@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#16161f"/>
+      <stop offset="100%" stop-color="#0a0a0f"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d4a574"/>
+      <stop offset="100%" stop-color="#f07167"/>
+    </linearGradient>
+    <linearGradient id="accent2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64b5f6"/>
+      <stop offset="100%" stop-color="#84a98c"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Subtle accent glow spots -->
+  <circle cx="200" cy="300" r="200" fill="#d4a574" opacity="0.03"/>
+  <circle cx="1000" cy="350" r="250" fill="#64b5f6" opacity="0.03"/>
+  <circle cx="600" cy="500" r="180" fill="#a78bfa" opacity="0.02"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1200" height="3" fill="url(#accent)"/>
+
+  <!-- Decorative dots -->
+  <circle cx="100" cy="80" r="2" fill="#d4a574" opacity="0.4"/>
+  <circle cx="300" cy="50" r="1.5" fill="#64b5f6" opacity="0.3"/>
+  <circle cx="700" cy="40" r="2" fill="#a78bfa" opacity="0.35"/>
+  <circle cx="950" cy="70" r="1.5" fill="#f07167" opacity="0.3"/>
+  <circle cx="1100" cy="55" r="2" fill="#84a98c" opacity="0.25"/>
+  <circle cx="150" cy="550" r="1.5" fill="#64b5f6" opacity="0.3"/>
+  <circle cx="500" cy="580" r="2" fill="#d4a574" opacity="0.25"/>
+  <circle cx="850" cy="560" r="1.5" fill="#a78bfa" opacity="0.3"/>
+  <circle cx="1050" cy="540" r="2" fill="#f07167" opacity="0.2"/>
+
+  <!-- Name -->
+  <text x="600" y="220" text-anchor="middle" font-family="Georgia, 'Playfair Display', serif" font-size="72" font-weight="700" fill="#f5f5f7" filter="url(#glow)">Lorenzo Colombani</text>
+
+  <!-- Divider line with gradient -->
+  <line x1="400" y1="260" x2="800" y2="260" stroke="url(#accent)" stroke-width="2" opacity="0.6"/>
+
+  <!-- Tagline -->
+  <text x="600" y="320" text-anchor="middle" font-family="'DM Sans', 'Helvetica Neue', sans-serif" font-size="32" fill="#d4a574">AI Policy · Design Thinking · Gamification</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="390" text-anchor="middle" font-family="'DM Sans', 'Helvetica Neue', sans-serif" font-size="22" fill="#9ca3af">Shaping AI Governance &amp; Transforming Organizations</text>
+
+  <!-- Pill tags -->
+  <rect x="310" y="440" width="140" height="36" rx="18" fill="#d4a574" opacity="0.12"/>
+  <text x="380" y="464" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="15" fill="#d4a574">AI Governance</text>
+
+  <rect x="470" y="440" width="110" height="36" rx="18" fill="#64b5f6" opacity="0.12"/>
+  <text x="525" y="464" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="15" fill="#64b5f6">Data Vault</text>
+
+  <rect x="600" y="440" width="130" height="36" rx="18" fill="#a78bfa" opacity="0.12"/>
+  <text x="665" y="464" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="15" fill="#a78bfa">Gamification</text>
+
+  <rect x="750" y="440" width="140" height="36" rx="18" fill="#f07167" opacity="0.12"/>
+  <text x="820" y="464" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="15" fill="#f07167">Design Thinking</text>
+
+  <!-- URL -->
+  <text x="600" y="560" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="18" fill="#9ca3af" opacity="0.6">lorenzocolombani.github.io</text>
+
+  <!-- Bottom accent bar -->
+  <rect x="0" y="627" width="1200" height="3" fill="url(#accent2)"/>
+</svg>
