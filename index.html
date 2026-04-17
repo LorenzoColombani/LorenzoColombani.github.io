@@ -20,6 +20,34 @@
     <meta name="twitter:title" content="Lorenzo Colombani | AI Policy Analyst & Design Thinker">
     <meta name="twitter:description" content="Shaping AI Governance & Transforming Organizations. AI Policy, Design Thinking, Gamification, and Data Vault projects.">
     <meta name="twitter:image" content="https://lorenzocolombani.github.io/og-image.png">
+    <meta name="description" content="Lorenzo Colombani — AI Policy Analyst, licensed lawyer, Fulbright Scholar, and gamification designer. Helping organizations navigate AI governance through human-centered design.">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Lorenzo Colombani",
+      "url": "https://lorenzocolombani.github.io",
+      "image": "https://lorenzocolombani.github.io/og-image.png",
+      "jobTitle": "AI Policy Analyst & Design Thinker",
+      "description": "AI Policy Analyst, licensed lawyer, Fulbright Scholar, and gamification designer helping organizations navigate AI governance through human-centered design.",
+      "sameAs": [
+        "https://www.linkedin.com/in/locolombani/",
+        "https://github.com/LorenzoColombani",
+        "https://medium.com/@lorenzocolombani",
+        "https://www.thplus.org"
+      ],
+      "alumniOf": [
+        {"@type": "EducationalOrganization", "name": "University of Pennsylvania Carey Law School"},
+        {"@type": "EducationalOrganization", "name": "Sciences Po Paris"},
+        {"@type": "EducationalOrganization", "name": "Université Paris-Sorbonne"},
+        {"@type": "EducationalOrganization", "name": "University of Pittsburgh"}
+      ],
+      "award": [
+        "Fulbright Scholarship",
+        "Penn-Wharton Innovation Award"
+      ]
+    }
+    </script>
     <style>
         :root {
             --bg-primary: #0a0a0f;
@@ -786,11 +814,45 @@
             .experience-years { text-align: left; }
             footer { flex-direction: column; gap: 1rem; text-align: center; }
         }
+
+        /* Skip link — visible only when focused via keyboard */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 1rem;
+            padding: 0.75rem 1.25rem;
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border-radius: 6px;
+            z-index: 10000;
+            transition: top 0.25s ease;
+        }
+        .skip-link:focus {
+            top: 1rem;
+            outline: 2px solid var(--text-primary);
+            outline-offset: 2px;
+        }
+
+        /* Reduced-motion: honor user preference */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .hero-photo::before { animation: none !important; }
+            #particle-canvas { display: none; }
+        }
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="scroll-progress"></div>
-    <canvas id="particle-canvas"></canvas>
+    <canvas id="particle-canvas" aria-hidden="true"></canvas>
 
     <nav>
         <div class="logo">Lorenzo Colombani</div>
@@ -807,10 +869,11 @@
         </ul>
     </nav>
 
+    <main id="main-content">
     <section class="hero">
         <div class="hero-container">
             <div class="hero-content">
-                <h1 class="hero-name">Lorenzo Colombani</h1>
+                <p class="hero-name">Lorenzo Colombani</p>
                 <p class="hero-tagline">AI Policy • Design Thinking • Gamification</p>
                 <h1>Shaping <span class="highlight">AI Governance</span> & Transforming Organizations</h1>
                 <p class="hero-subtitle">I bridge policy, law, and human-centered design to help organizations navigate AI governance and unlock engagement through gamification.</p>
@@ -839,13 +902,13 @@
             <p class="section-subtitle">A selection of work spanning AI tools, policy analysis, gamification design, and creative storytelling.</p>
         </div>
         <div class="portfolio-categories">
-            <button class="category-btn active" onclick="filterProjects('all')">All</button>
-            <button class="category-btn" onclick="filterProjects('ai-tools')">AI Tools</button>
-            <button class="category-btn" onclick="filterProjects('mental-health')">Mental Health</button>
-            <button class="category-btn" onclick="filterProjects('ai-policy')">AI Policy</button>
-            <button class="category-btn" onclick="filterProjects('creative')">Creative</button>
-            <button class="category-btn" onclick="filterProjects('workflow')">Workflows</button>
-            <button class="category-btn" onclick="filterProjects('education')">Education</button>
+            <button class="category-btn active" onclick="filterProjects(event, 'all')">All</button>
+            <button class="category-btn" onclick="filterProjects(event, 'ai-tools')">AI Tools</button>
+            <button class="category-btn" onclick="filterProjects(event, 'mental-health')">Mental Health</button>
+            <button class="category-btn" onclick="filterProjects(event, 'ai-policy')">AI Policy</button>
+            <button class="category-btn" onclick="filterProjects(event, 'creative')">Creative</button>
+            <button class="category-btn" onclick="filterProjects(event, 'workflow')">Workflows</button>
+            <button class="category-btn" onclick="filterProjects(event, 'education')">Education</button>
         </div>
         <div class="projects-grid">
             <!-- Wharton AI Studio Use Cases -->
@@ -1410,6 +1473,7 @@
             </div>
         </div>
     </section>
+    </main>
 
     <footer>
         <p class="footer-text">© 2026 Lorenzo Colombani</p>
@@ -1499,13 +1563,33 @@
             }
         }
 
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let particleRafId = null;
+
         function animateParticles() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (let particle of particles) particle.update();
             connectParticles();
-            requestAnimationFrame(animateParticles);
+            particleRafId = requestAnimationFrame(animateParticles);
         }
-        animateParticles();
+
+        function startParticles() {
+            if (prefersReducedMotion || particleRafId !== null) return;
+            animateParticles();
+        }
+        function stopParticles() {
+            if (particleRafId !== null) {
+                cancelAnimationFrame(particleRafId);
+                particleRafId = null;
+            }
+        }
+
+        startParticles();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopParticles();
+            else startParticles();
+        });
 
         const scrollProgress = document.querySelector('.scroll-progress');
         window.addEventListener('scroll', () => {
@@ -1522,7 +1606,7 @@
             document.querySelector('.nav-links').classList.toggle('active');
         }
 
-        function filterProjects(category) {
+        function filterProjects(event, category) {
             const cards = document.querySelectorAll('.project-card');
             const buttons = document.querySelectorAll('.category-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
