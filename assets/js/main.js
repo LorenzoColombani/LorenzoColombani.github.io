@@ -2,11 +2,15 @@
 
 import { initTV } from './tv.js';
 import { initTransport } from './transport.js';
+import { initSound } from './sound.js';
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---- the screens ------------------------------------------------------- */
 initTV();
+
+/* ---- the sound chip (nothing is fetched until it is clicked) ------------ */
+initSound();
 
 /* ---- the stacks: filters ----------------------------------------------- */
 {
