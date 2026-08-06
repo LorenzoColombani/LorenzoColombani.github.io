@@ -34,6 +34,15 @@ initSound();
       cards.forEach(card => {
         card.hidden = cat !== 'all' && !card.dataset.category.split(' ').includes(cat);
       });
+
+      /* Filtering can lift a card into view with no scroll at all, and a reveal
+         tween that never fired leaves it stamped at opacity:0 — measured: two of
+         the four AI Policy cards were invisible. ScrollTrigger.refresh() alone
+         did NOT fix it, so settle the shown cards outright. */
+      const shown = cards.filter(c => !c.hidden);
+      window.gsap?.set(shown, { y: 0, opacity: 1 });
+      window.ScrollTrigger?.refresh();
+      window.__srTransportRefresh?.();      // the doc got shorter; ticks must move
     });
     ch.setAttribute('aria-pressed', String(ch.classList.contains('is-active')));
   });
@@ -62,10 +71,6 @@ if (!reduced && window.Lenis && window.gsap && window.ScrollTrigger) {
       { y: 26, opacity: 0 },
       { y: 0, opacity: 1, duration: .8, ease: 'power2.out',
         scrollTrigger: { trigger: el, start: 'top 88%' } }));
-
-  // the filter can reveal a card that never crossed its trigger while hidden
-  document.querySelectorAll('.chip').forEach(ch =>
-    ch.addEventListener('click', () => requestAnimationFrame(() => ScrollTrigger.refresh())));
 }
 
 initTransport({ reduced, lenis });

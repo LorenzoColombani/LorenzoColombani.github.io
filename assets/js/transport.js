@@ -61,6 +61,9 @@ export function initTransport({ reduced = false, lenis = null } = {}) {
   addEventListener('resize', () => { place(); update(); }, { passive: true });
   (document.fonts?.ready ?? Promise.resolve()).then(place).catch(place);
 
+  // filtering the archive changes the document height, which moves every tick
+  window.__srTransportRefresh = () => { place(); update(); };
+
   place();
   update();
 }
