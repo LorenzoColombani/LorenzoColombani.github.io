@@ -221,7 +221,7 @@ section{
 .scroll-cue i{display:block;width:60px;height:1px;background:linear-gradient(to right,var(--gold-line-hi),transparent);animation:cueSlide 2.6s var(--ease) infinite}
 @keyframes cueSlide{0%,100%{transform:translateX(0);opacity:.6}50%{transform:translateX(10px);opacity:1}}
 
-/* ---------- 8. MARQUEE (filled in Task 5) ---------- */
+/* ---------- 8. MARQUEE ---------- */
 .epigraph{
   margin-top:clamp(24px,3vw,34px);padding-left:20px;
   border-left:2px solid var(--gold);
@@ -229,8 +229,89 @@ section{
   max-width:52ch;font-style:italic;
 }
 
+.feat-list{display:flex;flex-direction:column;gap:clamp(64px,9vw,132px)}
+
+.feat{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);
+  gap:clamp(24px,4vw,56px);align-items:center;
+}
+.feat:nth-child(even){grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+.feat:nth-child(even) .feat-copy{order:2}
+.feat:nth-child(even) .feat-screen{order:1}
+
+.feat-kicker{
+  font:400 11px/1 var(--mono);letter-spacing:.3em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:16px;
+}
+.feat-title{
+  font-family:var(--serif);font-weight:600;
+  font-size:clamp(1.55rem,3.1vw,2.6rem);line-height:1.12;letter-spacing:-.018em;
+  color:var(--ivory);text-wrap:balance;
+}
+.feat-blurb{
+  margin-top:clamp(12px,1.6vw,18px);color:var(--dim);max-width:46ch;
+}
+.feat-tags{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(16px,2vw,22px);
+}
+.feat-tags li{
+  font:400 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);border:1px solid var(--hairline);border-radius:999px;padding:6px 11px;
+}
+.feat-open{
+  display:inline-flex;align-items:center;gap:8px;position:relative;
+  margin-top:clamp(20px,2.6vw,28px);
+  font:400 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--gold);
+  padding:10px 0;transition:gap .3s var(--ease),color .3s var(--ease);
+}
+.feat-open::before{content:"";position:absolute;left:0;bottom:6px;width:100%;height:1px;background:var(--gold-line);transition:background .3s var(--ease)}
+.feat-open:hover{gap:14px}
+.feat-open:hover::before{background:var(--gold)}
+
+/* ---- the screen ---- */
+.feat-screen{
+  position:relative;display:block;
+  aspect-ratio:16/10;overflow:hidden;
+  background:linear-gradient(135deg,#14121B,#1d1930);
+  border:1px solid var(--gold-line);border-radius:8px;
+  box-shadow:0 30px 70px rgba(0,0,0,.45);
+}
+.feat-screen .still{
+  width:100%;height:100%;object-fit:cover;object-position:top center;
+  display:block;color:transparent;   /* no broken-alt scrawl before the stills land */
+}
+.feat-screen.is-shot{transition:border-color .35s var(--ease),transform .35s var(--ease)}
+.feat-screen.is-shot:hover{border-color:var(--gold-line-hi);transform:translateY(-3px)}
+
+.tv-btn,.feat-mark{
+  position:absolute;z-index:2;
+  font:400 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;
+}
+.tv-btn{
+  left:14px;bottom:14px;display:inline-flex;align-items:center;gap:8px;
+  color:var(--ivory);background:rgba(11,10,16,.72);
+  border:1px solid var(--gold-line-hi);border-radius:999px;padding:10px 16px;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  transition:background .28s var(--ease),color .28s var(--ease),border-color .28s var(--ease);
+}
+/* 44px minimum hit area without inflating the visual chip */
+.tv-btn::after{content:"";position:absolute;left:50%;top:50%;width:100%;height:44px;min-height:44px;transform:translate(-50%,-50%)}
+.tv-btn:hover{background:var(--gold);color:var(--stage);border-color:var(--gold)}
+.feat-mark{
+  right:14px;top:14px;color:var(--gold);
+  background:rgba(11,10,16,.6);border:1px solid var(--gold-line);
+  border-radius:999px;width:30px;height:30px;
+  display:grid;place-items:center;letter-spacing:0;
+}
+
 /* ---------- 13. RESPONSIVE ---------- */
 @media (max-width:900px){
+  .feat,.feat:nth-child(even){grid-template-columns:1fr;gap:22px}
+  .feat-copy,.feat:nth-child(even) .feat-copy{order:2}
+  .feat-screen,.feat:nth-child(even) .feat-screen{order:1}
+  .feat-list{gap:clamp(52px,11vw,80px)}
+  .feat-blurb{max-width:none}
+
   .hero-inner{grid-template-columns:1fr;gap:clamp(26px,6vw,40px)}
   .hero-photo{order:-1;justify-self:start}
   .hero-photo img{width:min(190px,44vw)}
