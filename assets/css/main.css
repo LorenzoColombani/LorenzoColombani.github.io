@@ -521,8 +521,34 @@ footer{
 .footer-links a:hover{color:var(--gold)}
 .footer-meta{font:400 10px/1.6 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);opacity:.75}
 
+/* ---------- 12. TRANSPORT ---------- */
+#transport{
+  position:fixed;left:0;right:0;bottom:0;height:2px;z-index:55;
+  background:rgba(236,231,221,.08);
+}
+.tp-fill{
+  position:absolute;inset:0;transform-origin:0 50%;transform:scaleX(0);
+  background:linear-gradient(to right,var(--gold-line-hi),var(--gold));
+}
+.tp-tick{
+  position:absolute;bottom:0;width:1px;height:8px;padding:0;
+  background:var(--gold-line-hi);transform:translateX(-.5px);
+}
+/* a 2px line is an impossible click target — the hit area is a pseudo-element */
+.tp-tick::after{content:"";position:absolute;left:50%;bottom:0;width:44px;height:44px;transform:translateX(-50%)}
+.tp-tick:hover,.tp-tick:focus-visible{background:var(--gold);height:14px}
+.tp-label{
+  position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
+  font:400 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gold);background:rgba(11,10,16,.9);padding:6px 9px;border-radius:3px;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .24s var(--ease);
+}
+.tp-tick:hover .tp-label,.tp-tick:focus-visible .tp-label{opacity:1}
+
 /* ---------- 13. RESPONSIVE ---------- */
 @media (max-width:900px){
+  #transport{display:none}
+
   /* the projector goes full-bleed: the framed site runs at its own width */
   .projector{padding:0;place-items:stretch}
   .projector-pane{width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0}
@@ -561,5 +587,7 @@ footer{
   .scroll-cue i{animation:none}
   #sound-chip.pulse-once{animation:none}
   .hero-name{transition:none}
+  .tv-dot,.tv-skel{animation:none}
+  .card:hover,.feat-screen.is-shot:hover{transform:none}
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
