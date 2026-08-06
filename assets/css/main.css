@@ -9,6 +9,8 @@
 /* ---------- 1. FONTS (self-hosted; no third-party requests) ---------- */
 @font-face{font-family:'Playfair Display';src:url('../fonts/playfair-display-v40-latin-600.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
 @font-face{font-family:'Playfair Display';src:url('../fonts/playfair-display-v40-latin-700.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Playfair Display';src:url('../fonts/playfair-display-v40-latin-600italic.woff2') format('woff2');font-weight:600;font-style:italic;font-display:swap}
+@font-face{font-family:'Playfair Display';src:url('../fonts/playfair-display-v40-latin-700italic.woff2') format('woff2');font-weight:700;font-style:italic;font-display:swap}
 @font-face{font-family:'DM Sans';src:url('../fonts/dm-sans-v17-latin-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'DM Sans';src:url('../fonts/dm-sans-v17-latin-500.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
 @font-face{font-family:'DM Sans';src:url('../fonts/dm-sans-v17-latin-700.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
@@ -168,8 +170,10 @@ section{
 /* directional scrim — keeps type legible over the particle field */
 .hero-copy{position:relative}
 .hero-copy::before{
-  content:"";position:absolute;inset:-14% -18% -14% -12%;z-index:-1;
-  background:radial-gradient(ellipse 72% 82% at 38% 50%,rgba(11,10,16,.86),rgba(11,10,16,.55) 44%,transparent 70%);
+  content:"";position:absolute;inset:-16% -30% -18% -14%;z-index:-1;
+  background:
+    radial-gradient(ellipse 78% 92% at 34% 48%,rgba(11,10,16,.92),rgba(11,10,16,.68) 46%,transparent 74%),
+    linear-gradient(to right,rgba(11,10,16,.86),rgba(11,10,16,.45) 52%,transparent 82%);
 }
 
 .hero-h1{display:block;margin:0}
@@ -177,10 +181,10 @@ section{
   display:block;font-family:var(--serif);font-weight:700;
   font-size:clamp(2.6rem,7.4vw,6.2rem);line-height:.98;letter-spacing:-.028em;
   color:var(--ivory);
-  /* particles assemble here, then the real text cross-fades in */
-  opacity:1;transition:opacity .9s var(--ease);
+  /* motes assemble on these glyphs, then the real text cross-fades back in */
+  opacity:1;
 }
-.hero-name.particled{opacity:0}
+.hn-line{display:block}
 .hero-claim{
   display:block;margin-top:clamp(16px,2.4vw,26px);
   font-family:var(--serif);font-weight:600;font-style:italic;
