@@ -1,6 +1,11 @@
 /* main.js — boot. Everything heavy is imported after first paint. */
 
+import { initTV } from './tv.js';
+
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---- the screens ------------------------------------------------------- */
+initTV();
 
 /* ---- nav: solid once we leave the hero -------------------------------- */
 const nav = document.getElementById('nav');

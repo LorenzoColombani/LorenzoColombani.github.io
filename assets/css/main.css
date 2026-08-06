@@ -304,8 +304,58 @@ section{
   display:grid;place-items:center;letter-spacing:0;
 }
 
+/* ---------- 8b. THE TV (live previews) ---------- */
+.tv-live{position:absolute;inset:0;z-index:3;background:var(--surface);overflow:hidden}
+.tv-live iframe{display:block}
+
+.tv-dot{
+  position:absolute;top:12px;left:14px;z-index:5;pointer-events:none;
+  font:400 10px/1 var(--mono);letter-spacing:.22em;color:var(--coral);
+  background:rgba(11,10,16,.66);border-radius:999px;padding:6px 10px;
+  animation:tvPulse 1.8s var(--ease) infinite;
+}
+@keyframes tvPulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+.tv-x{
+  position:absolute;top:10px;right:12px;z-index:6;
+  display:grid;place-items:center;width:34px;height:34px;
+  font:400 13px/1 var(--mono);color:var(--ivory);
+  background:rgba(11,10,16,.78);border:1px solid var(--gold-line-hi);border-radius:999px;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  transition:background .24s var(--ease),color .24s var(--ease);
+}
+.tv-x::after{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
+.tv-x:hover{background:var(--gold);color:var(--stage)}
+
+/* <400ms feedback: the pane is never just dark while a page connects */
+.tv-skel{
+  position:absolute;inset:0;z-index:4;background:var(--surface);
+  background-image:linear-gradient(105deg,transparent 32%,rgba(212,165,116,.14) 50%,transparent 68%);
+  background-size:220% 100%;
+  animation:tvSweep 1.25s linear infinite;
+}
+@keyframes tvSweep{0%{background-position:120% 0}100%{background-position:-120% 0}}
+
+/* the projector — one shared modal for the archive */
+.projector{
+  position:fixed;inset:0;z-index:80;
+  display:grid;place-items:center;padding:clamp(16px,4vw,48px);
+  background:rgba(6,5,10,.93);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+}
+.projector-pane{
+  position:relative;width:min(1120px,100%);aspect-ratio:16/10;
+  background:var(--surface);border:1px solid var(--gold-line);border-radius:8px;
+  overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.7);
+}
+.projector > .tv-x{top:clamp(10px,2vw,22px);right:clamp(10px,2vw,22px)}
+
 /* ---------- 13. RESPONSIVE ---------- */
 @media (max-width:900px){
+  /* the projector goes full-bleed: the framed site runs at its own width */
+  .projector{padding:0;place-items:stretch}
+  .projector-pane{width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0}
+
   .feat,.feat:nth-child(even){grid-template-columns:1fr;gap:22px}
   .feat-copy,.feat:nth-child(even) .feat-copy{order:2}
   .feat-screen,.feat:nth-child(even) .feat-screen{order:1}

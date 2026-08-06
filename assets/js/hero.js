@@ -233,7 +233,12 @@ export default function initHero({ canvas, nameEl, reduced }) {
   }
 
   /* ---- wiring ----------------------------------------------------------- */
-  document.addEventListener('visibilitychange', () => { hidden = document.hidden; });
+  let tabAway = false, screenLive = false;
+  const settle = () => { hidden = tabAway || screenLive; };
+
+  document.addEventListener('visibilitychange', () => { tabAway = document.hidden; settle(); });
+  // a framed film runs its own WebGL context and rAF — stand down while it plays
+  document.addEventListener('sr:live', e => { screenLive = !!e.detail?.live; settle(); });
 
   if (!reduced) {
     addEventListener('pointermove', (e) => {
