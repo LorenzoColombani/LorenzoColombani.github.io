@@ -350,6 +350,76 @@ section{
 }
 .projector > .tv-x{top:clamp(10px,2vw,22px);right:clamp(10px,2vw,22px)}
 
+/* ---------- 9. THE STACKS ---------- */
+.stacks{margin-top:clamp(88px,12vw,168px)}
+
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:clamp(28px,4vw,44px)}
+.chip{
+  position:relative;
+  font:400 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+  border:1px solid var(--hairline);border-radius:999px;padding:11px 16px;
+  transition:color .26s var(--ease),border-color .26s var(--ease),background .26s var(--ease);
+}
+.chip::after{content:"";position:absolute;left:50%;top:50%;width:100%;height:44px;transform:translate(-50%,-50%)}
+.chip:hover{color:var(--ivory);border-color:var(--gold-line)}
+.chip.is-active{color:var(--stage);background:var(--gold);border-color:var(--gold)}
+
+.card-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));
+  gap:clamp(14px,1.6vw,22px);
+}
+/* the filter uses [hidden]; a display rule on the card would out-specify it */
+.card[hidden]{display:none!important}
+
+.card{
+  position:relative;display:flex;flex-direction:column;
+  padding:clamp(22px,2.2vw,28px);
+  background:var(--surface);border:1px solid var(--hairline);border-radius:8px;
+  transition:transform .32s var(--ease),border-color .32s var(--ease),background .32s var(--ease);
+}
+.card:hover{transform:translateY(-3px);border-color:var(--gold-line);background:var(--surface-2)}
+.card:has(.card-title a:focus-visible){border-color:var(--gold-line-hi)}
+
+.card-idx{
+  font:400 10px/1 var(--mono);letter-spacing:.24em;color:var(--gold);opacity:.72;
+  margin-bottom:14px;
+}
+.card-title{
+  font-family:var(--serif);font-weight:600;font-size:1.12rem;line-height:1.28;
+  letter-spacing:-.01em;color:var(--ivory);
+}
+.card-title a{transition:color .26s var(--ease)}
+/* the whole card is the link — the play button sits above it */
+.card-title a::after{content:"";position:absolute;inset:0;z-index:1;border-radius:8px}
+.card:hover .card-title a{color:var(--gold)}
+
+.card-blurb{
+  margin-top:10px;font-size:.92rem;line-height:1.6;color:var(--dim);
+  flex:1 1 auto;
+}
+.card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.card-tags li{
+  font:400 9.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);opacity:.85;border:1px solid var(--hairline);border-radius:999px;padding:5px 9px;
+}
+
+.card-play{
+  position:relative;z-index:2;align-self:flex-start;
+  display:inline-flex;align-items:center;gap:7px;margin-top:18px;
+  font:400 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);
+  border:1px solid var(--gold-line);border-radius:999px;padding:10px 14px;
+  transition:background .26s var(--ease),color .26s var(--ease),border-color .26s var(--ease);
+}
+.card-play::after{content:"";position:absolute;left:50%;top:50%;width:100%;height:44px;transform:translate(-50%,-50%)}
+.card-play:hover{background:var(--gold);color:var(--stage);border-color:var(--gold)}
+
+.card-mark{
+  position:absolute;top:18px;right:20px;
+  font:400 12px/1 var(--mono);color:var(--dim);
+  transition:color .26s var(--ease),transform .26s var(--ease);
+}
+.card:hover .card-mark{color:var(--gold);transform:translate(2px,-2px)}
+
 /* ---------- 13. RESPONSIVE ---------- */
 @media (max-width:900px){
   /* the projector goes full-bleed: the framed site runs at its own width */

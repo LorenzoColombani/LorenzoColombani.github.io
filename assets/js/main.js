@@ -7,6 +7,33 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* ---- the screens ------------------------------------------------------- */
 initTV();
 
+/* ---- the stacks: filters ----------------------------------------------- */
+{
+  const chips = [...document.querySelectorAll('.chip')];
+  const cards = [...document.querySelectorAll('.card')];
+
+  const has = (cat) =>
+    cat === 'all' || cards.some(c => c.dataset.category.split(' ').includes(cat));
+
+  // a chip that can never match anything is a dead end — don't offer it.
+  // (Education currently lands here: its only card was promoted to the marquee.)
+  chips.forEach(ch => { if (!has(ch.dataset.filter)) ch.remove(); });
+
+  chips.filter(ch => ch.isConnected).forEach(ch => {
+    ch.addEventListener('click', () => {
+      const cat = ch.dataset.filter;
+      chips.forEach(c => {
+        c.classList.toggle('is-active', c === ch);
+        c.setAttribute('aria-pressed', String(c === ch));
+      });
+      cards.forEach(card => {
+        card.hidden = cat !== 'all' && !card.dataset.category.split(' ').includes(cat);
+      });
+    });
+    ch.setAttribute('aria-pressed', String(ch.classList.contains('is-active')));
+  });
+}
+
 /* ---- nav: solid once we leave the hero -------------------------------- */
 const nav = document.getElementById('nav');
 if (nav) {

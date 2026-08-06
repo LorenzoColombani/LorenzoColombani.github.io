@@ -69,6 +69,32 @@ function nativeFrame(url) {
   return f;
 }
 
+/* Cross-origin frames take focus when they load, and our ESC listener can't
+   hear keys inside one. Tabbing back out of the frame is the escape hatch — but
+   without a guard it lands on whatever sits behind the modal. So: any focus
+   that re-enters our document while the projector is open goes to the ✕, which
+   puts ESC back in reach. (Measured: Wix steals focus ~600ms after load, so a
+   one-shot refocus on `load` is too early to help.) */
+function guardModalFocus(e) {
+  if (!live?.isModal) return;
+  if (live.host.contains(e.target)) return;
+  live.host.querySelector('.tv-x')?.focus({ preventScroll: true });
+}
+
+/* And the steal itself: framed pages focus themselves shortly after load
+   (Wix does it ~600ms in), which hands the keyboard to a document we can't
+   read keys from. Measured: Shift+Tab does NOT walk straight back out — it
+   walks backwards through the framed page's own controls first, so a keyboard
+   user really is stuck. Watch for the steal over a short window and take focus
+   back once; after that the frame is the user's to enter deliberately. */
+function refuseFocusSteal(frame, closeBtn) {
+  const until = performance.now() + 3000;      // measured: Wix steals twice, ~1.2s and ~2.4s
+  const id = setInterval(() => {
+    if (!closeBtn.isConnected || performance.now() > until) { clearInterval(id); return; }
+    if (document.activeElement === frame) closeBtn.focus({ preventScroll: true });
+  }, 160);
+}
+
 function closeButton() {
   const x = document.createElement('button');
   x.type = 'button';
@@ -108,11 +134,13 @@ function openInPane(pane, data, btn) {
   frame.addEventListener('load', () => skel.remove());
 
   // the player wears its own chrome — a second LIVE badge just stacks on it
-  wrap.append(frame, ...(isWidget ? [] : [liveDot()]), closeButton());
+  const x = closeButton();
+  wrap.append(frame, ...(isWidget ? [] : [liveDot()]), x);
   pane.appendChild(wrap);
 
   live = { host: wrap, restoreFocus: btn };
-  wrap.querySelector('.tv-x').focus();
+  x.focus();
+  refuseFocusSteal(frame, x);
   announce(true);
   window.SRSound?.play('on');
 }
@@ -130,10 +158,12 @@ function openProjector(data, btn) {
 
   const pane = document.createElement('div');
   pane.className = 'projector-pane';
+  const x = closeButton();
+  dlg.appendChild(x);          // before the pane: Shift+Tab out of the frame lands here
   dlg.appendChild(pane);
-  dlg.appendChild(closeButton());
   document.body.appendChild(dlg);
   document.body.style.overflow = 'hidden';
+  document.addEventListener('focusin', guardModalFocus);
 
   const skel = document.createElement('div');
   skel.className = 'tv-skel';
@@ -149,7 +179,8 @@ function openProjector(data, btn) {
   dlg.addEventListener('click', e => { if (e.target === dlg) closeLive(); });
 
   live = { host: dlg, restoreFocus: btn, isModal: true };
-  dlg.querySelector('.tv-x').focus();
+  x.focus();
+  refuseFocusSteal(frame, x);
   announce(true);
   window.SRSound?.play('on');
 }
@@ -167,6 +198,7 @@ function trapTab(e) {
 
 export function closeLive() {
   if (!live) return;
+  document.removeEventListener('focusin', guardModalFocus);
   // blank before removing: some pages keep audio alive through a detach
   live.host.querySelectorAll('iframe').forEach(f => { f.src = 'about:blank'; });
   live.host.remove();
