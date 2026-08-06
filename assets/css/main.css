@@ -1,0 +1,251 @@
+/* ============================================================
+   THE SCREENING ROOM — lorenzocolombani.github.io
+   Sections: 1 fonts · 2 tokens · 3 reset · 4 type · 5 chrome
+             6 nav · 7 hero · 8 marquee · 9 stacks · 10 dossier
+             11 contact/footer · 12 transport · 13 responsive
+             14 reduced-motion
+   ============================================================ */
+
+/* ---------- 1. FONTS (self-hosted; no third-party requests) ---------- */
+@font-face{font-family:'Playfair Display';src:url('../fonts/playfair-display-v40-latin-600.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Playfair Display';src:url('../fonts/playfair-display-v40-latin-700.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'DM Sans';src:url('../fonts/dm-sans-v17-latin-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'DM Sans';src:url('../fonts/dm-sans-v17-latin-500.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'DM Sans';src:url('../fonts/dm-sans-v17-latin-700.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('../fonts/jbmono-400.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+
+/* ---------- 2. TOKENS ---------- */
+:root{
+  --stage:#0B0A10;
+  --surface:#14121B;
+  --surface-2:#1B1825;
+  --ivory:#ECE7DD;
+  --dim:#9C96A8;
+  --gold:#D4A574;
+  --coral:#F07167;
+
+  --gold-line:rgba(212,165,116,.26);
+  --gold-line-hi:rgba(212,165,116,.55);
+  --hairline:rgba(236,231,221,.10);
+
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'DM Sans',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+
+  --gutter:clamp(20px,5vw,88px);
+  --maxw:1280px;
+  --sec-gap:clamp(80px,11vh,160px);
+
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+/* ---------- 3. RESET ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--stage);color:var(--ivory);
+  font-family:var(--sans);font-size:clamp(15px,1.05vw,17px);line-height:1.62;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+}
+img{max-width:100%;height:auto;display:block}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+ul{list-style:none;margin:0;padding:0}
+h1,h2,h3,p,blockquote,figure{margin:0}
+
+::selection{background:var(--gold);color:var(--stage)}
+
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}
+
+.skip-link{
+  position:absolute;left:-9999px;top:0;z-index:200;
+  background:var(--gold);color:var(--stage);padding:12px 20px;
+  font:400 12px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;
+}
+.skip-link:focus{left:12px;top:12px}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+/* ---------- 4. TYPE ---------- */
+.section-label{
+  font:400 11px/1 var(--mono);letter-spacing:.34em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:18px;
+}
+.section-title{
+  font-family:var(--serif);font-weight:600;
+  font-size:clamp(1.9rem,4vw,3.2rem);line-height:1.1;letter-spacing:-.015em;
+  max-width:20ch;
+}
+.section-head{margin-bottom:clamp(40px,6vw,72px)}
+
+/* ---------- 5. PAGE CHROME (grain · vignette) ---------- */
+#vignette{
+  position:fixed;inset:0;z-index:3;pointer-events:none;
+  background:radial-gradient(ellipse 90% 80% at 50% 45%,transparent 42%,rgba(4,3,8,.42) 78%,rgba(3,2,6,.78) 100%);
+}
+#grain{
+  position:fixed;inset:-140px;z-index:4;pointer-events:none;opacity:.045;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grainshift .55s steps(1) infinite;
+}
+@keyframes grainshift{
+  0%{transform:translate(0,0)}    20%{transform:translate(-42px,22px)}
+  40%{transform:translate(28px,-32px)} 60%{transform:translate(-22px,-18px)}
+  80%{transform:translate(38px,28px)}  100%{transform:translate(0,0)}
+}
+
+main{position:relative;z-index:2}
+section{
+  max-width:var(--maxw);margin:0 auto;
+  padding:var(--sec-gap) var(--gutter);
+}
+
+/* ---------- 6. NAV ---------- */
+#nav{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  display:flex;align-items:center;gap:clamp(16px,4vw,48px);
+  padding:14px var(--gutter);
+  background:linear-gradient(to bottom,rgba(11,10,16,.92),rgba(11,10,16,0));
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  transition:background .4s var(--ease);
+}
+#nav.solid{background:rgba(11,10,16,.9);border-bottom:1px solid var(--hairline)}
+.nav-brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.nav-mark{
+  font:700 13px/1 var(--mono);letter-spacing:.06em;color:var(--stage);
+  background:var(--gold);padding:7px 8px;border-radius:3px;
+}
+.nav-name{font:400 12px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.nav-links{display:flex;gap:clamp(14px,2.4vw,34px)}
+.nav-links a{
+  font:400 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+  position:relative;padding:8px 0;transition:color .28s var(--ease);
+}
+.nav-links a::after{
+  content:"";position:absolute;left:0;right:100%;bottom:2px;height:1px;
+  background:var(--gold);transition:right .34s var(--ease);
+}
+.nav-links a:hover,.nav-links a:focus-visible{color:var(--ivory)}
+.nav-links a:hover::after{right:0}
+
+#sound-chip{
+  display:inline-flex;align-items:center;gap:8px;position:relative;
+  font:400 10px/1 var(--mono);letter-spacing:.22em;color:var(--dim);
+  border:1px solid var(--gold-line);border-radius:999px;padding:9px 14px;
+  transition:color .28s var(--ease),border-color .28s var(--ease),background .28s var(--ease);
+}
+#sound-chip::after{content:"";position:absolute;left:50%;top:50%;width:100%;min-width:44px;height:44px;transform:translate(-50%,-50%)}
+#sound-chip:hover{color:var(--ivory);border-color:var(--gold-line-hi)}
+#sound-chip[aria-pressed="true"]{color:var(--gold);border-color:var(--gold-line-hi);background:rgba(212,165,116,.08)}
+#sound-chip .chip-note{font-size:12px}
+@keyframes chipPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(212,165,116,0)}
+  50%{box-shadow:0 0 0 6px rgba(212,165,116,.14)}
+}
+#sound-chip.pulse-once{animation:chipPulse 2.4s var(--ease) 3}
+
+/* ---------- 7. HERO ---------- */
+.hero{
+  position:relative;min-height:100svh;max-width:none;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(90px,14vh,150px) var(--gutter) clamp(70px,10vh,110px);
+}
+#particle-canvas{
+  position:absolute;inset:0;width:100%;height:100%;z-index:0;
+  pointer-events:none;display:block;
+}
+.hero-inner{
+  position:relative;z-index:1;
+  width:100%;max-width:var(--maxw);margin:0 auto;
+  display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr);
+  gap:clamp(28px,5vw,72px);align-items:center;
+}
+
+/* directional scrim — keeps type legible over the particle field */
+.hero-copy{position:relative}
+.hero-copy::before{
+  content:"";position:absolute;inset:-14% -18% -14% -12%;z-index:-1;
+  background:radial-gradient(ellipse 72% 82% at 38% 50%,rgba(11,10,16,.86),rgba(11,10,16,.55) 44%,transparent 70%);
+}
+
+.hero-h1{display:block;margin:0}
+.hero-name{
+  display:block;font-family:var(--serif);font-weight:700;
+  font-size:clamp(2.6rem,7.4vw,6.2rem);line-height:.98;letter-spacing:-.028em;
+  color:var(--ivory);
+  /* particles assemble here, then the real text cross-fades in */
+  opacity:1;transition:opacity .9s var(--ease);
+}
+.hero-name.particled{opacity:0}
+.hero-claim{
+  display:block;margin-top:clamp(16px,2.4vw,26px);
+  font-family:var(--serif);font-weight:600;font-style:italic;
+  font-size:clamp(1.15rem,2.35vw,2rem);line-height:1.28;letter-spacing:-.01em;
+  color:var(--gold);max-width:22ch;
+}
+.hero-kicker{
+  margin-top:clamp(22px,3vw,34px);
+  font:400 clamp(9.5px,.78vw,11px)/1.9 var(--mono);
+  letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+  max-width:64ch;text-wrap:balance;
+}
+
+.hero-photo{position:relative;justify-self:center}
+.hero-photo img{
+  width:min(340px,34vw);height:auto;border-radius:50%;
+  filter:grayscale(.28) sepia(.14) contrast(1.06) brightness(.96);
+  box-shadow:0 0 70px rgba(212,165,116,.16),0 0 0 1px rgba(212,165,116,.34),0 24px 60px rgba(0,0,0,.5);
+}
+.hero-photo::after{
+  content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 50% 22%,rgba(212,165,116,.10),transparent 60%);
+  mix-blend-mode:screen;
+}
+
+.scroll-cue{
+  position:relative;z-index:1;
+  width:100%;max-width:var(--maxw);margin:clamp(36px,6vh,64px) auto 0;
+  display:flex;align-items:center;gap:12px;
+  font:400 10px/1 var(--mono);letter-spacing:.34em;text-transform:uppercase;color:var(--dim);
+  transition:color .3s var(--ease);
+}
+.scroll-cue:hover{color:var(--gold)}
+.scroll-cue i{display:block;width:60px;height:1px;background:linear-gradient(to right,var(--gold-line-hi),transparent);animation:cueSlide 2.6s var(--ease) infinite}
+@keyframes cueSlide{0%,100%{transform:translateX(0);opacity:.6}50%{transform:translateX(10px);opacity:1}}
+
+/* ---------- 8. MARQUEE (filled in Task 5) ---------- */
+.epigraph{
+  margin-top:clamp(24px,3vw,34px);padding-left:20px;
+  border-left:2px solid var(--gold);
+  font:500 clamp(15px,1.35vw,19px)/1.6 var(--sans);color:var(--dim);
+  max-width:52ch;font-style:italic;
+}
+
+/* ---------- 13. RESPONSIVE ---------- */
+@media (max-width:900px){
+  .hero-inner{grid-template-columns:1fr;gap:clamp(26px,6vw,40px)}
+  .hero-photo{order:-1;justify-self:start}
+  .hero-photo img{width:min(190px,44vw)}
+  .hero-claim{max-width:none}
+  .nav-name{display:none}
+  .nav-links{gap:14px}
+  .nav-links a{letter-spacing:.14em}
+}
+@media (max-width:620px){
+  .nav-links{display:none}
+  #nav{gap:12px}
+}
+
+/* ---------- 14. REDUCED MOTION ---------- */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  #grain{animation:none}
+  .scroll-cue i{animation:none}
+  #sound-chip.pulse-once{animation:none}
+  .hero-name{transition:none}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
