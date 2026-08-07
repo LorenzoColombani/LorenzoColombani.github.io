@@ -54,6 +54,31 @@ export function initTV() {
     if (e.key === 'Escape' && live) { e.preventDefault(); closeLive(); }
     if (e.key === 'Tab' && live?.isModal) trapTab(e);
   });
+
+  /* A scaled frame is sized ONCE, at open, from the pane width — so rotating the
+     device left it at the old scale. Measured: a bezel preview opened at 390
+     portrait and rotated to 844 landscape kept scale(0.272) inside a 758px pane,
+     so the framed site rendered 348px wide and filled 46% of the bezel, with
+     410px of dead screen beside it. */
+  let rzT;
+  addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(rescaleLive, 120); });
+  // iOS fires orientationchange BEFORE the new metrics are readable; resize
+  // follows, but land a late pass too in case it doesn't on some device.
+  addEventListener('orientationchange', () => setTimeout(rescaleLive, 260));
+}
+
+/* Re-scale in place rather than rebuilding. Recomputing a transform costs
+   nothing and — the point — does NOT reload the iframe. Swapping a scaled frame
+   for a native one when a rotate crosses the 900px projector boundary WOULD
+   reload it, throwing away wherever the visitor had scrolled to inside someone
+   else's site. A frame keeps the kind it was born with; only its scale moves. */
+function rescaleLive() {
+  if (!live?.scaled?.length) return;
+  for (const { frame, pane } of live.scaled) {
+    if (!frame.isConnected || !pane.isConnected) continue;
+    const w = pane.clientWidth;
+    if (w > 0) frame.style.transform = `scale(${w / FRAME_W})`;   // origin 0 0 is set at build
+  }
 }
 
 /* ---- pieces ------------------------------------------------------------ */
@@ -155,7 +180,8 @@ function openInPane(pane, data, btn) {
   wrap.append(frame, ...(isWidget ? [] : [liveDot()]), x);
   pane.appendChild(wrap);
 
-  live = { host: wrap, restoreFocus: btn };
+  // widget frames are native (fluid) — only the scaled ones need re-scaling
+  live = { host: wrap, restoreFocus: btn, scaled: isWidget ? [] : [{ frame, pane }] };
   x.focus();
   refuseFocusSteal(frame, x);
   announce(true);
@@ -292,7 +318,8 @@ function openProjector(data, btn) {
 
   dlg.addEventListener('click', e => { if (e.target === dlg) closeLive(); });
 
-  live = { host: dlg, restoreFocus: btn, isModal: true };
+  // `small` chose native (fluid) vs scaled at open; only the scaled one re-scales
+  live = { host: dlg, restoreFocus: btn, isModal: true, scaled: small ? [] : [{ frame, pane }] };
   x.focus();
   refuseFocusSteal(frame, x);
   announce(true);

@@ -39,6 +39,25 @@
   --sec-gap:clamp(80px,11vh,160px);
 
   --ease:cubic-bezier(.22,.61,.36,1);
+
+  /* safe areas — paired with viewport-fit=cover. Zero on every device without
+     a notch/home indicator, so these are free everywhere else. */
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-r:env(safe-area-inset-right,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px);
+}
+
+/* ---------- 2b. TOUCH TARGETS ----------
+   One mechanism for the whole site: a centred, invisible pseudo-element that
+   grows the HIT area to 44x44 without touching the visual size or the layout.
+   Applied per-control below; measured by hit-testing real points, not by
+   reading CSS (a rect sweep can't see a pseudo-element). */
+.hit44{position:relative}
+.hit44::after{
+  content:"";position:absolute;left:50%;top:50%;
+  width:100%;min-width:44px;height:100%;min-height:44px;
+  transform:translate(-50%,-50%);
 }
 
 /* ---------- 3. RESET ---------- */
@@ -115,20 +134,21 @@ h1,h2,h3,p,blockquote,figure{margin:0}
 main{position:relative;z-index:2}
 section{
   max-width:var(--maxw);margin:0 auto;
-  padding:var(--sec-gap) var(--gutter);
+  padding:var(--sec-gap) calc(var(--gutter) + var(--safe-r)) var(--sec-gap) calc(var(--gutter) + var(--safe-l));
 }
 
 /* ---------- 6. NAV ---------- */
 #nav{
   position:fixed;top:0;left:0;right:0;z-index:50;
   display:flex;align-items:center;gap:clamp(16px,4vw,48px);
-  padding:14px var(--gutter);
+  padding:calc(14px + var(--safe-t)) calc(var(--gutter) + var(--safe-r)) 14px calc(var(--gutter) + var(--safe-l));
   background:linear-gradient(to bottom,rgba(11,10,16,.92),rgba(11,10,16,0));
   backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
   transition:background .4s var(--ease);
 }
 #nav.solid{background:rgba(11,10,16,.9);border-bottom:1px solid var(--hairline)}
-.nav-brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.nav-brand{position:relative;display:flex;align-items:center;gap:10px;margin-right:auto}
+.nav-brand::after{content:"";position:absolute;left:50%;top:50%;width:100%;min-width:44px;height:44px;transform:translate(-50%,-50%)}
 .nav-mark{
   font:700 13px/1 var(--mono);letter-spacing:.06em;color:var(--stage);
   background:var(--gold);padding:7px 8px;border-radius:3px;
@@ -139,6 +159,7 @@ section{
   font:400 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
   position:relative;padding:8px 0;transition:color .28s var(--ease);
 }
+.nav-links a::before{content:"";position:absolute;left:50%;top:50%;width:100%;min-width:44px;height:44px;transform:translate(-50%,-50%)}
 .nav-links a::after{
   content:"";position:absolute;left:0;right:100%;bottom:2px;height:1px;
   background:var(--gold);transition:right .34s var(--ease);
@@ -162,11 +183,58 @@ section{
 }
 #sound-chip.pulse-once{animation:chipPulse 2.4s var(--ease) 3}
 
+/* ---- compact disclosure menu ------------------------------------------
+   Below 620px .nav-links is display:none and the transport is pointer-only,
+   so this panel IS the navigation — without it a phone visitor cannot reach
+   Contact at all. Plain disclosure, not a modal: it does not lock scroll and
+   does not trap focus. Closed state is display:none so the four links and the
+   relocated sound chip are out of the tab order and the a11y tree entirely. */
+#nav-menu-btn{
+  display:none;align-items:center;gap:8px;position:relative;
+  font:400 10px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+  border:1px solid var(--gold-line);border-radius:999px;padding:9px 14px;
+  transition:color .28s var(--ease),border-color .28s var(--ease),background .28s var(--ease);
+}
+/* same 44pt halo idiom as every other nav control (R1) so the target probe
+   measures this button identically to its neighbours */
+#nav-menu-btn::after{content:"";position:absolute;left:50%;top:50%;width:100%;min-width:44px;height:44px;transform:translate(-50%,-50%)}
+#nav-menu-btn[aria-expanded="true"]{color:var(--gold);border-color:var(--gold-line-hi);background:rgba(212,165,116,.08)}
+.mb-bars{display:flex;flex-direction:column;justify-content:center;gap:3px;width:12px;height:7px}
+.mb-bars i{display:block;height:1px;background:currentColor;transition:transform .28s var(--ease)}
+#nav-menu-btn[aria-expanded="true"] .mb-bars i:first-child{transform:translateY(2px) rotate(45deg)}
+#nav-menu-btn[aria-expanded="true"] .mb-bars i:last-child{transform:translateY(-2px) rotate(-45deg)}
+
+#nav-menu{
+  display:none;position:absolute;top:100%;left:0;right:0;
+  background:rgba(11,10,16,.97);
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  border-top:1px solid var(--gold-line);border-bottom:1px solid var(--hairline);
+  /* the panel spans edge to edge, so it carries its own safe-area padding —
+     the nav's inline padding does not reach an absolutely positioned child */
+  padding:2px calc(var(--gutter) + var(--safe-r)) calc(8px + var(--safe-b)) calc(var(--gutter) + var(--safe-l));
+  /* 100% here resolves against the nav's padding box = the nav's height, so
+     this is "everything below the bar". Matters at 693x320 landscape, where
+     four rows plus the chip nearly fill the viewport. */
+  max-height:74svh;
+  max-height:calc(100svh - 100%);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+#nav-menu.is-open{display:block;animation:navMenuIn .24s var(--ease)}
+@keyframes navMenuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.nm-links a{
+  display:flex;align-items:center;min-height:44px;
+  font:400 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+  border-bottom:1px solid var(--hairline);transition:color .28s var(--ease);
+}
+.nm-links a:hover,.nm-links a:focus-visible{color:var(--gold)}
+.nm-foot{display:flex;align-items:center;min-height:44px;padding-top:8px}
+
 /* ---------- 7. HERO ---------- */
 .hero{
   position:relative;min-height:100svh;max-width:none;
   display:flex;flex-direction:column;justify-content:center;
-  padding:clamp(90px,14vh,150px) var(--gutter) clamp(70px,10vh,110px);
+  padding:calc(clamp(90px,14vh,150px) + var(--safe-t)) calc(var(--gutter) + var(--safe-r))
+          clamp(70px,10vh,110px) calc(var(--gutter) + var(--safe-l));
   /* the scrim below reaches -30% past its box; without this it pushed the whole
      page 110px wide at 500px (measured — body{overflow-x:hidden} does not stop
      it, because the overflow propagates to the viewport and scrolls anyway) */
@@ -209,7 +277,7 @@ section{
 }
 .hero-kicker{
   margin-top:clamp(22px,3vw,34px);
-  font:400 clamp(9.5px,.78vw,11px)/1.9 var(--mono);
+  font:400 clamp(10px,.78vw,11px)/1.9 var(--mono);
   letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
   max-width:64ch;text-wrap:balance;
 }
@@ -233,6 +301,8 @@ section{
   font:400 10px/1 var(--mono);letter-spacing:.34em;text-transform:uppercase;color:var(--dim);
   transition:color .3s var(--ease);
 }
+/* the cue is a 10px-tall strip: give the WORD a 44px halo, not the whole row */
+.scroll-cue::after{content:"";position:absolute;left:0;top:50%;width:100%;height:44px;transform:translateY(-50%)}
 .scroll-cue:hover{color:var(--gold)}
 .scroll-cue i{display:block;width:60px;height:1px;background:linear-gradient(to right,var(--gold-line-hi),transparent);animation:cueSlide 2.6s var(--ease) infinite}
 @keyframes cueSlide{0%,100%{transform:translateX(0);opacity:.6}50%{transform:translateX(10px);opacity:1}}
@@ -280,6 +350,7 @@ section{
   font:400 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--gold);
   padding:10px 0;transition:gap .3s var(--ease),color .3s var(--ease);
 }
+.feat-open::after{content:"";position:absolute;left:50%;top:50%;width:100%;height:44px;transform:translate(-50%,-50%)}
 .feat-open::before{content:"";position:absolute;left:0;bottom:6px;width:100%;height:1px;background:var(--gold-line);transition:background .3s var(--ease)}
 .feat-open:hover{gap:14px}
 .feat-open:hover::before{background:var(--gold)}
@@ -327,6 +398,7 @@ section{
   border-radius:999px;width:30px;height:30px;
   display:grid;place-items:center;letter-spacing:0;
 }
+.feat-mark::after{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
 
 /* ---------- 8b. THE TV (live previews) ---------- */
 .tv-live{position:absolute;inset:0;z-index:3;background:var(--surface);overflow:hidden}
@@ -458,7 +530,7 @@ section{
 }
 .card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
 .card-tags li{
-  font:400 9.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;
+  font:400 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;
   color:var(--dim);opacity:.85;border:1px solid var(--hairline);border-radius:999px;padding:5px 9px;
 }
 
@@ -567,23 +639,36 @@ section{
 
 footer{
   position:relative;z-index:2;
-  max-width:var(--maxw);margin:0 auto;padding:34px var(--gutter) 48px;
+  max-width:var(--maxw);margin:0 auto;
+  padding:34px calc(var(--gutter) + var(--safe-r)) calc(48px + var(--safe-b)) calc(var(--gutter) + var(--safe-l));
   border-top:1px solid var(--hairline);
   display:flex;flex-wrap:wrap;align-items:center;gap:14px clamp(20px,4vw,44px);
 }
 .footer-claim{font-size:.88rem;color:var(--dim);margin-right:auto;max-width:52ch}
 .footer-links{display:flex;flex-wrap:wrap;gap:14px}
 .footer-links a{
+  position:relative;
   font:400 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);
   transition:color .26s var(--ease);
 }
+.footer-links a::after{content:"";position:absolute;left:50%;top:50%;width:100%;min-width:44px;height:44px;transform:translate(-50%,-50%)}
 .footer-links a:hover{color:var(--gold)}
 /* no opacity here: .75 on --dim measured 4.29:1, under the AA floor */
 .footer-meta{font:400 10px/1.6 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 
-/* ---------- 12. TRANSPORT ---------- */
+/* ---------- 12. TRANSPORT ----------
+   A POINTER affordance, deliberately. Each tick carries a 44px hit halo on a
+   2px line, and on touch those halos shadow whatever page content sits in the
+   bottom band — measured at iPad landscape: 9 real links intercepted (footer
+   links, publication rows, card titles). Mouse and trackpad get the transport;
+   touch gets the compact menu instead. Ticks are still built in JS either way,
+   so nothing else has to know. */
+#transport{display:none}
+@media (hover:hover) and (pointer:fine){
+  #transport{display:block}
+}
 #transport{
-  position:fixed;left:0;right:0;bottom:0;height:2px;z-index:55;
+  position:fixed;left:0;right:0;bottom:var(--safe-b);height:2px;z-index:55;
   background:rgba(236,231,221,.08);
 }
 .tp-fill{
@@ -594,20 +679,58 @@ footer{
   position:absolute;bottom:0;width:1px;height:8px;padding:0;
   background:var(--gold-line-hi);transform:translateX(-.5px);
 }
-/* a 2px line is an impossible click target — the hit area is a pseudo-element */
-.tp-tick::after{content:"";position:absolute;left:50%;bottom:0;width:44px;height:44px;transform:translateX(-50%)}
+/* A 2px line is an impossible target, so the hit area is a pseudo-element —
+   but 44px is the TOUCH spec and this bar is pointer-only (see above). At 44
+   the halos reached up into the page and shadowed real links near the bottom
+   edge (measured: 2 card titles at 1440, 9 links at iPad landscape). 26px is
+   ample for a mouse and stops stealing content clicks. */
+.tp-tick::after{content:"";position:absolute;left:50%;bottom:0;width:26px;height:26px;transform:translateX(-50%)}
 .tp-tick:hover,.tp-tick:focus-visible{background:var(--gold);height:14px}
 .tp-label{
   position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
-  font:400 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;
+  font:400 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;
   color:var(--gold);background:rgba(11,10,16,.9);padding:6px 9px;border-radius:3px;
   white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .24s var(--ease);
 }
 .tp-tick:hover .tp-label,.tp-tick:focus-visible .tp-label{opacity:1}
 
 /* ---------- 13. RESPONSIVE ---------- */
+/* Compact reading floor. Kept OUT of the component rules on purpose: the desktop
+   type rhythm stays byte-identical, and only the small screens — where a 14.7px
+   paragraph is genuinely hard work — get the 16px floor.
+   ⚠ THE HEIGHT CONDITION IS NOT DECORATION. R1 keyed "compact" on width alone,
+   which quietly served DESKTOP type to a phone: an iPhone 16 Pro Max in landscape
+   is 932 CSS px wide, so it sailed past max-width:900 and got 14.7px card blurbs
+   (measured at 932x430 — six prose classes under the floor). A phone is compact in
+   either orientation; short viewports are phones.
+
+   ⚠ AND THE POINTER CONDITION IS THE ONE THAT ACTUALLY GENERALISES. His ruling:
+   "For iPad, treat it as responsive (so: not computer browser)." Measured on a real
+   iPad Pro 11" in the iOS 26.5 Simulator, landscape: viewport 1210x702 — so BOTH
+   width rules miss it and it was being served desktop type on a touchscreen. No
+   width breakpoint can fix this honestly: an iPad Pro 13" in landscape is 1366 CSS
+   px, i.e. wider than most laptops. `any-pointer:coarse` asks the right question —
+   "is a finger going to touch this" — and measured YES on every real device tested
+   (iPhone SE/16/17 Pro/17 Pro Max, iPad Pro 11", both orientations) while a desktop
+   browser answers no. It also survives Apple inventing new screen sizes, which a
+   width breakpoint does not. Known, accepted false positive: a Windows touch laptop
+   also matches and gets a 16px reading floor — harmless. */
+@media (max-width:900px), (max-height:450px), (any-pointer:coarse){
+  body{font-size:16px}
+  .card-blurb,.pub-desc,.item-desc,.item-points li,.cred-name{font-size:16px}
+  /* was 15px — one pixel under the floor this block exists to enforce. Baseline
+     F5 named this element by name; R1 raised it from 14.1 and stopped short,
+     and R1's verification skipped the 390 arm where the probe sees it. */
+  .footer-claim{font-size:16px}
+}
+
 @media (max-width:900px){
-  #transport{display:none}
+  /* the screen-acts chips wrap at narrow widths and their 44px halos then
+     overlap vertically — measured. More gap separates them, and lifting them
+     off the bezel edge keeps each halo inside the pane instead of spilling
+     into the copy block below (measured: the widget chip's halo was landing
+     on .feat-copy). */
+  .screen-acts{gap:12px;bottom:18px}
 
   /* the projector goes full-bleed: the framed site runs at its own width */
   .projector{padding:0;place-items:stretch}
@@ -635,9 +758,47 @@ footer{
 }
 @media (max-width:620px){
   .nav-links{display:none}
+  #nav-menu-btn{display:inline-flex}
   #nav{gap:12px}
   footer{flex-direction:column;align-items:flex-start}
   .footer-claim{margin-right:0}
+}
+/* belt and braces: a stale .is-open must not survive a resize past the
+   breakpoint even if the JS listener never fires (the .is-open selector is
+   restated here so specificity ties and source order decides) */
+@media (min-width:621px){
+  #nav-menu,#nav-menu.is-open,#nav-menu-btn{display:none}
+}
+
+/* ---- SHORT-VIEWPORT HERO (his call: a compact ROW) ----------------------
+   A 100svh hero assumes a tall screen. Measured at 844x390 it did the opposite
+   of its job: the width rules had already stacked it to one column with the
+   photo on top, so the hero ran 676px tall inside a 390px viewport and the NAME
+   did not start until y=309 — a visitor arriving in landscape got a photograph
+   and nothing else. Below ~450px of height the hero stops reserving a screen and
+   becomes a row: copy left, photo shrunk beside it, scroll cue dropped (there is
+   no room for a hint to scroll on a screen that is already asking you to).
+   MUST stay after the width queries above — same specificity, source order decides. */
+@media (max-height:450px){
+  .hero{
+    min-height:auto;
+    /* ⚠ THE 64px MINIMUM IS NAV CLEARANCE — do not lower it to reclaim space.
+       The nav is fixed and its bottom sits at ~58–61px, so 20vh alone (44px at a
+       220px viewport, 50px at 250px) would slide the name UNDER the header.
+       Measured clearance at the tightest arms: 6px at 568x220, 4px at 1440x250. */
+    padding-top:calc(clamp(64px,20vh,84px) + var(--safe-t));
+    padding-bottom:clamp(28px,8vh,44px);
+  }
+  /* back to a row, but weighted to the copy — `auto` lets the photo take only
+     what it needs instead of a share of the width */
+  .hero-inner{grid-template-columns:minmax(0,1fr) auto;gap:clamp(18px,3.4vw,34px);align-items:center}
+  /* undo the width rules' order:-1 — in a row the name should come first */
+  .hero-photo{order:0;justify-self:end}
+  .hero-photo img{width:min(120px,18vw)}
+  .hero-name{font-size:clamp(1.9rem,5.2vw,3rem)}
+  .hero-claim{font-size:clamp(1rem,1.9vw,1.35rem);margin-top:clamp(8px,1.4vh,14px);max-width:30ch}
+  .hero-kicker{margin-top:clamp(10px,1.8vh,18px);line-height:1.7}
+  .scroll-cue{display:none}
 }
 
 /* ---------- 14. REDUCED MOTION ---------- */
