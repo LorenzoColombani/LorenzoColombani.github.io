@@ -23,8 +23,10 @@ const FADE_FROM  = 0.74;   // progress at which the motes start handing over
    At TEXT_FROM 0.46 the cloud had already finished spelling it, so the crisp text
    just brightened an identical grey shape — the materialize was over before you
    could read it. The word now exists as light first, then as type. */
-const RESIDUE    = 0.11;   // what's left of the cloud when the name is fully resolved
-const TEXT_STEPS = 14;     // quantise the headline's opacity writes — no per-frame style thrash
+const RESIDUE    = 0.0;    // the cloud goes to NOTHING. Anything above ~0 leaves a grainy
+                           // ghost hugging the letterforms — it reads as smudge, not
+                           // atmosphere. The DV cube fades its motes to zero for exactly
+                           // this reason; the film grain overlay carries the texture instead.
 
 export default function initHero({ canvas, nameEl, reduced }) {
   let renderer;
@@ -235,15 +237,13 @@ export default function initHero({ canvas, nameEl, reduced }) {
      arrive before the cloud had formed them — the two layers drifted apart and
      the assembly read as a wipe. Now one `p` writes both, so the text can only
      ever resolve OUT of the motes that are drawing it.
-     Quantised to TEXT_STEPS so we aren't writing a style every frame. */
-  let _lastStep = -1;
+
+     Written every frame, NOT quantised: beat4 quantised because each step cost
+     a full canvas redraw, but `opacity` on a DOM element is compositor-only —
+     free, and stepping it in chunks is what made the handover look notchy. */
   function setTextProgress(p) {
     const a = Math.max(0, Math.min(1, (p - TEXT_FROM) / (1 - TEXT_FROM)));
-    const eased = a * a * (3 - 2 * a);
-    const step = Math.round(eased * TEXT_STEPS);
-    if (step === _lastStep) return;
-    _lastStep = step;
-    nameEl.style.opacity = String(step / TEXT_STEPS);
+    nameEl.style.opacity = String(a * a * (3 - 2 * a));
   }
 
   let started = false, hidden = false, raf = 0;
@@ -267,16 +267,20 @@ export default function initHero({ canvas, nameEl, reduced }) {
     const t0 = performance.now();
 
     const loop = (now) => {
-      raf = requestAnimationFrame(loop);
-      if (hidden) return;
+      if (hidden) { raf = requestAnimationFrame(loop); return; }
       const t = (now - t0) / 1000;
       uni.uTime.value = t;
 
       const p = Math.min(1, t / DURATION);
       uni.uProgress.value = p;
       setTextProgress(p);
-
       renderer.render(scene, camera);
+
+      // The cloud resolves to nothing, so once it's home there is literally
+      // nothing left to draw — stop. (Cataloged: an assembled particle system
+      // that keeps rebuilding itself halves the frame rate for no picture.)
+      if (p >= 1) { raf = 0; renderer.clear(); return; }
+      raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
   }

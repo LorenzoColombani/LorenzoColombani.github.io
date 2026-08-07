@@ -6,6 +6,48 @@ import { initSound } from './sound.js';
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* ---- start at the top --------------------------------------------------
+   Browsers restore the previous scroll position on reload, and with a 100svh
+   hero that drops you into the middle of the page on what feels like a fresh
+   visit — you never see the cold open. Own it: opt out of restoration, and
+   re-assert the top once on load (layout shifts as fonts and the marquee
+   settle, which can nudge the offset on its own). A real scroll input from the
+   visitor cancels the re-assert, so we never yank anyone back. */
+let userMoved = false;
+{
+  const mark = () => { userMoved = true; };
+  addEventListener('wheel', mark, { passive: true, once: true });
+  addEventListener('touchstart', mark, { passive: true, once: true });
+  addEventListener('keydown', mark, { once: true });
+}
+/* Two things fight this and both had to be handled, verified by reloading from
+   4000px rather than by reading the flag:
+   - ScrollTrigger sets history.scrollRestoration back to 'auto' when it loads,
+     so setting it once at boot is not enough;
+   - Lenis owns the scroll position, so a native scrollTo(0,0) is overridden on
+     its next frame. It has to be told through its own API. */
+function toTop() {
+  if (userMoved) return;
+
+  // A deep link still wins — but Lenis starts at 0 and overrides the browser's
+  // own hash scroll, so arriving at /#experience landed at the top. Send it
+  // through Lenis too. (In-page nav CLICKS were never affected; only load.)
+  if (location.hash) {
+    const target = document.getElementById(location.hash.slice(1));
+    if (target) {
+      if (window.__srLenis) window.__srLenis.scrollTo(target, { immediate: true, force: true });
+      else target.scrollIntoView();
+    }
+    return;
+  }
+
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  scrollTo(0, 0);
+  window.__srLenis?.scrollTo(0, { immediate: true, force: true });
+}
+toTop();
+addEventListener('load', toTop, { once: true });
+
 /* ---- the screens ------------------------------------------------------- */
 initTV();
 
@@ -63,8 +105,10 @@ if (nav) {
 let lenis = null;
 if (!reduced && window.Lenis && window.gsap && window.ScrollTrigger) {
   lenis = new Lenis({ autoRaf: true });
+  window.__srLenis = lenis;
   gsap.registerPlugin(ScrollTrigger);
   lenis.on('scroll', ScrollTrigger.update);
+  toTop();                                  // now that Lenis and ScrollTrigger both exist
 
   document.querySelectorAll('.section-head, .feat, .card, .pub, .edu-item, .exp-item, .creds, .contact-link')
     .forEach(el => gsap.fromTo(el,

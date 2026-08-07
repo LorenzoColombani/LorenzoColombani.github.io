@@ -9,8 +9,10 @@
 
 const FRAME_W = 1280;
 const FRAME_H = 800;                       // 16:10, same ratio as the bezel
+const GROW    = 0.52;                      // s — panel → full screen, and back
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-let live = null;                           // { host, restoreFocus, isModal }
+let live = null;                           // { host, restoreFocus, isModal, isStage, from, pane }
 
 /* the hero keeps its own rAF loop; a framed three.js film would run a second
    WebGL context on top of it. Same signal both ways. */
@@ -24,6 +26,11 @@ export function initTV() {
       const feat = btn.closest('.feat');
       openInPane(feat.querySelector('.feat-screen'), feat.dataset, btn);
     });
+  });
+
+  // the marquee's ⤢ — the work takes the whole screen, and gives it straight back
+  document.querySelectorAll('.feat .tv-full').forEach(btn => {
+    btn.addEventListener('click', () => openStage(btn.closest('.feat'), btn));
   });
 
   document.querySelectorAll('.card[data-embed="live"] .card-play').forEach(btn => {
@@ -145,6 +152,102 @@ function openInPane(pane, data, btn) {
   window.SRSound?.play('on');
 }
 
+/* ---- the stage: a featured work takes the whole screen -------------------
+   Grows out of its own panel and retracts back into it (FLIP: measure the
+   panel, start the full-size stage transformed onto that rect, then animate to
+   identity — one transform, no layout work per frame).
+
+   Honesty rule, unchanged: a target that refuses framing does NOT get faked.
+   Data Vault and Wharton send X-Frame-Options DENY / frame-ancestors 'none',
+   so their stage shows the still at full size and hands you the real link. */
+function openStage(feat, btn) {
+  closeLive();
+
+  const d = feat.dataset;
+  const screen = feat.querySelector('.feat-screen');
+  const from = screen.getBoundingClientRect();
+  const title = feat.querySelector('.feat-title')?.textContent.trim() || 'project';
+
+  const dlg = document.createElement('div');
+  dlg.className = 'stage';
+  dlg.setAttribute('role', 'dialog');
+  dlg.setAttribute('aria-modal', 'true');
+  dlg.setAttribute('aria-label', title + ' — full screen');
+
+  const pane = document.createElement('div');
+  pane.className = 'stage-pane';
+  const x = closeButton();
+  x.classList.add('is-stage');
+  dlg.append(pane, x);
+
+  const bar = document.createElement('div');
+  bar.className = 'stage-bar';
+  const name = document.createElement('span');
+  name.className = 'stage-title';
+  name.textContent = title;
+  bar.append(name);
+
+  document.body.appendChild(dlg);
+  document.body.style.overflow = 'hidden';
+  document.addEventListener('focusin', guardModalFocus);
+
+  let frame = null;
+  if (d.embed === 'shot') {
+    // no iframe: this site says no, and a screenshot pretending otherwise is a lie
+    const img = feat.querySelector('.still').cloneNode();
+    img.className = 'stage-still';
+    img.loading = 'eager';
+    pane.appendChild(img);
+
+    const note = document.createElement('p');
+    note.className = 'stage-note';
+    note.textContent = 'This one won’t run inside another page — it sets a frame policy that blocks it.';
+    const go = document.createElement('a');
+    go.className = 'stage-go';
+    go.href = d.src; go.target = '_blank'; go.rel = 'noopener';
+    go.textContent = 'Open the live site ↗';
+    bar.append(note, go);
+  } else {
+    const skel = document.createElement('div');
+    skel.className = 'tv-skel';
+    pane.appendChild(skel);
+    // full-bleed and unscaled: at this size the site gets to be its own responsive self
+    frame = d.embed === 'widget' ? nativeFrame(soundcloudSrc(d.src)) : nativeFrame(d.src);
+    frame.addEventListener('load', () => skel.remove());
+    pane.appendChild(frame);
+    pane.appendChild(liveDot());
+
+    const go = document.createElement('a');
+    go.className = 'stage-go';
+    go.href = d.src; go.target = '_blank'; go.rel = 'noopener';
+    go.textContent = 'Open in a new tab ↗';
+    bar.append(go);
+  }
+  dlg.appendChild(bar);
+
+  live = { host: dlg, restoreFocus: btn, isModal: true, from, pane, isStage: true };
+
+  if (!REDUCED) {
+    const to = pane.getBoundingClientRect();
+    const sx = from.width / to.width, sy = from.height / to.height;
+    pane.style.transformOrigin = '0 0';
+    pane.style.transform =
+      `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${sx}, ${sy})`;
+    dlg.style.opacity = '0';
+    requestAnimationFrame(() => {
+      dlg.style.transition = 'opacity .3s ease';
+      pane.style.transition = `transform ${GROW}s cubic-bezier(.22,.61,.36,1)`;
+      dlg.style.opacity = '1';
+      pane.style.transform = 'none';
+    });
+  }
+
+  x.focus();
+  if (frame) refuseFocusSteal(frame, x);
+  announce(true);
+  window.SRSound?.play('on');
+}
+
 /* ---- projector (archive cards) ------------------------------------------ */
 
 function openProjector(data, btn) {
@@ -198,13 +301,32 @@ function trapTab(e) {
 
 export function closeLive() {
   if (!live) return;
+  const it = live;
+  live = null;                                  // drop the handle first: the retract is async
   document.removeEventListener('focusin', guardModalFocus);
   // blank before removing: some pages keep audio alive through a detach
-  live.host.querySelectorAll('iframe').forEach(f => { f.src = 'about:blank'; });
-  live.host.remove();
+  it.host.querySelectorAll('iframe').forEach(f => { f.src = 'about:blank'; });
   document.body.style.overflow = '';
-  live.restoreFocus?.focus();
-  live = null;
   announce(false);
   window.SRSound?.play('off');
+
+  const done = () => { it.host.remove(); it.restoreFocus?.focus(); };
+
+  // the stage retracts into the panel it grew out of — same curve, reversed
+  if (it.isStage && !REDUCED && it.pane) {
+    const to = it.pane.getBoundingClientRect();
+    const from = it.restoreFocus?.closest('.feat')?.querySelector('.feat-screen')
+                   ?.getBoundingClientRect() || it.from;
+    const sx = from.width / to.width, sy = from.height / to.height;
+    it.pane.style.transition = `transform ${GROW}s cubic-bezier(.22,.61,.36,1)`;
+    it.host.style.transition = 'opacity .34s ease .1s';
+    requestAnimationFrame(() => {
+      it.pane.style.transform =
+        `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${sx}, ${sy})`;
+      it.host.style.opacity = '0';
+    });
+    setTimeout(done, GROW * 1000 + 40);
+    return;
+  }
+  done();
 }
