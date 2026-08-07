@@ -286,16 +286,15 @@ export default function initHero({ canvas, nameEl, reduced }) {
      Without this the watchdog would kill the intro on every tab-switch back. */
   let resyncClock = false;
 
-  /* WEBGL CONTEXT LOSS — the reported "particle effect freezes mid-animation".
-     iOS Safari reclaims WebGL contexts under memory pressure, which is far more
-     likely in ordinary browsing with many tabs than in a fresh private window —
-     which is exactly the normal-vs-incognito split he saw. There was no handler
-     at all, so on loss `renderer.render()` silently became a no-op: the LAST
-     FRAME OF MOTES stayed painted on the canvas while the DOM headline kept
-     fading in on its own clock. Frozen dust, name resolving behind it.
-     A lost context is not recoverable for a 3-second intro and not worth
-     rebuilding, so hand over cleanly: stop the loop, finish the headline, and
-     take the stale canvas out. The visitor gets crisp type instead of debris. */
+  /* WEBGL CONTEXT LOSS — defensive, and honestly labelled as such: this was the
+     FIRST diagnosis of his mid-animation freeze, and it was wrong (measured:
+     ctxLost fired 0 times across every reproduction; the stall is three.js's
+     cold compile — see the watchdog in the loop). The handler stays because a
+     lost context is still a real iOS failure mode with the same right answer:
+     it is not recoverable for a 3-second intro, so hand over cleanly — stop the
+     loop, finish the headline, take the stale canvas out. Without this, loss
+     means renderer.render() silently no-ops and the last frame of motes stays
+     painted while the DOM headline fades in behind it. */
   function surrenderCanvas() {
     if (raf) cancelAnimationFrame(raf);
     raf = 0; finished = true;
@@ -334,26 +333,33 @@ export default function initHero({ canvas, nameEl, reduced }) {
        advancing the animation while nothing drew, so on resume it JUMPED to
        wherever the clock had got to. Now a stall costs at most one frame of
        progress (the 50ms clamp) and the materialize continues where it stopped. */
-    let elapsed = 0, last = 0;
+    let elapsed = 0, last = 0, strikes = 0;
 
     const loop = (now) => {
       if (hidden) { last = now; raf = requestAnimationFrame(loop); return; }
       if (!last || resyncClock) { last = now; resyncClock = false; }
       let gap = now - last;
 
-      /* STALL WATCHDOG — his SECOND report, after the context-loss fix shipped:
-         still freezing on his iPhone, Safari, normal mode only. "For a few
-         seconds" means it RESUMES — so it is not a lost context, it is the whole
-         page ceasing to draw because the device is busy (his everyday Safari
-         carries tabs and extensions a fresh private window does not — the same
-         normal-vs-incognito split, different mechanism). No code here can remove
-         that stall; what it can do is refuse to be seen frozen. A gap a visitor
-         can perceive ends the intro: cut to the finished name instead of holding
-         dust on screen. One exception — a big gap while nothing has been shown
-         yet (elapsed < 200ms) is a slow first frame (shader compile on a busy
-         GPU), so start clean rather than give up before the curtain is up. */
+      /* STALL WATCHDOG — third diagnosis, this one MEASURED (his
+         /systematic-debugging agent, A/B on real Safari on an erased iPhone 16
+         sim). Context loss NEVER fired — ctxLost 0 in every run. The stall is
+         the 671KB three.js bundle's cold fetch+compile landing in the intro's
+         first second: cold runs froze 975–1299ms starting ~300ms in; warm cache
+         froze 0ms; with three.js never loaded, 0ms. The modulepreload in main.js
+         attacks the cause; this handles whatever stall still lands.
+
+         What follows a freeze depends on WHERE it lands, because the stall
+         itself is synchronous and invisible to us until it ends:
+         - BEFORE the text starts resolving (p < TEXT_FROM): faint dust froze —
+           the signature assembly hasn't happened yet, and on a cold first visit
+           (exactly a recruiter) surrendering here would delete the choreography
+           for the people it exists for. Zero the gap and play it in full.
+         - MID-CROSSFADE: a half-resolved name frozen on screen reads as broken —
+           cut to the finished name.
+         - Repeatedly (3rd big gap): the device is overwhelmed; stop asking. */
       if (gap > 600) {
-        if (elapsed < 200) { gap = 0; }
+        const pNow = Math.min(1, (elapsed / 1000) / DURATION);
+        if (pNow < TEXT_FROM && strikes < 2) { gap = 0; strikes++; }
         else { surrenderCanvas(); return; }
       }
       elapsed += Math.min(gap, 50);
