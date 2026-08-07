@@ -702,8 +702,20 @@ footer{
    which quietly served DESKTOP type to a phone: an iPhone 16 Pro Max in landscape
    is 932 CSS px wide, so it sailed past max-width:900 and got 14.7px card blurbs
    (measured at 932x430 — six prose classes under the floor). A phone is compact in
-   either orientation; short viewports are phones. */
-@media (max-width:900px), (max-height:450px){
+   either orientation; short viewports are phones.
+
+   ⚠ AND THE POINTER CONDITION IS THE ONE THAT ACTUALLY GENERALISES. His ruling:
+   "For iPad, treat it as responsive (so: not computer browser)." Measured on a real
+   iPad Pro 11" in the iOS 26.5 Simulator, landscape: viewport 1210x702 — so BOTH
+   width rules miss it and it was being served desktop type on a touchscreen. No
+   width breakpoint can fix this honestly: an iPad Pro 13" in landscape is 1366 CSS
+   px, i.e. wider than most laptops. `any-pointer:coarse` asks the right question —
+   "is a finger going to touch this" — and measured YES on every real device tested
+   (iPhone SE/16/17 Pro/17 Pro Max, iPad Pro 11", both orientations) while a desktop
+   browser answers no. It also survives Apple inventing new screen sizes, which a
+   width breakpoint does not. Known, accepted false positive: a Windows touch laptop
+   also matches and gets a 16px reading floor — harmless. */
+@media (max-width:900px), (max-height:450px), (any-pointer:coarse){
   body{font-size:16px}
   .card-blurb,.pub-desc,.item-desc,.item-points li,.cred-name{font-size:16px}
   /* was 15px — one pixel under the floor this block exists to enforce. Baseline
