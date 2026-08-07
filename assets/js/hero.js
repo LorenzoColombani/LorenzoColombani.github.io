@@ -282,6 +282,28 @@ export default function initHero({ canvas, nameEl, reduced }) {
 
   let started = false, hidden = false, raf = 0, finished = false;
 
+  /* WEBGL CONTEXT LOSS — the reported "particle effect freezes mid-animation".
+     iOS Safari reclaims WebGL contexts under memory pressure, which is far more
+     likely in ordinary browsing with many tabs than in a fresh private window —
+     which is exactly the normal-vs-incognito split he saw. There was no handler
+     at all, so on loss `renderer.render()` silently became a no-op: the LAST
+     FRAME OF MOTES stayed painted on the canvas while the DOM headline kept
+     fading in on its own clock. Frozen dust, name resolving behind it.
+     A lost context is not recoverable for a 3-second intro and not worth
+     rebuilding, so hand over cleanly: stop the loop, finish the headline, and
+     take the stale canvas out. The visitor gets crisp type instead of debris. */
+  function surrenderCanvas() {
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0; finished = true;
+    nameEl.style.transition = 'none';
+    nameEl.style.opacity = '1';
+    canvas.style.display = 'none';
+  }
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();          // preventDefault is what makes loss survivable
+    surrenderCanvas();
+  }, false);
+
   function start() {
     const pts = sampleName();
     if (!pts) return;                          // couldn't read the headline → leave it alone
@@ -298,11 +320,22 @@ export default function initHero({ canvas, nameEl, reduced }) {
     nameEl.style.transition = 'none';          // we own this opacity now, frame by frame
     nameEl.style.opacity = '0';
     started = true;
-    const t0 = performance.now();
+
+    /* The clock ACCUMULATES while visible instead of reading wall time.
+       Wall time meant any stall — tab hidden, rAF throttled, a GC pause — kept
+       advancing the animation while nothing drew, so on resume it JUMPED to
+       wherever the clock had got to. Reported from his iPhone as the effect
+       freezing mid-animation. Now a stall costs at most one frame of progress
+       (the 50ms clamp), so whenever the visitor is actually looking they see the
+       materialize continue from where it stopped rather than snap forward. */
+    let elapsed = 0, last = 0;
 
     const loop = (now) => {
-      if (hidden) { raf = requestAnimationFrame(loop); return; }
-      const t = (now - t0) / 1000;
+      if (hidden) { last = now; raf = requestAnimationFrame(loop); return; }
+      if (!last) last = now;
+      elapsed += Math.min(now - last, 50);
+      last = now;
+      const t = elapsed / 1000;
       uni.uTime.value = t;
 
       const p = Math.min(1, t / DURATION);
