@@ -8,9 +8,23 @@
 
 import * as THREE from 'three';
 
-const ASSEMBLE = 2.3;   // s — scatter → name
-const HOLD     = 0.7;   // s — the name stands assembled
-const DISPERSE = 2.0;   // s — motes drift out, real text arrives
+/* ── the taste interface: every dial for the assembly lives here ───────────── */
+const DURATION   = 3.2;    // s — the whole materialize, start to settled
+const TRAVEL     = 0.62;   // share of the run ONE mote spends flying (the rest is its delay)
+const STAGGER    = 0.36;   // max per-mote head start — 0 would snap them all in together
+const CLOUD_X    = 0.60;   // half-width of the dust field the motes fly in from (canvas units)
+const CLOUD_Y    = 0.34;   // half-height — wider than tall, like the headline itself
+const SWIRL      = 0.055;  // sideways bow on the crossing segment (sin²-enveloped)
+const DRIFT_FAR  = 0.032;  // idle wander while scattered
+const DRIFT_HOME = 0.0012; // idle wander once landed — a shimmer, not a wobble
+const TEXT_FROM  = 0.66;   // progress at which the crisp headline starts arriving
+const FADE_FROM  = 0.74;   // progress at which the motes start handing over
+/* Order matters: the motes must OWN the name for a beat before the type shows up.
+   At TEXT_FROM 0.46 the cloud had already finished spelling it, so the crisp text
+   just brightened an identical grey shape — the materialize was over before you
+   could read it. The word now exists as light first, then as type. */
+const RESIDUE    = 0.11;   // what's left of the cloud when the name is fully resolved
+const TEXT_STEPS = 14;     // quantise the headline's opacity writes — no per-frame style thrash
 
 export default function initHero({ canvas, nameEl, reduced }) {
   let renderer;
@@ -75,11 +89,10 @@ export default function initHero({ canvas, nameEl, reduced }) {
   let points = null, geo = null;
   const uni = {
     uTime:     { value: 0 },
-    uConverge: { value: 0 },
-    uDisperse: { value: 0 },
+    uProgress: { value: 0 },        // THE single clock — motes AND the crisp text run off this
     uDPR:      { value: DPR },
     uMouse:    { value: new THREE.Vector2(0, 0) },
-    uAspect:   { value: 1 }
+    uResidue:  { value: RESIDUE }
   };
 
   const material = new THREE.ShaderMaterial({
@@ -89,29 +102,48 @@ export default function initHero({ canvas, nameEl, reduced }) {
     depthWrite: false,
     depthTest: false,
     vertexShader: /* glsl */`
-      attribute vec2 aStart;      // where a mote waits before the assembly
-      attribute vec2 aAmbient;    // where it drifts once the name is released
-      attribute float aOff;       // per-mote phase
+      attribute vec2  aStart;     // where a mote waits before the assembly
+      attribute float aDelay;     // per-mote head start — this is what makes it a wave
+      attribute float aOff;       // per-mote phase for the idle drift
       attribute float aSize;
-      uniform float uTime, uConverge, uDisperse, uDPR, uAspect;
+      attribute float aDepth;     // fake z: scales size and brightness
+      uniform float uTime, uProgress, uDPR, uResidue;
       uniform vec2  uMouse;
       varying float vAlpha;
+
       void main() {
-        vec2 named = mix(aStart, position.xy, uConverge);
-        vec2 p     = mix(named, aAmbient, uDisperse);
+        vec2 home = position.xy;             // the glyph pixel this mote belongs to — NEVER moves
+        vec2 off  = aStart - home;
 
-        // drift: wide while scattered, ~nil while the name is held, gentle after
-        float drift = mix(0.045, 0.0015, uConverge) + uDisperse * 0.012;
+        // Per-mote local progress. Each speck runs its own ${''}0..1 inside the global one,
+        // so they arrive across a window instead of all snapping on the same frame.
+        float lp = clamp((uProgress - aDelay) / ${TRAVEL.toFixed(2)}, 0.0, 1.0);
+        float e  = lp * lp * (3.0 - 2.0 * lp);
+
+        // Destination held FIXED; only the offset shrinks. (snap-free particle-morph)
+        vec2 p = home + off * (1.0 - e);
+
+        // Decorative swirl on the CROSSING SEGMENT ONLY, sin^2-enveloped so it has zero
+        // value AND zero slope at both seams — no kink entering, no kink landing.
+        float s = sin(3.14159265 * e);
+        p += vec2(-off.y, off.x) * (s * s) * ${SWIRL.toFixed(3)};
+
+        // idle drift: wide while scattered, ~nil once landed
+        float drift = mix(${DRIFT_FAR.toFixed(4)}, ${DRIFT_HOME.toFixed(4)}, e);
         p += vec2(sin(uTime * 0.42 + aOff), cos(uTime * 0.33 + aOff * 1.7)) * drift;
-        p += uMouse * mix(0.010, 0.028, uDisperse);              // parallax
+        p += uMouse * 0.014 * (1.0 - e * 0.55);
 
-        // dim while scattered, full as it lands, quiet once released
-        float lit = 0.20 + 0.80 * uConverge * uConverge;
-        vAlpha = lit * mix(1.0, 0.24, uDisperse);
+        // Brightness: dim in flight, and an ARRIVAL BLOOM as it lands — the name
+        // should exist as light before it exists as type. Then hand the frame to
+        // the real text; the motes are the performance, not the headline.
+        float landed = smoothstep(${FADE_FROM.toFixed(2)}, 1.0, uProgress);
+        float arrive = smoothstep(0.72, 1.0, e);                // last stretch of ITS OWN flight
+        vAlpha = (0.16 + 0.84 * e) * (1.0 + 0.55 * arrive) * mix(1.0, uResidue, landed);
 
-        gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
-        float size = aSize * uDPR * mix(1.9, 1.25, uConverge) * mix(1.0, 1.4, uDisperse);
-        gl_PointSize = clamp(size, 1.0, 22.0);                   // never a screen-filling blur
+        gl_Position  = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+        // stays a touch fatter on landing so the assembled word reads as glowing
+        // gold rather than a flat grey stipple
+        gl_PointSize = clamp(aSize * uDPR * aDepth * mix(2.1, 1.45, e), 1.0, 22.0);
       }`,
     fragmentShader: /* glsl */`
       precision mediump float;
@@ -121,8 +153,8 @@ export default function initHero({ canvas, nameEl, reduced }) {
         float d = length(q);
         if (d > 0.5) discard;
         float a = smoothstep(0.5, 0.02, d) * vAlpha;
-        // over-driven gold: additive overlap then accumulates into a glow
-        // instead of averaging out to grey grit
+        // over-driven gold: additive overlap accumulates into a glow instead of
+        // averaging out to grey grit
         gl_FragColor = vec4(vec3(0.831, 0.647, 0.455) * 1.55, a * 0.92);
       }`
   });
@@ -136,38 +168,54 @@ export default function initHero({ canvas, nameEl, reduced }) {
     // is coprime-ish with its length, rather than taking a contiguous head
     const stride = Math.max(1, Math.floor(available / N));
 
-    const pos = new Float32Array(N * 3);
+    /* Where the dust starts.
+       NOT "each mote near its own letter" — that was the bug in the first pass:
+       every speck orbiting its own glyph pixel means the cloud is a *blurred
+       copy of the name* from frame one, so the whole thing reads as text coming
+       into focus rather than dust becoming a word. Instead every mote starts at
+       a random point in ONE shared ellipse covering the headline, and flies to
+       its own glyph. At p=0 that is a field with no structure in it; the name
+       only exists once they arrive. */
+    let cx = 0, cy = 0;
+    for (let i = 0; i < available; i++) { cx += pts[i * 2]; cy += pts[i * 2 + 1]; }
+    cx /= available; cy /= available;
+
+    const pos   = new Float32Array(N * 3);
     const start = new Float32Array(N * 2);
-    const amb = new Float32Array(N * 2);
-    const off = new Float32Array(N);
-    const size = new Float32Array(N);
+    const delay = new Float32Array(N);
+    const off   = new Float32Array(N);
+    const size  = new Float32Array(N);
+    const depth = new Float32Array(N);
 
     for (let i = 0; i < N; i++) {
       const s = ((i * stride) % available) * 2;
       const tx = pts[s], ty = pts[s + 1];
       pos[i * 3] = tx; pos[i * 3 + 1] = ty; pos[i * 3 + 2] = 0;
 
+      // uniform inside the ellipse: sqrt(r) or the middle stays over-dense
       const ang = Math.random() * Math.PI * 2;
-      const rad = 0.35 + Math.random() * 0.75;
-      start[i * 2]     = tx + Math.cos(ang) * rad;
-      start[i * 2 + 1] = ty + Math.sin(ang) * rad * 0.62;
+      const rad = Math.sqrt(Math.random());
+      start[i * 2]     = cx + Math.cos(ang) * rad * CLOUD_X;
+      start[i * 2 + 1] = cy + Math.sin(ang) * rad * CLOUD_Y;
 
-      const a2 = Math.random() * Math.PI * 2;
-      const r2 = 0.10 + Math.random() * 0.45;
-      amb[i * 2]     = tx + Math.cos(a2) * r2;
-      amb[i * 2 + 1] = ty + Math.sin(a2) * r2 * 0.7;
+      // the wave. Biased so more motes leave early than late — the name reads
+      // sooner, and the stragglers are what makes it feel hand-made rather than
+      // switched on. (Math.random()**1.6 skews toward 0.)
+      delay[i] = Math.pow(Math.random(), 1.6) * STAGGER;
 
-      off[i] = Math.random() * 6.283;
-      size[i] = 1.7 + Math.random() * 2.6;
+      off[i]   = Math.random() * 6.283;
+      size[i]  = 1.7 + Math.random() * 2.6;
+      depth[i] = 0.55 + Math.random() * 0.75;   // fake z — near motes bigger and brighter
     }
 
     geo?.dispose();
     geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('aStart', new THREE.BufferAttribute(start, 2));
-    geo.setAttribute('aAmbient', new THREE.BufferAttribute(amb, 2));
+    geo.setAttribute('aDelay', new THREE.BufferAttribute(delay, 1));
     geo.setAttribute('aOff', new THREE.BufferAttribute(off, 1));
     geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+    geo.setAttribute('aDepth', new THREE.BufferAttribute(depth, 1));
 
     if (points) { scene.remove(points); }
     points = new THREE.Points(geo, material);
@@ -179,18 +227,24 @@ export default function initHero({ canvas, nameEl, reduced }) {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     renderer.setPixelRatio(DPR);
     renderer.setSize(w, h, false);
-    uni.uAspect.value = h ? w / h : 1;
   }
 
-  /* ---- the real text: hidden only once the motes can actually draw ------ */
-  const showText = (dur) => {
-    nameEl.style.transition = `opacity ${dur}s cubic-bezier(.22,.61,.36,1)`;
-    nameEl.style.opacity = '1';
-  };
-  const hideText = () => {
-    nameEl.style.transition = 'none';
-    nameEl.style.opacity = '0';
-  };
+  /* ---- the crisp headline, driven by the SAME progress as the motes -------
+     This is the whole point of the rebuild. Before, the text had its own CSS
+     transition on its own clock, so on a slow first paint the letters could
+     arrive before the cloud had formed them — the two layers drifted apart and
+     the assembly read as a wipe. Now one `p` writes both, so the text can only
+     ever resolve OUT of the motes that are drawing it.
+     Quantised to TEXT_STEPS so we aren't writing a style every frame. */
+  let _lastStep = -1;
+  function setTextProgress(p) {
+    const a = Math.max(0, Math.min(1, (p - TEXT_FROM) / (1 - TEXT_FROM)));
+    const eased = a * a * (3 - 2 * a);
+    const step = Math.round(eased * TEXT_STEPS);
+    if (step === _lastStep) return;
+    _lastStep = step;
+    nameEl.style.opacity = String(step / TEXT_STEPS);
+  }
 
   let started = false, hidden = false, raf = 0;
 
@@ -201,15 +255,16 @@ export default function initHero({ canvas, nameEl, reduced }) {
     resizeRenderer();
 
     if (reduced) {                             // one settled frame: text present, motes quiet
-      uni.uConverge.value = 1; uni.uDisperse.value = 1; uni.uTime.value = 3;
+      uni.uProgress.value = 1; uni.uTime.value = 3;
+      nameEl.style.opacity = '1';
       renderer.render(scene, camera);
       return;
     }
 
-    hideText();
+    nameEl.style.transition = 'none';          // we own this opacity now, frame by frame
+    nameEl.style.opacity = '0';
     started = true;
     const t0 = performance.now();
-    let textBack = false;
 
     const loop = (now) => {
       raf = requestAnimationFrame(loop);
@@ -217,15 +272,9 @@ export default function initHero({ canvas, nameEl, reduced }) {
       const t = (now - t0) / 1000;
       uni.uTime.value = t;
 
-      const c = Math.min(1, t / ASSEMBLE);
-      uni.uConverge.value = c * c * (3 - 2 * c);                       // smoothstep in
-
-      const d = Math.min(1, Math.max(0, (t - ASSEMBLE - HOLD) / DISPERSE));
-      uni.uDisperse.value = d * d * (3 - 2 * d);
-
-      // the crisp name resolves OUT of the cloud — the motes are still landing
-      // when the real letters arrive, so it never reads as sandpaper text
-      if (!textBack && t > ASSEMBLE * 0.78) { textBack = true; showText(1.1); }
+      const p = Math.min(1, t / DURATION);
+      uni.uProgress.value = p;
+      setTextProgress(p);
 
       renderer.render(scene, camera);
     };
