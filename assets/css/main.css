@@ -695,17 +695,24 @@ footer{
 .tp-tick:hover .tp-label,.tp-tick:focus-visible .tp-label{opacity:1}
 
 /* ---------- 13. RESPONSIVE ---------- */
-@media (max-width:900px){
-  /* Compact reading floor. Kept OUT of the component rules on purpose: the
-     desktop type rhythm stays byte-identical, and only the small screens —
-     where a 14.7px paragraph is genuinely hard work — get the 16px floor. */
+/* Compact reading floor. Kept OUT of the component rules on purpose: the desktop
+   type rhythm stays byte-identical, and only the small screens — where a 14.7px
+   paragraph is genuinely hard work — get the 16px floor.
+   ⚠ THE HEIGHT CONDITION IS NOT DECORATION. R1 keyed "compact" on width alone,
+   which quietly served DESKTOP type to a phone: an iPhone 16 Pro Max in landscape
+   is 932 CSS px wide, so it sailed past max-width:900 and got 14.7px card blurbs
+   (measured at 932x430 — six prose classes under the floor). A phone is compact in
+   either orientation; short viewports are phones. */
+@media (max-width:900px), (max-height:450px){
   body{font-size:16px}
   .card-blurb,.pub-desc,.item-desc,.item-points li,.cred-name{font-size:16px}
   /* was 15px — one pixel under the floor this block exists to enforce. Baseline
      F5 named this element by name; R1 raised it from 14.1 and stopped short,
      and R1's verification skipped the 390 arm where the probe sees it. */
   .footer-claim{font-size:16px}
+}
 
+@media (max-width:900px){
   /* the screen-acts chips wrap at narrow widths and their 44px halos then
      overlap vertically — measured. More gap separates them, and lifting them
      off the bezel edge keeps each halo inside the pane instead of spilling
@@ -749,6 +756,37 @@ footer{
    restated here so specificity ties and source order decides) */
 @media (min-width:621px){
   #nav-menu,#nav-menu.is-open,#nav-menu-btn{display:none}
+}
+
+/* ---- SHORT-VIEWPORT HERO (his call: a compact ROW) ----------------------
+   A 100svh hero assumes a tall screen. Measured at 844x390 it did the opposite
+   of its job: the width rules had already stacked it to one column with the
+   photo on top, so the hero ran 676px tall inside a 390px viewport and the NAME
+   did not start until y=309 — a visitor arriving in landscape got a photograph
+   and nothing else. Below ~450px of height the hero stops reserving a screen and
+   becomes a row: copy left, photo shrunk beside it, scroll cue dropped (there is
+   no room for a hint to scroll on a screen that is already asking you to).
+   MUST stay after the width queries above — same specificity, source order decides. */
+@media (max-height:450px){
+  .hero{
+    min-height:auto;
+    /* ⚠ THE 64px MINIMUM IS NAV CLEARANCE — do not lower it to reclaim space.
+       The nav is fixed and its bottom sits at ~58–61px, so 20vh alone (44px at a
+       220px viewport, 50px at 250px) would slide the name UNDER the header.
+       Measured clearance at the tightest arms: 6px at 568x220, 4px at 1440x250. */
+    padding-top:calc(clamp(64px,20vh,84px) + var(--safe-t));
+    padding-bottom:clamp(28px,8vh,44px);
+  }
+  /* back to a row, but weighted to the copy — `auto` lets the photo take only
+     what it needs instead of a share of the width */
+  .hero-inner{grid-template-columns:minmax(0,1fr) auto;gap:clamp(18px,3.4vw,34px);align-items:center}
+  /* undo the width rules' order:-1 — in a row the name should come first */
+  .hero-photo{order:0;justify-self:end}
+  .hero-photo img{width:min(120px,18vw)}
+  .hero-name{font-size:clamp(1.9rem,5.2vw,3rem)}
+  .hero-claim{font-size:clamp(1rem,1.9vw,1.35rem);margin-top:clamp(8px,1.4vh,14px);max-width:30ch}
+  .hero-kicker{margin-top:clamp(10px,1.8vh,18px);line-height:1.7}
+  .scroll-cue{display:none}
 }
 
 /* ---------- 14. REDUCED MOTION ---------- */
