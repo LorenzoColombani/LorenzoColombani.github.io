@@ -365,7 +365,11 @@ export default function initHero({ canvas, nameEl, reduced }) {
   // a framed film runs its own WebGL context and rAF — stand down while it plays
   document.addEventListener('sr:live', e => { screenLive = !!e.detail?.live; settle(); });
 
-  if (!reduced) {
+  /* Same gate as the photo parallax in main.js: the mote field's mouse response
+     needs a hovering pointer to mean anything. On touch `pointermove` only fires
+     mid-drag, so this was a per-frame uniform write during scroll gestures for an
+     effect that never showed. `hover:hover` measured `no` on every real device. */
+  if (!reduced && matchMedia('(hover: hover) and (pointer: fine)').matches) {
     addEventListener('pointermove', (e) => {
       const nx = (e.clientX / innerWidth) * 2 - 1;
       const ny = (e.clientY / innerHeight) * 2 - 1;

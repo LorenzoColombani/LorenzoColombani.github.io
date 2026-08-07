@@ -204,8 +204,14 @@ if (!reduced && window.Lenis && window.gsap && window.ScrollTrigger) {
 
 initTransport({ reduced, lenis });
 
-/* ---- hero mouse parallax (transform only) ------------------------------ */
-if (!reduced) {
+/* ---- hero mouse parallax (transform only) ------------------------------
+   Gated on a real hovering pointer. On touch `pointermove` fires only while a
+   finger is already down and dragging, so the parallax was never a parallax
+   there — just a listener and a transform write on every touch-drag frame, for
+   an effect nobody could see. Measured on real hardware: `hover:hover` is `no`
+   on the iPhone AND the iPad, both orientations, so this is dead code on every
+   touch device the site supports. */
+if (!reduced && matchMedia('(hover: hover) and (pointer: fine)').matches) {
   const photo = document.querySelector('.hero-photo img');
   if (photo) {
     addEventListener('pointermove', e => {
