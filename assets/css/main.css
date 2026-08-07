@@ -183,6 +183,52 @@ section{
 }
 #sound-chip.pulse-once{animation:chipPulse 2.4s var(--ease) 3}
 
+/* ---- compact disclosure menu ------------------------------------------
+   Below 620px .nav-links is display:none and the transport is pointer-only,
+   so this panel IS the navigation — without it a phone visitor cannot reach
+   Contact at all. Plain disclosure, not a modal: it does not lock scroll and
+   does not trap focus. Closed state is display:none so the four links and the
+   relocated sound chip are out of the tab order and the a11y tree entirely. */
+#nav-menu-btn{
+  display:none;align-items:center;gap:8px;position:relative;
+  font:400 10px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+  border:1px solid var(--gold-line);border-radius:999px;padding:9px 14px;
+  transition:color .28s var(--ease),border-color .28s var(--ease),background .28s var(--ease);
+}
+/* same 44pt halo idiom as every other nav control (R1) so the target probe
+   measures this button identically to its neighbours */
+#nav-menu-btn::after{content:"";position:absolute;left:50%;top:50%;width:100%;min-width:44px;height:44px;transform:translate(-50%,-50%)}
+#nav-menu-btn[aria-expanded="true"]{color:var(--gold);border-color:var(--gold-line-hi);background:rgba(212,165,116,.08)}
+.mb-bars{display:flex;flex-direction:column;justify-content:center;gap:3px;width:12px;height:7px}
+.mb-bars i{display:block;height:1px;background:currentColor;transition:transform .28s var(--ease)}
+#nav-menu-btn[aria-expanded="true"] .mb-bars i:first-child{transform:translateY(2px) rotate(45deg)}
+#nav-menu-btn[aria-expanded="true"] .mb-bars i:last-child{transform:translateY(-2px) rotate(-45deg)}
+
+#nav-menu{
+  display:none;position:absolute;top:100%;left:0;right:0;
+  background:rgba(11,10,16,.97);
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  border-top:1px solid var(--gold-line);border-bottom:1px solid var(--hairline);
+  /* the panel spans edge to edge, so it carries its own safe-area padding —
+     the nav's inline padding does not reach an absolutely positioned child */
+  padding:2px calc(var(--gutter) + var(--safe-r)) calc(8px + var(--safe-b)) calc(var(--gutter) + var(--safe-l));
+  /* 100% here resolves against the nav's padding box = the nav's height, so
+     this is "everything below the bar". Matters at 693x320 landscape, where
+     four rows plus the chip nearly fill the viewport. */
+  max-height:74svh;
+  max-height:calc(100svh - 100%);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+#nav-menu.is-open{display:block;animation:navMenuIn .24s var(--ease)}
+@keyframes navMenuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.nm-links a{
+  display:flex;align-items:center;min-height:44px;
+  font:400 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+  border-bottom:1px solid var(--hairline);transition:color .28s var(--ease);
+}
+.nm-links a:hover,.nm-links a:focus-visible{color:var(--gold)}
+.nm-foot{display:flex;align-items:center;min-height:44px;padding-top:8px}
+
 /* ---------- 7. HERO ---------- */
 .hero{
   position:relative;min-height:100svh;max-width:none;
@@ -655,7 +701,10 @@ footer{
      where a 14.7px paragraph is genuinely hard work — get the 16px floor. */
   body{font-size:16px}
   .card-blurb,.pub-desc,.item-desc,.item-points li,.cred-name{font-size:16px}
-  .footer-claim{font-size:15px}
+  /* was 15px — one pixel under the floor this block exists to enforce. Baseline
+     F5 named this element by name; R1 raised it from 14.1 and stopped short,
+     and R1's verification skipped the 390 arm where the probe sees it. */
+  .footer-claim{font-size:16px}
 
   /* the screen-acts chips wrap at narrow widths and their 44px halos then
      overlap vertically — measured. More gap separates them, and lifting them
@@ -690,9 +739,16 @@ footer{
 }
 @media (max-width:620px){
   .nav-links{display:none}
+  #nav-menu-btn{display:inline-flex}
   #nav{gap:12px}
   footer{flex-direction:column;align-items:flex-start}
   .footer-claim{margin-right:0}
+}
+/* belt and braces: a stale .is-open must not survive a resize past the
+   breakpoint even if the JS listener never fires (the .is-open selector is
+   restated here so specificity ties and source order decides) */
+@media (min-width:621px){
+  #nav-menu,#nav-menu.is-open,#nav-menu-btn{display:none}
 }
 
 /* ---------- 14. REDUCED MOTION ---------- */

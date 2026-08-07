@@ -127,6 +127,62 @@ if (nav) {
   onScroll();
 }
 
+/* ---- compact navigation: the MENU disclosure ---------------------------
+   Below 620px the desktop links are display:none and the transport is
+   pointer-only, so this panel is the ONLY way to reach a section. It is a
+   plain disclosure, not a modal: no scroll lock, no focus trap.
+   The panel markup ships in the DOM from boot (merely CSS-hidden), so the
+   anchor interceptor above has already bound its four links — nothing here
+   re-implements scrolling. */
+{
+  const btn = document.getElementById('nav-menu-btn');
+  const panel = document.getElementById('nav-menu');
+  const chip = document.getElementById('sound-chip');
+  const foot = panel && panel.querySelector('.nm-foot');
+  const compact = matchMedia('(max-width: 620px)');
+
+  if (nav && btn && panel) {
+    const isOpen = () => btn.getAttribute('aria-expanded') === 'true';
+
+    /* returnFocus is ESC-only ON PURPOSE. Choosing a link hands keyboard focus
+       to the scroll target (the interceptor does `el.focus()`); pulling focus
+       back to this button afterwards would undo that and dump the user at the
+       top of the page again. */
+    const close = (returnFocus) => {
+      if (!isOpen()) return;
+      panel.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
+      if (returnFocus) btn.focus();
+    };
+
+    btn.addEventListener('click', () => {
+      if (isOpen()) return close(false);
+      panel.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+    });
+
+    /* The click that OPENS the menu also bubbles to document. The panel is a
+       child of #nav, so this one containment check covers button and panel
+       both and keeps the opening click from immediately closing it. */
+    document.addEventListener('click', e => { if (!nav.contains(e.target)) close(false); });
+    addEventListener('keydown', e => { if (e.key === 'Escape') close(true); });
+    panel.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', () => close(false)));
+
+    /* The sound chip is bar furniture on wide and menu furniture on compact.
+       Moving the node keeps its behaviour: sound.js bound the ELEMENT, not a
+       selector, so its listener and label reference survive the reparent. */
+    const placeChip = () => {
+      if (!chip || !foot) return;
+      const home = compact.matches ? foot : nav;
+      if (chip.parentElement === home) return;
+      if (compact.matches) foot.appendChild(chip);
+      else nav.insertBefore(chip, btn);
+    };
+    compact.addEventListener('change', () => { close(false); placeChip(); });
+    placeChip();
+  }
+}
+
 /* ---- motion: smooth scroll + reveals -----------------------------------
    gsap.fromTo, never gsap.from: `from` leaves content stranded at opacity 0 if
    the tween never runs. With fromTo inside this guard, no gsap means no tween
