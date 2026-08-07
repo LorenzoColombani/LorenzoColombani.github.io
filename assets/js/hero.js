@@ -16,7 +16,8 @@ const CLOUD_X    = 0.60;   // half-width of the dust field the motes fly in from
 const CLOUD_Y    = 0.34;   // half-height — wider than tall, like the headline itself
 const SWIRL      = 0.055;  // sideways bow on the crossing segment (sin²-enveloped)
 const DRIFT_FAR  = 0.032;  // idle wander while scattered
-const DRIFT_HOME = 0.0012; // idle wander once landed — a shimmer, not a wobble
+const DRIFT_HOME = 0.0;    // landed motes are PINNED — any wander here jiggles the
+                           // mote-name against the static text during the crossfade
 const TEXT_FROM  = 0.66;   // progress at which the crisp headline starts arriving
 const FADE_FROM  = 0.74;   // progress at which the motes start handing over
 /* Order matters: the motes must OWN the name for a beat before the type shows up.
@@ -61,8 +62,16 @@ export default function initHero({ canvas, nameEl, reduced }) {
     const bw = Math.ceil(box.x1 - box.x0), bh = Math.ceil(box.y1 - box.y0);
     if (bw < 8 || bh < 8) return null;
 
+    /* The reconstruction must reproduce the DOM's TEXT METRICS, not just its
+       font — or the motes fly to a name that isn't where the headline renders.
+       Measured before this block existed: the mote-name sat ~+10px right
+       (letter-spacing:-.028em never applied to fillText — the error grows per
+       character) and ~7px high (the baseline was the guess fs*0.72 instead of
+       the CSS half-leading formula). On a retina screenshot that doubles: a
+       visible double-exposure through the whole crossfade. */
+    const PAD = Math.ceil(parseFloat(lines[0].cs.fontSize) * 0.35);   // ink overshoot room
     const off = document.createElement('canvas');
-    off.width = bw; off.height = bh;
+    off.width = bw + PAD * 2; off.height = bh + PAD * 2;
     const ctx = off.getContext('2d', { willReadFrequently: true });
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#fff';
@@ -70,17 +79,42 @@ export default function initHero({ canvas, nameEl, reduced }) {
     lines.forEach(({ el, r, cs }) => {
       const fs = parseFloat(cs.fontSize);
       ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
-      // baseline sits inside the line box: half the leading, then the ascent
-      const baseline = (r.top - host.top - box.y0) + (r.height + fs * 0.72) / 2;
-      ctx.fillText(el.textContent, (r.left - host.left) - box.x0, baseline);
+
+      // 1 · letter-spacing: same advance as the DOM, or the glyphs drift right
+      const ls = cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing) || 0;
+      const canSpace = 'letterSpacing' in ctx;
+      if (canSpace) ctx.letterSpacing = ls + 'px';
+
+      // 2 · baseline: CSS centres the font's content box (ascent+descent) in
+      //     the line box — compute it from the font's real metrics
+      const met = ctx.measureText('Hg');
+      const A = met.fontBoundingBoxAscent, D = met.fontBoundingBoxDescent;
+      const baseInBox = (A > 0 && D > 0)
+        ? (r.height - (A + D)) / 2 + A
+        : (r.height + fs * 0.72) / 2;              // old guess, only if metrics missing
+      const bx = (r.left - host.left) - box.x0 + PAD;
+      const by = (r.top - host.top - box.y0) + baseInBox + PAD;
+
+      if (canSpace || ls === 0) {
+        ctx.fillText(el.textContent, bx, by);
+      } else {
+        // no canvas letter-spacing support: advance by hand (loses kerning
+        // pairs ~1px; far better than a 2.8px/char systematic drift)
+        let x = bx;
+        for (const ch of el.textContent) {
+          ctx.fillText(ch, x, by);
+          x += ctx.measureText(ch).width + ls;
+        }
+      }
     });
 
-    const { data } = ctx.getImageData(0, 0, bw, bh);
+    const OW = off.width, OH = off.height;
+    const { data } = ctx.getImageData(0, 0, OW, OH);
     const pts = [];
-    for (let y = 0; y < bh; y++) {
-      for (let x = 0; x < bw; x++) {
-        if (data[(y * bw + x) * 4 + 3] > 110) {
-          pts.push((box.x0 + x) / host.width, 1 - (box.y0 + y) / host.height);
+    for (let y = 0; y < OH; y++) {
+      for (let x = 0; x < OW; x++) {
+        if (data[(y * OW + x) * 4 + 3] > 110) {
+          pts.push((box.x0 + x - PAD) / host.width, 1 - (box.y0 + y - PAD) / host.height);
         }
       }
     }
@@ -133,7 +167,7 @@ export default function initHero({ canvas, nameEl, reduced }) {
         // idle drift: wide while scattered, ~nil once landed
         float drift = mix(${DRIFT_FAR.toFixed(4)}, ${DRIFT_HOME.toFixed(4)}, e);
         p += vec2(sin(uTime * 0.42 + aOff), cos(uTime * 0.33 + aOff * 1.7)) * drift;
-        p += uMouse * 0.014 * (1.0 - e * 0.55);
+        p += uMouse * 0.014 * (1.0 - e);   // parallax dies as a mote lands: the glyph is static
 
         // Brightness: dim in flight, and an ARRIVAL BLOOM as it lands — the name
         // should exist as light before it exists as type. Then hand the frame to

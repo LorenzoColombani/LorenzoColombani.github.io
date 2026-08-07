@@ -26,18 +26,27 @@ let userMoved = false;
      so setting it once at boot is not enough;
    - Lenis owns the scroll position, so a native scrollTo(0,0) is overridden on
      its next frame. It has to be told through its own API. */
+const stripHash = () => history.replaceState(null, '', location.pathname + location.search);
+
+/* A real deep link wins on THIS load — but the hash is then stripped, because
+   a hash that stays in the URL makes every future reload start at that section.
+   That was the bug the reload test missed: click WORK once, the URL becomes
+   /#portfolio forever, and "the site doesn't start at the top" on every visit
+   after. The target is CAPTURED once (toTop runs at boot, after Lenis exists,
+   and at `load` — the first version stripped the hash on call one and call
+   three then forced the top, killing deep links). */
+let deepTarget = null;   // null = not looked yet · false = no deep link · element = jump here
 function toTop() {
   if (userMoved) return;
 
-  // A deep link still wins — but Lenis starts at 0 and overrides the browser's
-  // own hash scroll, so arriving at /#experience landed at the top. Send it
-  // through Lenis too. (In-page nav CLICKS were never affected; only load.)
-  if (location.hash) {
-    const target = document.getElementById(location.hash.slice(1));
-    if (target) {
-      if (window.__srLenis) window.__srLenis.scrollTo(target, { immediate: true, force: true });
-      else target.scrollIntoView();
-    }
+  if (deepTarget === null) {
+    deepTarget = (location.hash && document.getElementById(location.hash.slice(1))) || false;
+    if (deepTarget) stripHash();
+  }
+
+  if (deepTarget) {      // re-asserted each call: layout grows under it as things load
+    if (window.__srLenis) window.__srLenis.scrollTo(deepTarget, { immediate: true, force: true });
+    else deepTarget.scrollIntoView();
     return;
   }
 
@@ -47,6 +56,23 @@ function toTop() {
 }
 toTop();
 addEventListener('load', toTop, { once: true });
+
+/* ---- in-page anchors never write the hash ------------------------------
+   The nav, the brand mark and the scroll cue all point at #sections. Left
+   native, one click poisons the URL (see above). They scroll instead, and the
+   URL stays clean. The skip-link keeps native behaviour: intercepting it would
+   break its focus hand-off for keyboard users, and #main-content is the top of
+   the page anyway. */
+document.querySelectorAll('a[href^="#"]:not(.skip-link)').forEach(a => {
+  a.addEventListener('click', e => {
+    const el = document.getElementById(a.getAttribute('href').slice(1));
+    if (!el) return;
+    e.preventDefault();
+    if (window.__srLenis) window.__srLenis.scrollTo(el);
+    else el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+    stripHash();
+  });
+});
 
 /* ---- the screens ------------------------------------------------------- */
 initTV();
