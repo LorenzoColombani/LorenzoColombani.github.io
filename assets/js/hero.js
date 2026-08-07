@@ -281,6 +281,10 @@ export default function initHero({ canvas, nameEl, reduced }) {
   }
 
   let started = false, hidden = false, raf = 0, finished = false;
+  /* set when the tab comes BACK — rAF is fully suspended while hidden, so the
+     first frame after return sees a huge wall-clock gap that is not a stall.
+     Without this the watchdog would kill the intro on every tab-switch back. */
+  let resyncClock = false;
 
   /* WEBGL CONTEXT LOSS — the reported "particle effect freezes mid-animation".
      iOS Safari reclaims WebGL contexts under memory pressure, which is far more
@@ -298,6 +302,10 @@ export default function initHero({ canvas, nameEl, reduced }) {
     nameEl.style.transition = 'none';
     nameEl.style.opacity = '1';
     canvas.style.display = 'none';
+    // the natural end disposes; a surrendered intro must too, or the mote
+    // attributes and GL context sit in memory for the page's whole life —
+    // on the memory-pressured phone that caused the surrender in the first place
+    try { geo?.dispose(); material.dispose(); renderer.dispose(); } catch { /* context may be gone */ }
   }
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();          // preventDefault is what makes loss survivable
@@ -324,16 +332,31 @@ export default function initHero({ canvas, nameEl, reduced }) {
     /* The clock ACCUMULATES while visible instead of reading wall time.
        Wall time meant any stall — tab hidden, rAF throttled, a GC pause — kept
        advancing the animation while nothing drew, so on resume it JUMPED to
-       wherever the clock had got to. Reported from his iPhone as the effect
-       freezing mid-animation. Now a stall costs at most one frame of progress
-       (the 50ms clamp), so whenever the visitor is actually looking they see the
-       materialize continue from where it stopped rather than snap forward. */
+       wherever the clock had got to. Now a stall costs at most one frame of
+       progress (the 50ms clamp) and the materialize continues where it stopped. */
     let elapsed = 0, last = 0;
 
     const loop = (now) => {
       if (hidden) { last = now; raf = requestAnimationFrame(loop); return; }
-      if (!last) last = now;
-      elapsed += Math.min(now - last, 50);
+      if (!last || resyncClock) { last = now; resyncClock = false; }
+      let gap = now - last;
+
+      /* STALL WATCHDOG — his SECOND report, after the context-loss fix shipped:
+         still freezing on his iPhone, Safari, normal mode only. "For a few
+         seconds" means it RESUMES — so it is not a lost context, it is the whole
+         page ceasing to draw because the device is busy (his everyday Safari
+         carries tabs and extensions a fresh private window does not — the same
+         normal-vs-incognito split, different mechanism). No code here can remove
+         that stall; what it can do is refuse to be seen frozen. A gap a visitor
+         can perceive ends the intro: cut to the finished name instead of holding
+         dust on screen. One exception — a big gap while nothing has been shown
+         yet (elapsed < 200ms) is a slow first frame (shader compile on a busy
+         GPU), so start clean rather than give up before the curtain is up. */
+      if (gap > 600) {
+        if (elapsed < 200) { gap = 0; }
+        else { surrenderCanvas(); return; }
+      }
+      elapsed += Math.min(gap, 50);
       last = now;
       const t = elapsed / 1000;
       uni.uTime.value = t;
@@ -359,7 +382,11 @@ export default function initHero({ canvas, nameEl, reduced }) {
 
   /* ---- wiring ----------------------------------------------------------- */
   let tabAway = false, screenLive = false;
-  const settle = () => { hidden = tabAway || screenLive; };
+  const settle = () => {
+    const was = hidden;
+    hidden = tabAway || screenLive;
+    if (was && !hidden) resyncClock = true;   // see the watchdog: returning ≠ stalling
+  };
 
   document.addEventListener('visibilitychange', () => { tabAway = document.hidden; settle(); });
   // a framed film runs its own WebGL context and rAF — stand down while it plays
