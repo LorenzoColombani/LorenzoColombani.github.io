@@ -336,6 +336,7 @@ export default function initHero({ canvas, nameEl, reduced }) {
     raf = 0; finished = true;
     nameEl.style.transition = 'none';
     nameEl.style.opacity = '1';
+    nameEl.style.willChange = '';
     canvas.style.display = 'none';
     // the natural end disposes; a surrendered intro must too, or the mote
     // attributes and GL context sit in memory for the page's whole life —
@@ -361,6 +362,16 @@ export default function initHero({ canvas, nameEl, reduced }) {
     }
 
     nameEl.style.transition = 'none';          // we own this opacity now, frame by frame
+    /* HIS SCREEN RECORDING pinned the freeze to one frame: it begins the exact
+       moment this element's opacity first leaves 0 again (~p=0.66, t≈2.1s).
+       The headline paints at page load (opacity 1), we zero it here, and
+       WITHOUT will-change Safari drops its rendered layer — so at the crossfade
+       it must re-rasterize a ~3500×750px serif text layer mid-choreography.
+       On his memory-pressured phone that took ~0.7s of frozen pixels; a fresh
+       private window has no such surface-cache pressure, which is the
+       normal-vs-incognito split. Keep the layer alive for the 3.2s we animate
+       it; released in both end paths so it doesn't hold memory afterwards. */
+    nameEl.style.willChange = 'opacity';
     nameEl.style.opacity = '0';
     started = true;
 
@@ -377,17 +388,23 @@ export default function initHero({ canvas, nameEl, reduced }) {
       let gap = now - last;
 
       /* STALL WATCHDOG. The stall itself is synchronous and invisible to us
-         until it ends; what follows depends on WHERE it lands:
-         - BEFORE the text starts resolving (p < TEXT_FROM): faint dust froze —
-           the signature assembly hasn't happened yet, and on a cold first visit
-           (exactly a recruiter) surrendering here would delete the choreography
-           for the people it exists for. Zero the gap and play it in full.
-         - MID-CROSSFADE: a half-resolved name frozen on screen reads as broken —
-           cut to the finished name.
+         until it ends; what follows depends on what was VISIBLY on screen when
+         it hit — judged by the text's eased opacity, not raw progress. His
+         screen recording showed the stall landing a hair past TEXT_FROM, where
+         the text sits under 2% opacity: by progress that counts as
+         "mid-crossfade", to the eye it is still just dust — the old p<TEXT_FROM
+         rule would have amputated the intro over an invisible boundary.
+         - text not yet readable (eased opacity < 0.15): continue the
+           choreography — on a cold first visit (exactly a recruiter),
+           surrendering would delete it for the people it exists for.
+         - a genuinely half-resolved name frozen on screen: cut to the finished
+           name; frozen half-text reads as broken.
          - Repeatedly (3rd big gap): the device is overwhelmed; stop asking. */
       if (gap > 600) {
         const pNow = Math.min(1, (elapsed / 1000) / DURATION);
-        if (pNow < TEXT_FROM && strikes < 2) { gap = 0; strikes++; }
+        const aRaw = Math.max(0, Math.min(1, (pNow - TEXT_FROM) / (1 - TEXT_FROM)));
+        const aNow = aRaw * aRaw * (3 - 2 * aRaw);        // same ease the text uses
+        if (aNow < 0.15 && strikes < 2) { gap = 0; strikes++; }
         else { surrenderCanvas(); return; }
       }
       elapsed += Math.min(gap, 50);
@@ -403,6 +420,7 @@ export default function initHero({ canvas, nameEl, reduced }) {
       // attributes and a GL context have no business outliving a 3.2s intro.
       if (p >= 1) {
         raf = 0; finished = true;
+        nameEl.style.willChange = '';          // the layer did its job; release it
         gl.clear(gl.COLOR_BUFFER_BIT);
         disposeGL();
         return;
