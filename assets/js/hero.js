@@ -4,9 +4,18 @@
    selectable, accessible, indexable — the particles are the performance).
 
    All motion lives in the vertex shader: the CPU writes nothing per frame,
-   so the mote count is effectively free.  Design-library: "GPU flow-mote field". */
+   so the mote count is effectively free.  Design-library: "GPU flow-mote field".
 
-import * as THREE from 'three';
+   RAW WEBGL, NO three.js — the fourth and structural answer to his freeze
+   reports (iPhone Safari, normal mode; three shipped fixes did not end it).
+   The intro is ONE draw call with two custom shaders; three.js contributed a
+   671KB module whose cold fetch+compile measurably stalled the first second
+   (A/B: cold 975–1299ms, warm 0ms, absent 0ms) and whose camera was never
+   even used — the vertex shader has always emitted clip-space directly.
+   Whatever his phone's exact stall mechanism (compiled-code cache eviction,
+   extension scanning, memory reclaim — all environmental, all unprovable
+   from here), every one of them scales with the bytes we ship. So ship ~none:
+   the whole GL layer below is ~90 lines, and the page loses 671KB. */
 
 /* ── the taste interface: every dial for the assembly lives here ───────────── */
 const DURATION   = 3.2;    // s — the whole materialize, start to settled
@@ -29,16 +38,132 @@ const RESIDUE    = 0.0;    // the cloud goes to NOTHING. Anything above ~0 leave
                            // atmosphere. The DV cube fades its motes to zero for exactly
                            // this reason; the film grain overlay carries the texture instead.
 
+const VERT = `
+  attribute vec2  position;   // the glyph pixel this mote belongs to — NEVER moves
+  attribute vec2  aStart;     // where a mote waits before the assembly
+  attribute float aDelay;     // per-mote head start — this is what makes it a wave
+  attribute float aOff;       // per-mote phase for the idle drift
+  attribute float aSize;
+  attribute float aDepth;     // fake z: scales size and brightness
+  uniform float uTime, uProgress, uDPR, uResidue;
+  uniform vec2  uMouse;
+  varying float vAlpha;
+
+  void main() {
+    vec2 home = position.xy;
+    vec2 off  = aStart - home;
+
+    // Per-mote local progress. Each speck runs its own 0..1 inside the global one,
+    // so they arrive across a window instead of all snapping on the same frame.
+    float lp = clamp((uProgress - aDelay) / ${TRAVEL.toFixed(2)}, 0.0, 1.0);
+    float e  = lp * lp * (3.0 - 2.0 * lp);
+
+    // Destination held FIXED; only the offset shrinks. (snap-free particle-morph)
+    vec2 p = home + off * (1.0 - e);
+
+    // Decorative swirl on the CROSSING SEGMENT ONLY, sin^2-enveloped so it has zero
+    // value AND zero slope at both seams — no kink entering, no kink landing.
+    float s = sin(3.14159265 * e);
+    p += vec2(-off.y, off.x) * (s * s) * ${SWIRL.toFixed(3)};
+
+    // idle drift: wide while scattered, ~nil once landed
+    float drift = mix(${DRIFT_FAR.toFixed(4)}, ${DRIFT_HOME.toFixed(4)}, e);
+    p += vec2(sin(uTime * 0.42 + aOff), cos(uTime * 0.33 + aOff * 1.7)) * drift;
+    p += uMouse * 0.014 * (1.0 - e);   // parallax dies as a mote lands: the glyph is static
+
+    // Brightness: dim in flight, and an ARRIVAL BLOOM as it lands — the name
+    // should exist as light before it exists as type. Then hand the frame to
+    // the real text; the motes are the performance, not the headline.
+    float landed = smoothstep(${FADE_FROM.toFixed(2)}, 1.0, uProgress);
+    float arrive = smoothstep(0.72, 1.0, e);                // last stretch of ITS OWN flight
+    vAlpha = (0.16 + 0.84 * e) * (1.0 + 0.55 * arrive) * mix(1.0, uResidue, landed);
+
+    gl_Position  = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+    // stays a touch fatter on landing so the assembled word reads as glowing
+    // gold rather than a flat grey stipple
+    gl_PointSize = clamp(aSize * uDPR * aDepth * mix(2.1, 1.45, e), 1.0, 22.0);
+  }`;
+
+const FRAG = `
+  precision mediump float;
+  varying float vAlpha;
+  void main() {
+    vec2 q = gl_PointCoord - 0.5;
+    float d = length(q);
+    if (d > 0.5) discard;
+    float a = smoothstep(0.5, 0.02, d) * vAlpha;
+    // over-driven gold: additive overlap accumulates into a glow instead of
+    // averaging out to grey grit
+    gl_FragColor = vec4(vec3(0.831, 0.647, 0.455) * 1.55, a * 0.92);
+  }`;
+
 export default function initHero({ canvas, nameEl, reduced }) {
-  let renderer;
+  /* ---- the GL layer: everything three.js was doing for one draw call ----- */
+  let gl;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'high-performance' });
-  } catch (e) { return; }                     // no WebGL → the real text simply stays put
-  if (!renderer.getContext()) return;
+    const opts = { alpha: true, antialias: false, powerPreference: 'high-performance',
+                   depth: false, stencil: false };
+    gl = canvas.getContext('webgl', opts) || canvas.getContext('experimental-webgl', opts);
+  } catch (e) { /* fall through */ }
+  if (!gl) return;                            // no WebGL → the real text simply stays put
 
   const DPR = Math.min(devicePixelRatio || 1, 2);
-  const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1);  // work in 0..1 canvas space
+
+  function compile(type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    return gl.getShaderParameter(sh, gl.COMPILE_STATUS) ? sh : null;
+  }
+  const vs = compile(gl.VERTEX_SHADER, VERT);
+  const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+  if (!vs || !fs) return;                     // a driver that rejects the shader keeps the text
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs); gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+  gl.useProgram(prog);
+
+  // additive glow over a transparent canvas — same state three's material asked for
+  gl.disable(gl.DEPTH_TEST);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+  gl.clearColor(0, 0, 0, 0);
+
+  /* one interleaved buffer: home.xy · start.xy · delay · off · size · depth
+     (8 floats, 32-byte stride) — a single upload instead of six */
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  const STRIDE = 32;
+  [['position', 2, 0], ['aStart', 2, 8], ['aDelay', 1, 16],
+   ['aOff', 1, 20], ['aSize', 1, 24], ['aDepth', 1, 28]].forEach(([name, n, off]) => {
+    const loc = gl.getAttribLocation(prog, name);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, n, gl.FLOAT, false, STRIDE, off);
+  });
+
+  const U = {};
+  for (const n of ['uTime', 'uProgress', 'uDPR', 'uMouse', 'uResidue'])
+    U[n] = gl.getUniformLocation(prog, n);
+  gl.uniform1f(U.uDPR, DPR);
+  gl.uniform1f(U.uResidue, RESIDUE);
+
+  let drawCount = 0, mx = 0, my = 0;
+
+  function render(t, p) {
+    gl.uniform1f(U.uTime, t);
+    gl.uniform1f(U.uProgress, p);
+    gl.uniform2f(U.uMouse, mx, my);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    if (drawCount) gl.drawArrays(gl.POINTS, 0, drawCount);
+  }
+
+  function disposeGL() {
+    try {
+      gl.deleteBuffer(buf); gl.deleteProgram(prog);
+      gl.getExtension('WEBGL_lose_context')?.loseContext();   // actually free the context
+    } catch { /* context may already be gone */ }
+  }
 
   /* ---- sample the rendered headline into target points ------------------
      Traces ONLY the headline's own box at full resolution, so every mote
@@ -122,79 +247,6 @@ export default function initHero({ canvas, nameEl, reduced }) {
   }
 
   /* ---- geometry --------------------------------------------------------- */
-  let points = null, geo = null;
-  const uni = {
-    uTime:     { value: 0 },
-    uProgress: { value: 0 },        // THE single clock — motes AND the crisp text run off this
-    uDPR:      { value: DPR },
-    uMouse:    { value: new THREE.Vector2(0, 0) },
-    uResidue:  { value: RESIDUE }
-  };
-
-  const material = new THREE.ShaderMaterial({
-    uniforms: uni,
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    depthTest: false,
-    vertexShader: /* glsl */`
-      attribute vec2  aStart;     // where a mote waits before the assembly
-      attribute float aDelay;     // per-mote head start — this is what makes it a wave
-      attribute float aOff;       // per-mote phase for the idle drift
-      attribute float aSize;
-      attribute float aDepth;     // fake z: scales size and brightness
-      uniform float uTime, uProgress, uDPR, uResidue;
-      uniform vec2  uMouse;
-      varying float vAlpha;
-
-      void main() {
-        vec2 home = position.xy;             // the glyph pixel this mote belongs to — NEVER moves
-        vec2 off  = aStart - home;
-
-        // Per-mote local progress. Each speck runs its own ${''}0..1 inside the global one,
-        // so they arrive across a window instead of all snapping on the same frame.
-        float lp = clamp((uProgress - aDelay) / ${TRAVEL.toFixed(2)}, 0.0, 1.0);
-        float e  = lp * lp * (3.0 - 2.0 * lp);
-
-        // Destination held FIXED; only the offset shrinks. (snap-free particle-morph)
-        vec2 p = home + off * (1.0 - e);
-
-        // Decorative swirl on the CROSSING SEGMENT ONLY, sin^2-enveloped so it has zero
-        // value AND zero slope at both seams — no kink entering, no kink landing.
-        float s = sin(3.14159265 * e);
-        p += vec2(-off.y, off.x) * (s * s) * ${SWIRL.toFixed(3)};
-
-        // idle drift: wide while scattered, ~nil once landed
-        float drift = mix(${DRIFT_FAR.toFixed(4)}, ${DRIFT_HOME.toFixed(4)}, e);
-        p += vec2(sin(uTime * 0.42 + aOff), cos(uTime * 0.33 + aOff * 1.7)) * drift;
-        p += uMouse * 0.014 * (1.0 - e);   // parallax dies as a mote lands: the glyph is static
-
-        // Brightness: dim in flight, and an ARRIVAL BLOOM as it lands — the name
-        // should exist as light before it exists as type. Then hand the frame to
-        // the real text; the motes are the performance, not the headline.
-        float landed = smoothstep(${FADE_FROM.toFixed(2)}, 1.0, uProgress);
-        float arrive = smoothstep(0.72, 1.0, e);                // last stretch of ITS OWN flight
-        vAlpha = (0.16 + 0.84 * e) * (1.0 + 0.55 * arrive) * mix(1.0, uResidue, landed);
-
-        gl_Position  = vec4(p * 2.0 - 1.0, 0.0, 1.0);
-        // stays a touch fatter on landing so the assembled word reads as glowing
-        // gold rather than a flat grey stipple
-        gl_PointSize = clamp(aSize * uDPR * aDepth * mix(2.1, 1.45, e), 1.0, 22.0);
-      }`,
-    fragmentShader: /* glsl */`
-      precision mediump float;
-      varying float vAlpha;
-      void main() {
-        vec2 q = gl_PointCoord - 0.5;
-        float d = length(q);
-        if (d > 0.5) discard;
-        float a = smoothstep(0.5, 0.02, d) * vAlpha;
-        // over-driven gold: additive overlap accumulates into a glow instead of
-        // averaging out to grey grit
-        gl_FragColor = vec4(vec3(0.831, 0.647, 0.455) * 1.55, a * 0.92);
-      }`
-  });
-
   function build(pts) {
     const isSmall = matchMedia('(max-width: 900px)').matches;
     const cap = isSmall ? 8000 : 24000;
@@ -216,53 +268,38 @@ export default function initHero({ canvas, nameEl, reduced }) {
     for (let i = 0; i < available; i++) { cx += pts[i * 2]; cy += pts[i * 2 + 1]; }
     cx /= available; cy /= available;
 
-    const pos   = new Float32Array(N * 3);
-    const start = new Float32Array(N * 2);
-    const delay = new Float32Array(N);
-    const off   = new Float32Array(N);
-    const size  = new Float32Array(N);
-    const depth = new Float32Array(N);
-
+    const v = new Float32Array(N * 8);        // interleaved, see the pointer setup
     for (let i = 0; i < N; i++) {
       const s = ((i * stride) % available) * 2;
-      const tx = pts[s], ty = pts[s + 1];
-      pos[i * 3] = tx; pos[i * 3 + 1] = ty; pos[i * 3 + 2] = 0;
+      const o = i * 8;
+      v[o]     = pts[s];                      // home.x
+      v[o + 1] = pts[s + 1];                  // home.y
 
       // uniform inside the ellipse: sqrt(r) or the middle stays over-dense
       const ang = Math.random() * Math.PI * 2;
       const rad = Math.sqrt(Math.random());
-      start[i * 2]     = cx + Math.cos(ang) * rad * CLOUD_X;
-      start[i * 2 + 1] = cy + Math.sin(ang) * rad * CLOUD_Y;
+      v[o + 2] = cx + Math.cos(ang) * rad * CLOUD_X;
+      v[o + 3] = cy + Math.sin(ang) * rad * CLOUD_Y;
 
       // the wave. Biased so more motes leave early than late — the name reads
       // sooner, and the stragglers are what makes it feel hand-made rather than
       // switched on. (Math.random()**1.6 skews toward 0.)
-      delay[i] = Math.pow(Math.random(), 1.6) * STAGGER;
+      v[o + 4] = Math.pow(Math.random(), 1.6) * STAGGER;
 
-      off[i]   = Math.random() * 6.283;
-      size[i]  = 1.7 + Math.random() * 2.6;
-      depth[i] = 0.55 + Math.random() * 0.75;   // fake z — near motes bigger and brighter
+      v[o + 5] = Math.random() * 6.283;                 // drift phase
+      v[o + 6] = 1.7 + Math.random() * 2.6;             // size
+      v[o + 7] = 0.55 + Math.random() * 0.75;           // fake z — near motes bigger, brighter
     }
 
-    geo?.dispose();
-    geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('aStart', new THREE.BufferAttribute(start, 2));
-    geo.setAttribute('aDelay', new THREE.BufferAttribute(delay, 1));
-    geo.setAttribute('aOff', new THREE.BufferAttribute(off, 1));
-    geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
-    geo.setAttribute('aDepth', new THREE.BufferAttribute(depth, 1));
-
-    if (points) { scene.remove(points); }
-    points = new THREE.Points(geo, material);
-    points.frustumCulled = false;              // positions live in the shader; the bounds are a lie
-    scene.add(points);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, v, gl.STATIC_DRAW);
+    drawCount = N;
   }
 
   function resizeRenderer() {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    renderer.setPixelRatio(DPR);
-    renderer.setSize(w, h, false);
+    canvas.width  = Math.round(canvas.clientWidth * DPR);
+    canvas.height = Math.round(canvas.clientHeight * DPR);
+    gl.viewport(0, 0, canvas.width, canvas.height);
   }
 
   /* ---- the crisp headline, driven by the SAME progress as the motes -------
@@ -288,13 +325,12 @@ export default function initHero({ canvas, nameEl, reduced }) {
 
   /* WEBGL CONTEXT LOSS — defensive, and honestly labelled as such: this was the
      FIRST diagnosis of his mid-animation freeze, and it was wrong (measured:
-     ctxLost fired 0 times across every reproduction; the stall is three.js's
-     cold compile — see the watchdog in the loop). The handler stays because a
-     lost context is still a real iOS failure mode with the same right answer:
+     ctxLost fired 0 times across every reproduction). The handler stays because
+     a lost context is still a real iOS failure mode with the same right answer:
      it is not recoverable for a 3-second intro, so hand over cleanly — stop the
      loop, finish the headline, take the stale canvas out. Without this, loss
-     means renderer.render() silently no-ops and the last frame of motes stays
-     painted while the DOM headline fades in behind it. */
+     means render() silently no-ops and the last frame of motes stays painted
+     while the DOM headline fades in behind it. */
   function surrenderCanvas() {
     if (raf) cancelAnimationFrame(raf);
     raf = 0; finished = true;
@@ -304,10 +340,11 @@ export default function initHero({ canvas, nameEl, reduced }) {
     // the natural end disposes; a surrendered intro must too, or the mote
     // attributes and GL context sit in memory for the page's whole life —
     // on the memory-pressured phone that caused the surrender in the first place
-    try { geo?.dispose(); material.dispose(); renderer.dispose(); } catch { /* context may be gone */ }
+    disposeGL();
   }
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();          // preventDefault is what makes loss survivable
+    if (finished) return;        // our own disposeGL fires this too — not a failure
     surrenderCanvas();
   }, false);
 
@@ -318,9 +355,8 @@ export default function initHero({ canvas, nameEl, reduced }) {
     resizeRenderer();
 
     if (reduced) {                             // one settled frame: text present, motes quiet
-      uni.uProgress.value = 1; uni.uTime.value = 3;
       nameEl.style.opacity = '1';
-      renderer.render(scene, camera);
+      render(3, 1);
       return;
     }
 
@@ -340,16 +376,8 @@ export default function initHero({ canvas, nameEl, reduced }) {
       if (!last || resyncClock) { last = now; resyncClock = false; }
       let gap = now - last;
 
-      /* STALL WATCHDOG — third diagnosis, this one MEASURED (his
-         /systematic-debugging agent, A/B on real Safari on an erased iPhone 16
-         sim). Context loss NEVER fired — ctxLost 0 in every run. The stall is
-         the 671KB three.js bundle's cold fetch+compile landing in the intro's
-         first second: cold runs froze 975–1299ms starting ~300ms in; warm cache
-         froze 0ms; with three.js never loaded, 0ms. The modulepreload in main.js
-         attacks the cause; this handles whatever stall still lands.
-
-         What follows a freeze depends on WHERE it lands, because the stall
-         itself is synchronous and invisible to us until it ends:
+      /* STALL WATCHDOG. The stall itself is synchronous and invisible to us
+         until it ends; what follows depends on WHERE it lands:
          - BEFORE the text starts resolving (p < TEXT_FROM): faint dust froze —
            the signature assembly hasn't happened yet, and on a cold first visit
            (exactly a recruiter) surrendering here would delete the choreography
@@ -365,20 +393,18 @@ export default function initHero({ canvas, nameEl, reduced }) {
       elapsed += Math.min(gap, 50);
       last = now;
       const t = elapsed / 1000;
-      uni.uTime.value = t;
 
       const p = Math.min(1, t / DURATION);
-      uni.uProgress.value = p;
       setTextProgress(p);
-      renderer.render(scene, camera);
+      render(t, p);
 
       // The cloud resolves to nothing, so once it's home there is literally
-      // nothing left to draw — stop, and give the memory back: ~1MB of mote
+      // nothing left to draw — stop, and give the memory back: the mote
       // attributes and a GL context have no business outliving a 3.2s intro.
       if (p >= 1) {
         raf = 0; finished = true;
-        renderer.clear();
-        geo?.dispose(); material.dispose(); renderer.dispose();
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        disposeGL();
         return;
       }
       raf = requestAnimationFrame(loop);
@@ -404,9 +430,8 @@ export default function initHero({ canvas, nameEl, reduced }) {
      effect that never showed. `hover:hover` measured `no` on every real device. */
   if (!reduced && matchMedia('(hover: hover) and (pointer: fine)').matches) {
     addEventListener('pointermove', (e) => {
-      const nx = (e.clientX / innerWidth) * 2 - 1;
-      const ny = (e.clientY / innerHeight) * 2 - 1;
-      uni.uMouse.value.set(nx, -ny);
+      mx = (e.clientX / innerWidth) * 2 - 1;
+      my = -((e.clientY / innerHeight) * 2 - 1);
     }, { passive: true });
   }
 

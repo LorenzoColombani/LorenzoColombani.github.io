@@ -6,20 +6,9 @@ import { initSound } from './sound.js';
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* Warm three.js NOW, not at the load event. The 671KB bundle's cold fetch and
-   compile is what froze the hero's first second on his iPhone — measured by
-   A/B on real Safari: cold runs stalled 975–1299ms starting right as the
-   materialize began; warm cache stalled 0ms; with three.js absent, 0ms. By the
-   time the load handler imports hero.js this preload has already pulled the
-   module through fetch/compile, so that work cannot land inside the intro.
-   Injected from JS rather than written in the HTML head so reduced-motion
-   keeps its verified guarantee: those visitors never download three.js at all. */
-if (!reduced) {
-  const warm = document.createElement('link');
-  warm.rel = 'modulepreload';
-  warm.href = 'assets/vendor/three.module.min.js';
-  document.head.appendChild(warm);
-}
+/* (A three.js modulepreload lived here for one commit. It is gone WITH
+   three.js itself — the hero now runs on ~90 lines of raw WebGL in hero.js,
+   and there is nothing heavy left to warm.) */
 
 /* ---- start at the top --------------------------------------------------
    Browsers restore the previous scroll position on reload, and with a 100svh
