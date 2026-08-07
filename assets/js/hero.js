@@ -280,7 +280,7 @@ export default function initHero({ canvas, nameEl, reduced }) {
     nameEl.style.opacity = String(a * a * (3 - 2 * a));
   }
 
-  let started = false, hidden = false, raf = 0;
+  let started = false, hidden = false, raf = 0, finished = false;
 
   function start() {
     const pts = sampleName();
@@ -311,9 +311,14 @@ export default function initHero({ canvas, nameEl, reduced }) {
       renderer.render(scene, camera);
 
       // The cloud resolves to nothing, so once it's home there is literally
-      // nothing left to draw — stop. (Cataloged: an assembled particle system
-      // that keeps rebuilding itself halves the frame rate for no picture.)
-      if (p >= 1) { raf = 0; renderer.clear(); return; }
+      // nothing left to draw — stop, and give the memory back: ~1MB of mote
+      // attributes and a GL context have no business outliving a 3.2s intro.
+      if (p >= 1) {
+        raf = 0; finished = true;
+        renderer.clear();
+        geo?.dispose(); material.dispose(); renderer.dispose();
+        return;
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -339,6 +344,9 @@ export default function initHero({ canvas, nameEl, reduced }) {
   addEventListener('resize', () => {
     clearTimeout(rz);
     rz = setTimeout(() => {
+      // after settle everything is disposed and nothing will ever draw again —
+      // resampling the glyphs and rebuilding 24k motes here was pure dead work
+      if (finished) return;
       resizeRenderer();
       if (!started) return;
       const pts = sampleName();                // re-target: the headline reflowed

@@ -70,6 +70,9 @@ document.querySelectorAll('a[href^="#"]:not(.skip-link)').forEach(a => {
     e.preventDefault();
     if (window.__srLenis) window.__srLenis.scrollTo(el);
     else el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+    // a native anchor would have moved keyboard focus too — keep that contract
+    el.tabIndex = -1;
+    el.focus({ preventScroll: true });
     stripHash();
   });
 });
@@ -161,11 +164,11 @@ if (!reduced) {
 addEventListener('load', () => {
   const canvas = document.getElementById('particle-canvas');
   const nameEl = document.getElementById('hero-name');
-  if (canvas && nameEl) {
+  // reduced motion: the settled state is the plain headline (the motes fade to
+  // nothing anyway) — don't make those users download three.js to render it
+  if (canvas && nameEl && !reduced) {
     import('./hero.js')
       .then(m => m.default({ canvas, nameEl, reduced }))
       .catch(() => {});                 // headline stays real text if this never lands
   }
 });
-
-export { reduced };

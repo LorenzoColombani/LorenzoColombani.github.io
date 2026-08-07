@@ -12,6 +12,15 @@ const KEY = 'sr-sound';
 const MUSIC_GAIN = 0.35;
 const SFX_GAIN = 0.5;
 
+/* storage can THROW, not just be empty (Chrome "block all cookies" makes the
+   localStorage getter itself throw) — and this module boots in main.js's init
+   chain, so an unguarded read would take filters, motion and the hero down
+   with it. Sound degrades; the page never does. */
+const store = {
+  get() { try { return localStorage.getItem(KEY); } catch { return null; } },
+  set(v) { try { localStorage.setItem(KEY, v); } catch { /* politeness only */ } }
+};
+
 export function initSound() {
   const chip = document.getElementById('sound-chip');
   if (!chip) return;
@@ -30,7 +39,7 @@ export function initSound() {
       musicGain.connect(ctx.destination);
 
       const buf = await fetch('assets/audio/score.m4a')
-        .then(r => r.arrayBuffer())
+        .then(r => { if (!r.ok) throw new Error('score ' + r.status); return r.arrayBuffer(); })
         .then(b => ctx.decodeAudioData(b));
 
       source = ctx.createBufferSource();
@@ -39,6 +48,9 @@ export function initSound() {
       source.connect(musicGain);
       source.start();
     })();
+    // a failed load must not brick sound for the session: clear the cached
+    // promise so the NEXT click retries instead of re-awaiting the rejection
+    loading.catch(() => { loading = null; });
     return loading;
   }
 
@@ -69,13 +81,23 @@ export function initSound() {
 
   async function set(v) {
     on = v;
-    localStorage.setItem(KEY, v ? 'on' : 'off');
+    store.set(v ? 'on' : 'off');
     chip.setAttribute('aria-pressed', String(v));
     label.textContent = v ? 'SOUND ON' : 'SOUND OFF';
     chip.classList.remove('pulse-once');
     if (v) {
-      await ensure();
+      try {
+        await ensure();
+      } catch {
+        // load failed: revert honestly instead of an ON chip over silence
+        on = false;
+        chip.setAttribute('aria-pressed', 'false');
+        label.textContent = 'SOUND OFF';
+        return;
+      }
+      if (!on) return;   // toggled OFF while the score was fetching — stay silent
       await ctx.resume();
+      if (!on) return;
       ramp(MUSIC_GAIN, 1.2);
     } else {
       ramp(0, 0.6);
@@ -89,7 +111,7 @@ export function initSound() {
   });
 
   // first visit only: one quiet invitation, then never again
-  if (localStorage.getItem(KEY) === null) chip.classList.add('pulse-once');
+  if (store.get() === null) chip.classList.add('pulse-once');
 
   window.SRSound = { play, get enabled() { return on; } };
 }

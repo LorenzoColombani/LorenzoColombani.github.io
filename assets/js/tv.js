@@ -20,6 +20,16 @@ function announce(on) {
   document.dispatchEvent(new CustomEvent('sr:live', { detail: { live: on } }));
 }
 
+/* Scroll lock for the modal surfaces (stage + projector). Two locks, both
+   required — measured, not assumed: `overflow-x:clip` on html stops body's
+   overflow from propagating to the viewport, so the hidden goes on the ROOT;
+   and Lenis writes scrollTop directly, so it must be told to stop. */
+function setScrollLock(on) {
+  document.documentElement.classList.toggle('is-locked', on);
+  const l = window.__srLenis;
+  if (l) { if (on) l.stop(); else l.start(); }
+}
+
 export function initTV() {
   document.querySelectorAll('.feat .tv-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -188,7 +198,7 @@ function openStage(feat, btn) {
   bar.append(name);
 
   document.body.appendChild(dlg);
-  document.body.style.overflow = 'hidden';
+  setScrollLock(true);
   document.addEventListener('focusin', guardModalFocus);
 
   let frame = null;
@@ -234,6 +244,7 @@ function openStage(feat, btn) {
     pane.style.transform =
       `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${sx}, ${sy})`;
     dlg.style.opacity = '0';
+    void pane.offsetWidth;   // commit the start state — one bare rAF can skip the grow (Safari)
     requestAnimationFrame(() => {
       dlg.style.transition = 'opacity .3s ease';
       pane.style.transition = `transform ${GROW}s cubic-bezier(.22,.61,.36,1)`;
@@ -265,7 +276,7 @@ function openProjector(data, btn) {
   dlg.appendChild(x);          // before the pane: Shift+Tab out of the frame lands here
   dlg.appendChild(pane);
   document.body.appendChild(dlg);
-  document.body.style.overflow = 'hidden';
+  setScrollLock(true);
   document.addEventListener('focusin', guardModalFocus);
 
   const skel = document.createElement('div');
@@ -306,11 +317,13 @@ export function closeLive() {
   document.removeEventListener('focusin', guardModalFocus);
   // blank before removing: some pages keep audio alive through a detach
   it.host.querySelectorAll('iframe').forEach(f => { f.src = 'about:blank'; });
-  document.body.style.overflow = '';
+  setScrollLock(false);
   announce(false);
   window.SRSound?.play('off');
 
-  const done = () => { it.host.remove(); it.restoreFocus?.focus(); };
+  // the focus restore is skipped if another preview opened during the retract —
+  // yanking focus out of the NEW dialog's ✕ half a second in would strand ESC
+  const done = () => { it.host.remove(); if (!live) it.restoreFocus?.focus(); };
 
   // the stage retracts into the panel it grew out of — same curve, reversed
   if (it.isStage && !REDUCED && it.pane) {
