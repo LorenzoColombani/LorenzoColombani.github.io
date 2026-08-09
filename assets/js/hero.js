@@ -422,6 +422,19 @@ export default function initHero({ canvas, nameEl, reduced }) {
         raf = 0; finished = true;
         nameEl.style.willChange = '';          // the layer did its job; release it
         gl.clear(gl.COLOR_BUFFER_BIT);
+        /* An EMPTY canvas is not an ABSENT one, and that gap was a real bug.
+           Left visible, this element is still a viewport-sized compositor layer
+           whose GL backing store disposeGL() is about to destroy on purpose.
+           Chrome drops the layer's tiles once the hero scrolls far enough out of
+           view and re-rasterizes them on the way back — from a backing store
+           that no longer exists. Reported on desktop Chrome: a viewport-wide
+           white bloom, everywhere the hero scrim doesn't cover it. And it
+           STAYS, because a canvas that never draws never invalidates its layer,
+           so nothing after that first bad raster ever repaints it — reload was
+           the only way out. Take it out of the layer tree, exactly as
+           surrenderCanvas() already does on the abort path. Free, because
+           RESIDUE is 0: the settled frame is a blank canvas either way. */
+        canvas.style.display = 'none';
         disposeGL();
         return;
       }
