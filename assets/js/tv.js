@@ -157,6 +157,13 @@ function liveDot() {
   return d;
 }
 
+/* Embeds that ship their own player chrome (SoundCloud, YouTube) get no badge:
+   it would stack on their title bar, and "LIVE" on a recording is a claim the
+   page can't back. Marked per-project with `data-player` in index.html. */
+function ownsChrome(data) {
+  return data.embed === 'widget' || data.player !== undefined;
+}
+
 /* ---- in-bezel (marquee) ------------------------------------------------- */
 
 function openInPane(pane, data, btn) {
@@ -175,9 +182,11 @@ function openInPane(pane, data, btn) {
     : scaledFrame(data.src, pane.clientWidth);
   frame.addEventListener('load', () => skel.remove());
 
-  // the player wears its own chrome — a second LIVE badge just stacks on it
+  // the player wears its own chrome — a second LIVE badge just stacks on it.
+  // `data-player` says the same of any embed that is itself a player: on a
+  // video, "● LIVE" also claims a broadcast that isn't happening.
   const x = closeButton();
-  wrap.append(frame, ...(isWidget ? [] : [liveDot()]), x);
+  wrap.append(frame, ...(ownsChrome(data) ? [] : [liveDot()]), x);
   pane.appendChild(wrap);
 
   // widget frames are native (fluid) — only the scaled ones need re-scaling
@@ -203,6 +212,12 @@ function openStage(feat, btn) {
   const screen = feat.querySelector('.feat-screen');
   const from = screen.getBoundingClientRect();
   const title = feat.querySelector('.feat-title')?.textContent.trim() || 'project';
+
+  /* Where "open it for real" goes. Usually that IS the framed URL, but an embed
+     URL is not always the shareable one — a YouTube /embed/ link plays without
+     being the page you'd send someone. The card already publishes the canonical
+     link, so trust it and fall back to the framed src. */
+  const away = feat.querySelector('.feat-open')?.getAttribute('href') || d.src;
 
   const dlg = document.createElement('div');
   dlg.className = 'stage';
@@ -240,7 +255,7 @@ function openStage(feat, btn) {
     note.textContent = 'This one won’t run inside another page — it sets a frame policy that blocks it.';
     const go = document.createElement('a');
     go.className = 'stage-go';
-    go.href = d.src; go.target = '_blank'; go.rel = 'noopener';
+    go.href = away; go.target = '_blank'; go.rel = 'noopener';
     go.textContent = 'Open the live site ↗';
     bar.append(note, go);
   } else {
@@ -251,11 +266,11 @@ function openStage(feat, btn) {
     frame = d.embed === 'widget' ? nativeFrame(soundcloudSrc(d.src)) : nativeFrame(d.src);
     frame.addEventListener('load', () => skel.remove());
     pane.appendChild(frame);
-    pane.appendChild(liveDot());
+    if (!ownsChrome(d)) pane.appendChild(liveDot());
 
     const go = document.createElement('a');
     go.className = 'stage-go';
-    go.href = d.src; go.target = '_blank'; go.rel = 'noopener';
+    go.href = away; go.target = '_blank'; go.rel = 'noopener';
     go.textContent = 'Open in a new tab ↗';
     bar.append(go);
   }
