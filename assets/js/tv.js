@@ -247,7 +247,8 @@ function openStage(feat, btn) {
     const go = document.createElement('a');
     go.className = 'stage-go';
     go.href = away; go.target = '_blank'; go.rel = 'noopener';
-    go.textContent = 'Open the live site ↗';
+    // not "the live site" — a shot target isn't always a site (Agency is an app's repo)
+    go.textContent = 'Open in a new tab ↗';
     bar.append(note, go);
   } else {
     const skel = document.createElement('div');
