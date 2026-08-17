@@ -329,7 +329,7 @@ function openProjector(data, btn) {
   const frame = small ? nativeFrame(data.src) : scaledFrame(data.src, pane.clientWidth);
   frame.addEventListener('load', () => skel.remove());
   pane.appendChild(frame);
-  pane.appendChild(liveDot());
+  if (!ownsChrome(data)) pane.appendChild(liveDot());
 
   dlg.addEventListener('click', e => { if (e.target === dlg) closeLive(); });
 
