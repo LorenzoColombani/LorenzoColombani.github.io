@@ -157,13 +157,6 @@ function liveDot() {
   return d;
 }
 
-/* Embeds that ship their own player chrome (SoundCloud, YouTube) get no badge:
-   it would stack on their title bar, and "LIVE" on a recording is a claim the
-   page can't back. Marked per-project with `data-player` in index.html. */
-function ownsChrome(data) {
-  return data.embed === 'widget' || data.player !== undefined;
-}
-
 /* ---- in-bezel (marquee) ------------------------------------------------- */
 
 function openInPane(pane, data, btn) {
@@ -182,11 +175,9 @@ function openInPane(pane, data, btn) {
     : scaledFrame(data.src, pane.clientWidth);
   frame.addEventListener('load', () => skel.remove());
 
-  // the player wears its own chrome — a second LIVE badge just stacks on it.
-  // `data-player` says the same of any embed that is itself a player: on a
-  // video, "● LIVE" also claims a broadcast that isn't happening.
+  // the player wears its own chrome — a second LIVE badge just stacks on it
   const x = closeButton();
-  wrap.append(frame, ...(ownsChrome(data) ? [] : [liveDot()]), x);
+  wrap.append(frame, ...(isWidget ? [] : [liveDot()]), x);
   pane.appendChild(wrap);
 
   // widget frames are native (fluid) — only the scaled ones need re-scaling
@@ -266,7 +257,7 @@ function openStage(feat, btn) {
     frame = d.embed === 'widget' ? nativeFrame(soundcloudSrc(d.src)) : nativeFrame(d.src);
     frame.addEventListener('load', () => skel.remove());
     pane.appendChild(frame);
-    if (!ownsChrome(d)) pane.appendChild(liveDot());
+    pane.appendChild(liveDot());
 
     const go = document.createElement('a');
     go.className = 'stage-go';
@@ -329,7 +320,7 @@ function openProjector(data, btn) {
   const frame = small ? nativeFrame(data.src) : scaledFrame(data.src, pane.clientWidth);
   frame.addEventListener('load', () => skel.remove());
   pane.appendChild(frame);
-  if (!ownsChrome(data)) pane.appendChild(liveDot());
+  pane.appendChild(liveDot());
 
   dlg.addEventListener('click', e => { if (e.target === dlg) closeLive(); });
 
