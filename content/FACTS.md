@@ -32,7 +32,7 @@ file's sources.
 - **Court mediator** — VERIFIED (cours-appel.justice.fr ANNUMED May-2026 directory, listed 2024–2026). Never the lead on the freelance home.
 - **Scalefree internship** — past tense, Jun–Aug 2026 (ended). Off the hire fold. Data Vault Foundations points to Scalefree for certification / enterprise DV; this site sells no DV consulting.
 - **The Bridge** — score is Kevin MacLeod (CC BY) / Mixkit. **Never "original score"** on The Bridge.
-- **Agency (repo: `github.com/LorenzoColombani/openbots`)** — personal v0.1, MIT, used by Lorenzo. Never imply users. Case study + repo normalization deferred until the new version ships.
+- **OpenBots (formerly Agency; repo: `github.com/LorenzoColombani/openbots`)** — v0.5.0 released 2026-09-01 (marked Latest): the ground-up rebuild — Swift 6, SwiftUI, durable SQLite state, explicit approvals, MIT. Used by Lorenzo; never imply users. Preview status stated honestly (consequential-action executor disabled in this build). The "hold until it ships" condition is met — the case study may now be written (Stage 1).
 
 ## Never claim on the freelance home
 
