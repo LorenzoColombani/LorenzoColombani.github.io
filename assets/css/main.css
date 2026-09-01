@@ -905,3 +905,5 @@ footer{
 /* close the dead zone between the hero cue and the offer */
 .hero{padding-bottom:0}
 #offer{padding-top:clamp(18px,3vh,36px)}
+
+#offer{margin-top:clamp(-96px,-9vh,-56px)}
