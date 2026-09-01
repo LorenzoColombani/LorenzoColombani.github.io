@@ -898,3 +898,6 @@ footer{
 }
 
 #offer .method-line{margin:clamp(14px,1.8vw,24px) 0 clamp(24px,3vw,40px)}
+
+/* the offer opens right under the hero cue — no dead zone */
+#offer{padding-top:clamp(32px,5vh,64px)}
