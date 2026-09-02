@@ -918,3 +918,22 @@ footer{
 .hero-basis{font-size:11px;line-height:1.8;letter-spacing:.18em}
 /* footer meta: same mono voice, one step up from 10px */
 .footer-meta{font-size:11px}
+
+/* ---------- 16. TYPE SCALE 2026-09-03 — one modular scale (≈1.25 from a 17px body), display capped, nothing under 12px ----------
+   Before: body 15–17px, mono labels 10–11px, display up to 99px (hero) / 86px (contact) / 51px (titles) — a 6:1 spread that read as
+   "some text huge, the rest tiny" on a 14" Retina. After: body 16–18, labels 12, tags 11.5, titles ≤42, hero ≤74, contact ≤58. */
+body{font-size:clamp(16px,1.1vw,18px)}
+.hero-name{font-size:clamp(2.6rem,6vw,4.6rem)}
+.hero-claim{font-size:clamp(1.2rem,2.1vw,1.75rem)}
+.hero-kicker{font-size:13px}
+.hero-basis{font-size:12px}
+.section-title{font-size:clamp(1.8rem,3.2vw,2.6rem)}
+.contact-title{font-size:clamp(2.2rem,5vw,3.6rem)}
+#offer .method-line,.method-line{font-size:clamp(1.4rem,2.6vw,2.1rem)}
+.feat-title{font-size:clamp(1.5rem,2.6vw,2.1rem)}
+.offer-name{font-size:clamp(1.3rem,1.8vw,1.6rem)}
+.epigraph{font-size:clamp(16px,1.25vw,18px)}
+.feat-blurb,.card-blurb,.offer-desc,.contact-blurb,.how-line,.proof-frame,.footer-claim{font-size:clamp(16px,1.1vw,18px);line-height:1.6}
+/* the mono voice: labels 12px, tags 11.5px — the same voice, one readable size */
+.section-label,.feat-kicker,.offer-idx,.card-idx,.how-label,.proof-meta,.cl-label,.nav-links a,.nm-links a,.offer-note,.feat-open,.card-play,.btn-hire,.tv-btn,.tv-full,.chip,.footer-meta{font-size:12px}
+.feat-tags li,.card-tags li{font-size:11.5px}
