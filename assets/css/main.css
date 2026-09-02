@@ -943,3 +943,10 @@ body{font-size:clamp(16px,1.1vw,18px)}
    now use DM Sans 500, one step smaller, tighter leading. Serif stays for the name and the section titles. */
 .hero-claim{font-family:var(--sans);font-style:normal;font-weight:500;font-size:clamp(1.15rem,1.9vw,1.55rem);line-height:1.35;letter-spacing:-.005em}
 .method-line{font-family:var(--sans);font-style:normal;font-weight:500;font-size:clamp(1.2rem,2vw,1.65rem);line-height:1.4;letter-spacing:-.005em;max-width:34ch}
+
+/* ---------- 18. COLOR BY ROLE 2026-09-03 (tentative, Lorenzo to confirm) ----------
+   Gold = the small mono system voice only (labels, kickers, tags, buttons, links). Prose you read is ivory when it is a
+   statement, dim when it is body text. Gold never sits on a sentence — so the eye learns one rule. */
+.hero-claim{color:var(--ivory)}
+.hero-basis{color:var(--dim)}
+.method-line .method-gold{color:var(--ivory)}
