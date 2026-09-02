@@ -199,7 +199,7 @@ if (!reduced && window.Lenis && window.gsap && window.ScrollTrigger) {
   lenis.on('scroll', ScrollTrigger.update);
   toTop();                                  // now that Lenis and ScrollTrigger both exist
 
-  document.querySelectorAll('.section-head, .feat, .card, .pub, .edu-item, .exp-item, .creds, .contact-link, .offer-item, .offer-note')
+  document.querySelectorAll('.section-head, .feat, .card, .pub, .edu-item, .exp-item, .creds, .contact-link, .offer-item, .offer-note, .proof-item, .proof-more, .how-line')
     .forEach(el => gsap.fromTo(el,
       { y: 26, opacity: 0 },
       { y: 0, opacity: 1, duration: .8, ease: 'power2.out',
