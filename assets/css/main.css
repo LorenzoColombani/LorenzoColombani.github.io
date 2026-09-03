@@ -1000,4 +1000,4 @@ body{font-size:clamp(16px,1.1vw,18px)}
 .nm-icon:hover,.nm-icon:focus-visible{color:var(--gold)}
 .nm-icon .nav-svg{width:18px;height:18px}
 .proof-cta-arrow .ext-glyph{width:13px;height:13px;vertical-align:-1px}
-.card-lab{box-shadow:inset 0 0 0 1px var(--gold-line)}
+.card-background{box-shadow:inset 0 0 0 1px var(--gold-line)}
