@@ -958,3 +958,20 @@ body{font-size:clamp(16px,1.1vw,18px)}
 .card-mark .ext-glyph,.pub-go .ext-glyph{width:13px;height:13px;vertical-align:-1px}
 .btn-hire .ext-glyph,.feat-open .ext-glyph{width:12px;height:12px}
 .cl-value .ext-glyph{width:.8em;height:.8em;color:var(--gold);margin-left:.15em}
+
+/* ---------- 19. LAB ON THE HOME SCALE 2026-09-03 — the dossier never got pass 16. Measured at 1200px before: mono voice 10–11px
+   (home: 12), body 14.7–15px (home: 16–18 / 1.6), row titles 19px (home row title = offer-name, 21–26px). Same voice, same sizes. */
+.pub-venue,.rail,.item-org,.creds-title,.cred-meta{font-size:12px;line-height:1.6}
+.pub-venue{margin-bottom:8px}
+.creds-title{letter-spacing:.24em}
+.pub-desc,.item-desc,.item-points li,.cred-name{font-size:clamp(16px,1.1vw,18px);line-height:1.6}
+.pub-desc,.item-desc{margin-top:10px}
+.item-points{margin-top:14px;gap:8px}
+.item-points li::before{top:.7em}
+.pub-title,.item-title{font-size:clamp(1.3rem,1.8vw,1.6rem);line-height:1.25;letter-spacing:-.01em}
+.edu-item,.exp-item{grid-template-columns:minmax(140px,180px) minmax(0,1fr)}
+.rail{padding-top:6px}
+.item-org{margin-top:6px}
+.creds-list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.cred-item{padding:20px 22px;gap:8px}
+.cred-name{line-height:1.4}
