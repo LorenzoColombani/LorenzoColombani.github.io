@@ -889,8 +889,8 @@ footer{
 .proof-link:hover .proof-fact{color:var(--gold)}
 
 /* the lab page opens under the fixed nav — no 100svh hero there */
-.lab-intro{padding-top:clamp(150px,24vh,230px)}
-.lab-intro .epigraph{margin-top:clamp(18px,2.4vw,28px)}
+.bg-intro{padding-top:clamp(150px,24vh,230px)}
+.bg-intro .epigraph{margin-top:clamp(18px,2.4vw,28px)}
 
 @media (max-width:720px){
   .offer-grid{grid-template-columns:1fr}
@@ -1000,4 +1000,13 @@ body{font-size:clamp(16px,1.1vw,18px)}
 .nm-icon:hover,.nm-icon:focus-visible{color:var(--gold)}
 .nm-icon .nav-svg{width:18px;height:18px}
 .proof-cta-arrow .ext-glyph{width:13px;height:13px;vertical-align:-1px}
-.card-background{box-shadow:inset 0 0 0 1px var(--gold-line)}
+/* the Background card = the same door as the Career cell: gold frame and tint, the button voice, gold fill on hover */
+.card-background{background:rgba(212,165,116,.07);border-color:var(--gold-line-hi);box-shadow:inset 0 0 0 1px var(--gold-line-hi)}
+.card-background .card-idx{opacity:1}
+.card-background .card-title{font:500 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-top:2px}
+.card-background .card-blurb{font-family:var(--serif);font-weight:600;font-size:clamp(1.05rem,1.35vw,1.3rem);line-height:1.35;color:var(--ivory)}
+.card-background .card-mark{color:var(--gold)}
+.card-background:hover,.card-background:has(.card-title a:focus-visible){background:var(--gold);border-color:var(--gold);transform:translateY(-3px)}
+.card-background:hover .card-title a,.card-background:hover .card-blurb,.card-background:hover .card-idx,.card-background:hover .card-mark,.card-background:hover .card-tags li{color:var(--stage)}
+.card-background:hover .card-tags li{border-color:rgba(11,10,16,.35);opacity:1}
+.card-background:hover .card-mark{transform:translate(2px,-2px)}
