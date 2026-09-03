@@ -1010,3 +1010,9 @@ body{font-size:clamp(16px,1.1vw,18px)}
 .card-background:hover .card-title a,.card-background:hover .card-blurb,.card-background:hover .card-idx,.card-background:hover .card-mark,.card-background:hover .card-tags li{color:var(--stage)}
 .card-background:hover .card-tags li{border-color:rgba(11,10,16,.35);opacity:1}
 .card-background:hover .card-mark{transform:translate(2px,-2px)}
+
+/* phone: the dossier date rail stacks above the entry — a 180px rail left 156px of text at 390px */
+@media (max-width:720px){
+  .edu-item,.exp-item{grid-template-columns:1fr;gap:8px}
+  .rail{border-left:0;padding-left:0;padding-top:0}
+}
