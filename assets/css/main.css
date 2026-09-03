@@ -988,3 +988,16 @@ body{font-size:clamp(16px,1.1vw,18px)}
 .proof-link:hover .proof-cta,.proof-link:hover .proof-fact,.proof-link:focus-visible .proof-cta,.proof-link:focus-visible .proof-fact{color:var(--stage)}
 .proof-link:hover .proof-cta-arrow{transform:translateX(4px)}
 @media (prefers-reduced-motion:reduce){.proof-cta-arrow{transition:none}}
+
+/* ---------- 21. NAV SOCIAL ICONS + LAB CARD 2026-09-03 ---------- */
+.nav-links{align-items:center}
+.nav-links .nav-icon a{display:inline-flex;align-items:center;justify-content:center;padding:6px;margin:0}
+.nav-links .nav-icon:first-of-type{margin-left:clamp(2px,.6vw,8px)}
+.nav-svg{display:block;width:15px;height:15px}
+.nav-links a:hover .nav-svg,.nav-links a:focus-visible .nav-svg{color:var(--gold)}
+.nm-foot{gap:18px}
+.nm-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:var(--dim);transition:color .28s var(--ease)}
+.nm-icon:hover,.nm-icon:focus-visible{color:var(--gold)}
+.nm-icon .nav-svg{width:18px;height:18px}
+.proof-cta-arrow .ext-glyph{width:13px;height:13px;vertical-align:-1px}
+.card-lab{box-shadow:inset 0 0 0 1px var(--gold-line)}
