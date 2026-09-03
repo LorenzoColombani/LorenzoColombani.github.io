@@ -1016,3 +1016,5 @@ body{font-size:clamp(16px,1.1vw,18px)}
   .edu-item,.exp-item{grid-template-columns:1fr;gap:8px}
   .rail{border-left:0;padding-left:0;padding-top:0}
 }
+/* tap target: Hire me measured 41px tall on a phone — 44 minimum */
+.btn-hire{min-height:44px}
