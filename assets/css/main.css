@@ -975,3 +975,16 @@ body{font-size:clamp(16px,1.1vw,18px)}
 .creds-list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
 .cred-item{padding:20px 22px;gap:8px}
 .cred-name{line-height:1.4}
+
+/* ---------- 20. THE LAB DOOR 2026-09-03 — DOET: the Lab had no signifier on the home (a 12px nav word + a sixth grid cell styled
+   like the five facts). The cell is now a button: gold frame and tint, the Hire-me voice, arrow that moves. Same cell, so the
+   2×3 grid stays whole — a full-width row would have orphaned the fifth fact. ---------- */
+.proof-item.is-link{background:rgba(212,165,116,.07);box-shadow:inset 0 0 0 1px var(--gold-line-hi)}
+.proof-link{justify-content:center;gap:10px;transition:background .3s var(--ease),box-shadow .3s var(--ease)}
+.proof-cta{display:inline-flex;align-items:center;gap:10px;font:500 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.proof-cta-arrow{display:inline-block;transition:transform .3s var(--ease)}
+.proof-link .proof-fact{color:var(--ivory)}
+.proof-link:hover,.proof-link:focus-visible{background:var(--gold)}
+.proof-link:hover .proof-cta,.proof-link:hover .proof-fact,.proof-link:focus-visible .proof-cta,.proof-link:focus-visible .proof-fact{color:var(--stage)}
+.proof-link:hover .proof-cta-arrow{transform:translateX(4px)}
+@media (prefers-reduced-motion:reduce){.proof-cta-arrow{transition:none}}
