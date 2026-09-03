@@ -950,3 +950,11 @@ body{font-size:clamp(16px,1.1vw,18px)}
 .hero-claim{color:var(--ivory)}
 .hero-basis{color:var(--dim)}
 .method-line .method-gold{color:var(--ivory)}
+
+/* ---------- 18. EXTERNAL-LINK GLYPH 2026-09-03 — the box-arrow icon from the Cantina pattern replaces the ↗ character
+   everywhere (Hire me, Open links, card marks, dossier rows, contact values). Inherits color from its wrapper. ---------- */
+.ext-glyph{display:inline-block;width:1em;height:1em;vertical-align:-.12em;color:currentColor}
+.feat-mark .ext-glyph{width:13px;height:13px;vertical-align:0}
+.card-mark .ext-glyph,.pub-go .ext-glyph{width:13px;height:13px;vertical-align:-1px}
+.btn-hire .ext-glyph,.feat-open .ext-glyph{width:12px;height:12px}
+.cl-value .ext-glyph{width:.8em;height:.8em;color:var(--gold);margin-left:.15em}
