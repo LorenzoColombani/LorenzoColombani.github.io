@@ -137,6 +137,34 @@ function refuseFocusSteal(frame, closeBtn) {
   }, 160);
 }
 
+/* Escape stops closing a live embed the moment the visitor clicks INTO it: the
+   frame is cross-origin, so it swallows every key and there is no way to listen
+   inside it. refuseFocusSteal above only guards the first three seconds, when
+   the framed site grabs focus by itself — it was never about the visitor.
+   Reproduced on the live site 2026-09-04: click the film, press Escape, nothing.
+   It never showed up locally, because a local server is refused the frame and
+   focus therefore never leaves us.
+
+   So take the key back the moment the pointer returns to our own chrome. A
+   pointermove over the frame belongs to the frame and never reaches us, so this
+   fires exactly when the cursor is on the backdrop or the bar — which is where
+   it already is when a hand is on its way to Escape or to the ✕. The backdrop
+   also closes on click, because a full-screen overlay should. */
+function keepKeysReachable(host, closeBtn, { backdropCloses = true } = {}) {
+  const reclaim = () => {
+    if (closeBtn.isConnected && document.activeElement !== closeBtn) {
+      closeBtn.focus({ preventScroll: true });
+    }
+  };
+  host.addEventListener('pointermove', reclaim, { passive: true });
+  host.addEventListener('pointerenter', reclaim, { passive: true });
+  // only the two modal surfaces have a backdrop; the in-page preview's
+  // surround is page, and clicking the page must not close the preview
+  if (backdropCloses) {
+    host.addEventListener('pointerdown', e => { if (e.target === host) closeLive(); });
+  }
+}
+
 function closeButton() {
   const x = document.createElement('button');
   x.type = 'button';
@@ -183,6 +211,7 @@ function openInPane(pane, data, btn) {
   // widget frames are native (fluid) — only the scaled ones need re-scaling
   live = { host: wrap, restoreFocus: btn, scaled: isWidget ? [] : [{ frame, pane }] };
   x.focus();
+  keepKeysReachable(wrap, x, { backdropCloses: false });
   refuseFocusSteal(frame, x);
   announce(true);
   window.SRSound?.play('on');
@@ -287,6 +316,7 @@ function openStage(feat, btn) {
   }
 
   x.focus();
+  keepKeysReachable(dlg, x);
   if (frame) refuseFocusSteal(frame, x);
   announce(true);
   window.SRSound?.play('on');
@@ -328,6 +358,7 @@ function openProjector(data, btn) {
   // `small` chose native (fluid) vs scaled at open; only the scaled one re-scales
   live = { host: dlg, restoreFocus: btn, isModal: true, scaled: small ? [] : [{ frame, pane }] };
   x.focus();
+  keepKeysReachable(dlg, x);
   refuseFocusSteal(frame, x);
   announce(true);
   window.SRSound?.play('on');

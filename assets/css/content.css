@@ -200,3 +200,56 @@ pre.code{
 /* the closing action — the four lenses agreed this was the site's worst gap:
    eight of the twelve pages ended with no way to act */
 .doc .closer .contact-links{margin-top:clamp(20px,2.4vw,30px)}
+
+/* ============================================================
+   THE SECTION RAIL — where am I inside this page, and what is left.
+
+   Built for the document pages because the film transport cannot serve them:
+   it resolves its ticks from the home's section ids, so on a case study it
+   renders as a fill with no landmarks. The rail takes over there and the
+   transport is hidden, so a page never carries two progress devices.
+
+   Sizes come from the site's own floors: the dot is 5px because the transport's
+   tick is 1px and this one has to read as pressable, and the hit area is 44px
+   because that is the tap target main.css sets for .btn-hire. The label lives
+   on hover and focus so the resting state is six quiet marks, not a menu.
+   ============================================================ */
+.srail{display:none}
+
+@media (min-width:1100px){
+  body:has(main.doc) #transport{display:none}   /* one wayfinding device per page */
+
+  .srail{
+    display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+    position:fixed;top:50%;right:calc(18px + var(--safe-r,0px));transform:translateY(-50%);
+    z-index:54;                                   /* under the nav (55), over the page */
+  }
+  .srail-dot{
+    position:relative;display:flex;align-items:center;justify-content:flex-end;
+    width:44px;height:26px;padding:0;border:0;background:none;cursor:pointer;
+  }
+  /* the mark itself — the button is the target, this is the signifier */
+  .srail-dot::after{
+    content:"";width:5px;height:5px;border-radius:50%;
+    background:var(--gold-line-hi);
+    transition:background .3s var(--ease),width .3s var(--ease),height .3s var(--ease);
+  }
+  .srail-dot:hover::after,.srail-dot:focus-visible::after{background:var(--gold)}
+  .srail-dot.is-on::after{width:7px;height:7px;background:var(--gold)}
+
+  .srail-label{
+    position:absolute;right:24px;white-space:nowrap;
+    font:400 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dim);opacity:0;transform:translateX(6px);pointer-events:none;
+    transition:opacity .3s var(--ease),transform .3s var(--ease),color .3s var(--ease);
+  }
+  /* hovering anywhere on the rail reveals the whole map, which is the question
+     you are actually asking when you reach for it */
+  .srail:hover .srail-label,.srail-dot:focus-visible .srail-label{opacity:1;transform:none}
+  .srail-dot:hover .srail-label,.srail-dot.is-on .srail-label{color:var(--gold)}
+  .srail:hover .srail-dot.is-on .srail-label{color:var(--gold)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .srail-dot::after,.srail-label{transition:none}
+}
