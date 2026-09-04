@@ -83,6 +83,15 @@ export function initSound() {
     s.start();
   }
 
+  /* Both stores, on both revert paths. A resume that cannot start would
+     otherwise re-arm itself on every page of the visit — a context, a fetch and
+     a decode each time, only to flip the chip back — and leave localStorage
+     claiming 'on' over silence. */
+  function disarm() {
+    store.set('off');
+    try { sessionStorage.setItem(KEY, 'off'); } catch { /* politeness only */ }
+  }
+
   async function set(v) {
     on = v;
     store.set(v ? 'on' : 'off');
@@ -98,6 +107,7 @@ export function initSound() {
         on = false;
         chip.setAttribute('aria-pressed', 'false');
         label.textContent = 'SOUND OFF';
+        disarm();     // or an offline or missing score re-arms on every page
         return;
       }
       if (!on) return;   // toggled OFF while the score was fetching — stay silent
@@ -112,12 +122,7 @@ export function initSound() {
         on = false;
         chip.setAttribute('aria-pressed', 'false');
         label.textContent = 'SOUND OFF';
-        /* Clear both stores, or a resume that cannot start re-arms itself on
-           every page of the visit — constructing a context, fetching the score
-           and decoding it each time, only to flip the chip back. It also left
-           localStorage claiming 'on' over silence. */
-        store.set('off');
-        try { sessionStorage.setItem(KEY, 'off'); } catch { /* politeness only */ }
+        disarm();
         return;
       }
       ramp(MUSIC_GAIN, 1.2);

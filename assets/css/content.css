@@ -147,12 +147,13 @@ pre.code{
    (width then depended on the item count) and the second added one filler cell
    (which at six items produced a spurious third row). The rule moves onto the
    cells, so the grid stops caring how many there are. */
-/* The grid paints one hairline per edge through 1px gaps, the way main.css
-   always did — per-cell insets doubled every interior edge to 2px. What changed
-   is only that the cells carry the ground, so an unfilled cell shows the page
-   rather than a lit square, and the layout stops caring about the item count. */
-.doc .creds-list{background:var(--hairline);border:1px solid var(--hairline);gap:1px}
-.doc .cred-item{background:var(--stage)}
+/* Nothing here about the hairline: main.css already paints one line per edge
+   through 1px gaps, and restating that was two no-op declarations under a
+   comment claiming an effect they did not have. Per-cell insets, which an
+   earlier pass tried, doubled every interior edge to 2px. The only rule that
+   does any work is auto-fit above — it collapses tracks left empty across the
+   whole grid, which is what stops an unfilled cell showing as a lit square and
+   what removes the dependency on the item count. */
 
 /* ============================================================
    STATES — what the four-lens audit of 2026-09-04 found missing.

@@ -182,6 +182,12 @@ function build() {
       const target = group.heading || section;
       target.tabIndex = -1;
       target.focus({ preventScroll: true });
+      /* setCurrent's guard refuses to move the tab stop while focus is inside
+         the rail, which is right for the arrow keys and wrong here: a click
+         focuses the dot, so the guard held and the stop stayed on chapter one
+         until the reader happened to scroll into a different chapter. Focus has
+         just left the rail for the heading, so set it explicitly. */
+      dots.forEach(({ b }, n) => { b.tabIndex = n === i ? 0 : -1; });
     });
 
     rail.appendChild(b);
