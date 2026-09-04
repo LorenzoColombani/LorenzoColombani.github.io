@@ -263,7 +263,7 @@ pre.code{
    device would get marks it cannot read and no transport either. */
 @media (min-width:1240px) and (hover:hover) and (pointer:fine){
   body:has(main.doc) #transport{display:none}   /* one wayfinding device per page */
-  body:has(main.doc) .srail{
+  .srail{
     display:flex;flex-direction:column;align-items:flex-end;gap:2px;
     position:fixed;top:50%;transform:translateY(-50%);
     /* anchored to the content column, not to the viewport, so the marks stay a
@@ -412,3 +412,11 @@ pre.code{
 }
 .doc .contact-links .contact-link:first-child:hover{background:rgba(212,165,116,.24)}
 .doc .contact-links .contact-link:not(:first-child) .cl-value{color:var(--dim)}
+
+/* A rail jump moves focus to the chapter heading, which is right — a jump a
+   keyboard user cannot continue from is half a jump. It should not paint the
+   global focus ring around a whole heading for someone who used a mouse, and
+   Chrome counts programmatic focus on a tabindex="-1" element as focus-visible,
+   so it did. sectionrail.js marks the pointer case; the keyboard case keeps its
+   ring, which is the whole point of having one. */
+[data-quiet-focus]:focus-visible{outline:none}

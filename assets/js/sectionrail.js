@@ -47,7 +47,10 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const CAN_PAINT = matchMedia('(min-width:1240px) and (hover:hover) and (pointer:fine)');
 
 function build() {
-  const main = document.querySelector('main.doc');
+  /* Any page that loads this file, not only the twelve document pages —
+     Lorenzo asked for the rail on the home too. The home keeps its film
+     transport as well; two devices there is his call, made knowingly. */
+  const main = document.querySelector('main');
   if (!main) return;
   if (!CAN_PAINT.matches) return;
 
@@ -66,8 +69,15 @@ function build() {
        name no sighted reader can see is not a chapter — it folds into the one
        above, which is where it belongs anyway. */
     const heading = [...el.querySelectorAll('h1, h2')].find(h => !h.classList.contains('sr-only'));
-    if (heading) {
-      groups.push({ els: [...orphans, el], name: heading.textContent.trim().replace(/\s+/g, ' '), heading });
+    if (heading || el.dataset.railLabel) {
+      /* data-rail-label lets a section name itself, for the case where the
+         visible heading is not a usable label — the home's h1 carries the name
+         and the whole claim. The trailing full stop goes: the home writes its
+         headings as sentences ("Selected work."), and a column of labels is a
+         list, not prose. */
+      const name = (el.dataset.railLabel || heading.textContent)
+        .trim().replace(/\s+/g, ' ').replace(/\.$/, '');
+      groups.push({ els: [...orphans, el], name, heading: heading || el });
       orphans = [];
     } else if (groups.length) {
       groups[groups.length - 1].els.push(el);
@@ -158,7 +168,7 @@ function build() {
     cap.textContent = group.name;
     b.appendChild(cap);
 
-    b.addEventListener('click', () => {
+    b.addEventListener('click', e => {
       /* Acknowledge the press before reporting the result — otherwise nothing
          changes until the scroll carries the target into the observer band,
          several hundred milliseconds later. */
@@ -181,6 +191,16 @@ function build() {
          acknowledgement larger than the screen. */
       const target = group.heading || section;
       target.tabIndex = -1;
+      /* Move focus for everyone — a jump that does not is a jump a keyboard
+         user cannot continue from. But a mouse click should not paint the
+         global gold focus ring around a whole heading, and Chrome treats
+         programmatic focus on a tabindex="-1" element as focus-visible, so it
+         did. A click from Enter or Space reports detail 0; a pointer reports 1
+         or more. Quiet the ring for the pointer only, and let it go on blur. */
+      if (e.detail !== 0) {
+        target.dataset.quietFocus = '1';
+        target.addEventListener('blur', () => delete target.dataset.quietFocus, { once: true });
+      }
       target.focus({ preventScroll: true });
       /* setCurrent's guard refuses to move the tab stop while focus is inside
          the rail, which is right for the arrow keys and wrong here: a click
