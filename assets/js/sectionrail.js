@@ -49,7 +49,11 @@ function build() {
   let orphans = [];
   for (const el of main.children) {
     if (el.tagName !== 'SECTION') continue;
-    const heading = el.querySelector('h1, h2');
+    /* A visible heading. The screen block on a case study carries an sr-only
+       h2 so the document hierarchy does not skip a level, but a chapter whose
+       name no sighted reader can see is not a chapter — it folds into the one
+       above, which is where it belongs anyway. */
+    const heading = [...el.querySelectorAll('h1, h2')].find(h => !h.classList.contains('sr-only'));
     if (heading) {
       groups.push({ els: [...orphans, el], name: heading.textContent.trim().replace(/\s+/g, ' '), heading });
       orphans = [];
@@ -97,7 +101,7 @@ function build() {
   }
 
   const dots = groups.map((group, i) => {
-    const section = group.els.find(el => el.querySelector('h1, h2')) || group.els[0];
+    const section = group.els.find(el => el.contains(group.heading)) || group.els[0];
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'srail-dot';
