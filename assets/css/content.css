@@ -126,4 +126,77 @@ pre.code{
    empty square, because the grid paints its own hairline background. */
 .doc .creds{max-width:none}
 .doc .creds-list{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
-.doc .cred-item:last-child{grid-column:auto/-1}
+.doc .creds-list::after{content:"";background:var(--stage)}   /* paints the empty track;
+   stretching the last cell instead made its width depend on the item count — 6 items gave
+   the Practice cell one column, 4 gave it three. */
+
+/* ============================================================
+   STATES — what the four-lens audit of 2026-09-04 found missing.
+
+   All three schema lenses landed on the same root cause: main.css:87 resets
+   every link to `color:inherit;text-decoration:none`, and the components
+   these pages borrowed from the home were never interactive there, so they
+   arrived without their hover, active or resting states. A link inside a
+   heading or a grid cell rendered byte-identical to the text around it, and
+   on /work/ the only target was the words — 113x34px inside a 900x159px row,
+   2.7% of it. Everything below is scoped to .doc.
+   ============================================================ */
+
+/* the whole row is the target, the way .card and .feat-case already do it */
+.doc .exp-item:has(.item-title a){position:relative;transition:background .34s var(--ease)}
+.doc .exp-item:has(.item-title a):hover{background:rgba(212,165,116,.05)}
+.doc .item-title a::after{content:"";position:absolute;inset:0}
+.doc .exp-item:has(.item-title a:hover) .item-title a,
+.doc .exp-item:has(.item-title a:focus-visible) .item-title a{color:var(--gold)}
+.doc .exp-item:has(.item-title a:focus-visible){background:rgba(212,165,116,.05)}
+
+/* a link inside a metadata cell needs to look like one at rest */
+.doc .cred-name a{
+  border-bottom:1px solid var(--gold-line-hi);
+  transition:color .3s var(--ease),border-color .3s var(--ease);
+}
+.doc .cred-name a:hover,.doc .cred-name a:focus-visible{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* the practice cards on /about/ lift on hover but only their words were the
+   target — the home solved this for .card at main.css:512 and :524 */
+.doc .offer-item{position:relative}
+.doc .offer-name a::after{content:"";position:absolute;inset:0}
+.doc .offer-item:has(.offer-name a:hover) .offer-name,
+.doc .offer-item:has(.offer-name a:focus-visible) .offer-name{color:var(--gold)}
+.doc .offer-item:has(.offer-name a:focus-visible){border-color:var(--gold-line-hi)}
+
+/* a prose link was ivory-on-dim at a measured 2.32:1 with a 1.60:1 underline.
+   The underline carries the signifier, so it has to be visible: gold-line-hi
+   measures 3.34:1 on the page ground, past the 3:1 WCAG G183 asks for. */
+.doc .prose a{border-bottom-color:var(--gold-line-hi);text-underline-offset:3px}
+
+/* five rows in /about/'s credentials list are <div class="pub-row"> — not
+   links — but main.css:561 keys the hover on the class, so they slid sideways
+   and turned gold under the cursor while doing nothing. */
+.doc div.pub-row:hover{padding-left:0;background:none}
+.doc div.pub-row:hover .pub-title{color:var(--ivory)}
+
+/* the shot pane is the biggest thing on the page and the only hover response
+   that leads nowhere: tv.js binds the buttons, never the image */
+.doc .feat-screen.is-shot:hover{transform:none;border-color:var(--hairline)}
+
+/* every state on these pages was a dim-to-gold swap, measured 1.28:1 — a hue
+   change with no luminance step, which vanishes in peripheral vision and
+   under deuteranopia. Pair the hue with a value change. */
+.doc .crumbs a:hover,.doc .pager a:hover .pager-label,.doc .practice-links a:hover{color:var(--ivory)}
+.doc .pager a:hover{color:var(--gold)}
+
+/* nothing on twelve pages said which one you were on, and the practice row
+   linked the page you were standing on */
+.doc [aria-current="page"]{color:var(--gold);cursor:default}
+.doc .practice-links [aria-current="page"]{border-bottom:1px solid var(--gold-line-hi);padding-bottom:3px}
+
+/* press acknowledgement: no :active rule existed anywhere in either sheet,
+   so a click on a link that triggers a document load returned nothing at all
+   between the press and the repaint */
+.doc .exp-item:has(.item-title a):active,.doc a.pub-row:active{background:rgba(212,165,116,.09)}
+.doc .btn-hire:active,.doc .pager a:active,.doc .practice-links a:active{opacity:.75}
+
+/* the closing action — the four lenses agreed this was the site's worst gap:
+   eight of the twelve pages ended with no way to act */
+.doc .closer .contact-links{margin-top:clamp(20px,2.4vw,30px)}

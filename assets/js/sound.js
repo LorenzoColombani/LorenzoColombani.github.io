@@ -38,7 +38,7 @@ export function initSound() {
       musicGain.gain.value = 0;
       musicGain.connect(ctx.destination);
 
-      const buf = await fetch('assets/audio/score.m4a')
+      const buf = await fetch('/assets/audio/score.m4a')
         .then(r => { if (!r.ok) throw new Error('score ' + r.status); return r.arrayBuffer(); })
         .then(b => ctx.decodeAudioData(b));
 
@@ -62,10 +62,14 @@ export function initSound() {
     g.linearRampToValueAtTime(to, ctx.currentTime + seconds);
   }
 
+  /* Both audio paths are root-absolute. They were document-relative, which is
+     the same thing on the home page and a 404 on every page in a subfolder —
+     so on /work/openbots/ the chip flipped to SOUND ON, the fetch rejected,
+     and it flipped silently back over silence. Found in the Stage 1 audit. */
   async function play(name) {                 // tv.js calls this
     if (!on || !ctx) return;
     const file = name === 'on' ? 'sfx-hud-on' : 'sfx-hud-blip';
-    sfx[file] ??= fetch(`assets/audio/${file}.mp3`)
+    sfx[file] ??= fetch(`/assets/audio/${file}.mp3`)
       .then(r => r.arrayBuffer())
       .then(b => ctx.decodeAudioData(b))
       .catch(() => null);
