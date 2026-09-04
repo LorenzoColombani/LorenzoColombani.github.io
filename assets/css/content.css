@@ -282,9 +282,13 @@ pre.code{
     position:absolute;right:2px;top:0;bottom:0;width:1px;
     background:var(--hairline);
   }
+  /* height, not scaleY: the fill is now a measured distance down the column to
+     the lit mark, and scaling also squashed the gradient into whatever fraction
+     was showing, so the ramp meant nothing until the page was fully read. */
   .srail-fill{
-    position:absolute;inset:0;transform-origin:50% 0;transform:scaleY(0);
+    position:absolute;left:0;right:0;top:0;height:0;
     background:linear-gradient(to bottom,var(--gold-line-hi),var(--gold));
+    background-size:100% 400px;
   }
 
   .srail-dot{
@@ -333,9 +337,13 @@ pre.code{
        what pointer-events:none makes it — buys nothing at all. */
     transition:opacity .3s var(--ease) .45s,transform .3s var(--ease) .45s,color .3s var(--ease);
   }
-  /* hovering anywhere on the rail reveals the whole map, which is the question
-     you are actually asking when you reach for it */
-  .srail:hover .srail-label,.srail-dot:focus-visible .srail-label{
+  /* One label at a time, the one you are pointing at. Revealing the whole map
+     on rail hover was the intent — "what is on this page" is the question you
+     bring to a rail — but the margin is only empty on a document page. On the
+     home the column sits over the hero portrait, and five plated lines land
+     across a face. The usability lens asked for one at a time and it was right;
+     the lit mark already answers "where am I" without any label at all. */
+  .srail-dot:hover .srail-label,.srail-dot:focus-visible .srail-label{
     opacity:1;transform:none;
     transition-delay:.12s;            /* quick in, slow out */
   }

@@ -248,21 +248,48 @@ function build() {
      never light; and the spine needs a scroll position, not an intersection.
      Measuring covers all three, and seeds the opening state instead of asserting
      chapter one on a page that may have opened halfway down. */
+  /* The fill has to end at the mark that is lit. It used to be a plain scroll
+     fraction — scrollY over the scrollable height — while the lit mark is
+     chosen by chapter, and on a page with a tall hero and uneven sections those
+     two truths disagree visibly: the gold stopped between the first and second
+     marks while the third was lit. Lorenzo saw it immediately and he is right,
+     a progress line that does not reach its own current stop reads as broken
+     rather than as informative.
+     So it is measured in pixels down the column: to the lit mark, plus however
+     far you have read into that chapter, toward the next one. Still continuous,
+     and it can no longer contradict the dot beside it. */
+  const paintSpine = () => {
+    const here = dots[current] || dots[0];
+    if (!here) return;
+    const railTop = rail.getBoundingClientRect().top;
+    const centre = d => { const b = d.b.getBoundingClientRect(); return b.top - railTop + b.height / 2; };
+    let y = centre(here);
+    const next = dots[current + 1];
+    if (next) {
+      const a = here.els[0].getBoundingClientRect().top;
+      const b = next.els[0].getBoundingClientRect().top;
+      const span = b - a;
+      const read = span > 0 ? Math.min(1, Math.max(0, -a / span)) : 0;
+      y += read * (centre(next) - centre(here));
+    }
+    spineFill.style.height = `${Math.round(y)}px`;
+  };
+
   const measure = () => {
     /* The gate at build() is one-directional: a window that starts wide builds
        the rail, and narrowing below the threshold used to leave this running
        every frame for a column nobody can see any more. */
     if (!CAN_PAINT.matches) return;
     const max = document.documentElement.scrollHeight - innerHeight;
-    if (max > 0) spineFill.style.transform = `scaleY(${Math.min(1, scrollY / max)})`;
-    if (jumping()) return;
-    if (max > 0 && scrollY >= max - 2) { setCurrent(dots.length - 1); return; }
+    if (jumping()) { paintSpine(); return; }
+    if (max > 0 && scrollY >= max - 2) { setCurrent(dots.length - 1); paintSpine(); return; }
     const line = innerHeight * 0.25;
     let best = 0;
     dots.forEach(({ els }, i) => {
       if (els.some(el => el.getBoundingClientRect().top <= line)) best = i;
     });
     setCurrent(best);
+    paintSpine();
   };
 
   let raf = 0;
