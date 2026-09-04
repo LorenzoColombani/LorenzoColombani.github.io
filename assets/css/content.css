@@ -399,6 +399,13 @@ pre.code{
    1.06:1 — below the site's own hairline, so invisible. The visible difference
    was entirely the demotion of the row beside it. The mail row now carries a
    gold edge, which is a real signal at any tint. */
+/* main.css gives these rows zero left padding, so the label starts flush at the
+   row's edge — and the gold bar was painting straight over the first letter.
+   "EMAIL" read as "MAIL". Every row in the block gets the same gutter, so the
+   labels stay in one column and the bar has somewhere of its own to sit; the
+   hover shift main.css animates is preserved, just from the new resting value. */
+.doc .contact-links .contact-link{padding-left:18px}
+.doc .contact-links .contact-link:hover{padding-left:32px}
 .doc .contact-links .contact-link:first-child{
   background:rgba(212,165,116,.16);
   box-shadow:inset 3px 0 0 var(--gold);
