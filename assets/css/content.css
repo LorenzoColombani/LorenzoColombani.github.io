@@ -253,3 +253,13 @@ pre.code{
 @media (prefers-reduced-motion:reduce){
   .srail-dot::after,.srail-label{transition:none}
 }
+
+/* the hire button opens a mail client, which is a surprise unless the button
+   says so — the site's own rule, stated in tv.js, is that an affordance tells
+   the truth about what will happen. Written by hire.js, so it never appears
+   when the script has not run and the link is still a plain mailto. */
+.hire-hint{
+  display:block;margin-top:10px;
+  font:400 10px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
