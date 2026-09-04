@@ -319,12 +319,30 @@ body:has(main.doc) #transport{display:none}
   .srail-dot::after,.srail-label,.srail-fill{transition:none}
 }
 
-/* the hire button opens a mail client, which is a surprise unless the button
-   says so — the site's own rule, stated in tv.js, is that an affordance tells
-   the truth about what will happen. Written by hire.js, so it never appears
-   when the script has not run and the link is still a plain mailto. */
+/* The hire affordance opens a mail client, which is a surprise unless it says
+   so — the site's own rule, stated in tv.js, is that an affordance tells the
+   truth about what will happen. Written by hire.js, so it never appears when
+   the script has not run and the link is still a plain mailto.
+
+   It was 10px uppercase mono in --dim: the site's smallest, most-skipped
+   register, the one the whole web uses for disclaimers, with an email address
+   inside it rendering as LORENZO.COLOMBANI@LIVE.FR. Two lenses called that a
+   signifier present and unseen. It is a promise, not fine print, so it reads
+   at the body's small size in sentence case. */
 .hire-hint{
-  display:block;margin-top:10px;
-  font:400 10px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;
-  color:var(--dim);
+  display:block;margin-top:12px;max-width:52ch;
+  font-size:.86rem;line-height:1.5;color:var(--dim);
 }
+/* after the click it stops being a label and becomes the recovery */
+.hire-hint.is-live{color:var(--ivory)}
+
+/* the static address beside the button — the fallback for a swallowed click,
+   present in the markup so it survives the script being blocked */
+.hire-address{margin-top:14px;font-size:.86rem;line-height:1.5;color:var(--dim);max-width:52ch}
+.hire-address strong{color:var(--ivory);font-weight:500}
+.hire-address a{
+  color:var(--ivory);text-decoration:none;
+  border-bottom:1px solid var(--gold-line-hi);
+  transition:color .3s var(--ease),border-color .3s var(--ease);
+}
+.hire-address a:hover,.hire-address a:focus-visible{color:var(--gold);border-bottom-color:var(--gold)}
