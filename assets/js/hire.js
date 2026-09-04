@@ -110,6 +110,11 @@ function build() {
       a.dataset.hire = '1';
       const hint = document.createElement('span');
       hint.className = 'hire-hint';
+      /* Set up front, not at click time: a live region created and filled in the
+         same tick is unreliably announced. The recovery line below is the one
+         message a screen-reader user most needs — a mailto that silently does
+         nothing is hardest to diagnose without sight of the page. */
+      hint.setAttribute('aria-live', 'polite');
       hint.textContent = 'Opens a draft that is already written, with room for what you need.';
       /* After the list, never inside it. .contact-links is a bordered column
          and each row carries its own rule, so a caption dropped between Email

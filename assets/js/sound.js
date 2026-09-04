@@ -112,6 +112,12 @@ export function initSound() {
         on = false;
         chip.setAttribute('aria-pressed', 'false');
         label.textContent = 'SOUND OFF';
+        /* Clear both stores, or a resume that cannot start re-arms itself on
+           every page of the visit — constructing a context, fetching the score
+           and decoding it each time, only to flip the chip back. It also left
+           localStorage claiming 'on' over silence. */
+        store.set('off');
+        try { sessionStorage.setItem(KEY, 'off'); } catch { /* politeness only */ }
         return;
       }
       ramp(MUSIC_GAIN, 1.2);

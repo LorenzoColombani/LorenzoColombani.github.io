@@ -24,20 +24,32 @@
    arrived from — on a site whose whole job is a single visit ending in an email.
    Buttons, and the cost is that a jump has no undo but the scroll.
 
-   NO VENDOR DEPENDENCY. An IntersectionObserver picks the current chapter with a
-   scroll-position fallback under it, so the rail costs nothing on load and keeps
-   working if the vendor bundle is ever dropped from these pages. Jumps go
-   through Lenis when main.js has published it and reduced motion is not asked
-   for, and fall back to the native scroll otherwise. The landing offset lives in
-   CSS (`scroll-margin-top`) so both paths land in the same place. */
+   NO VENDOR DEPENDENCY. The current chapter is measured from scroll position on
+   a rAF, so the rail costs nothing on load and keeps working if the vendor
+   bundle is ever dropped from these pages. Jumps go through Lenis when main.js
+   has published it and reduced motion is not asked for, and fall back to the
+   native scroll otherwise — with the landing offset passed explicitly, because
+   Lenis has no scroll-margin support and would otherwise land 72px away from
+   where the CSS puts the native path. */
 
 const MIN_SECTIONS = 3;
+/* Kept in step with `.doc > section{scroll-margin-top}` in content.css, which
+   is what the native path obeys. */
+const LAND_OFFSET = 72;
 const MIN_PAGE_HEIGHT = 2.5;      // viewports; a short page does not need a rail
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* The same conditions the CSS uses to paint the rail. Without this, build() ran
+   on every device — so a phone, where .srail is display:none and always will be,
+   still installed a scroll listener that read scrollHeight and called
+   getBoundingClientRect on eleven sections every animation frame, on top of
+   GSAP, ScrollTrigger and Lenis, for a component nobody can see. */
+const CAN_PAINT = matchMedia('(min-width:1240px) and (hover:hover) and (pointer:fine)');
 
 function build() {
   const main = document.querySelector('main.doc');
   if (!main) return;
+  if (!CAN_PAINT.matches) return;
 
   /* A mark is a chapter, and a chapter starts at a heading. Some sections carry
      no heading of their own — on a case study the screen and its metadata grid
@@ -75,7 +87,11 @@ function build() {
      editing the shared top bar on every page including the two live ones. The
      group is named, and every mark carries its own label and its position in the
      set, which is the contract the film transport already ships with. */
-  rail.setAttribute('role', 'group');
+  /* toolbar, not group: it tells assistive tech that the arrows walk this set,
+     which the roving tab stop otherwise leaves undiscoverable. Still not a
+     second navigation landmark, so the shared top bar needs no name. */
+  rail.setAttribute('role', 'toolbar');
+  rail.setAttribute('aria-orientation', 'vertical');
   rail.setAttribute('aria-label', 'Chapters on this page');
 
   const spine = document.createElement('span');
@@ -86,7 +102,22 @@ function build() {
   spine.appendChild(spineFill);
   rail.appendChild(spine);
 
-  let jumping = false;
+  /* A DEADLINE, NOT A LATCH. This was a boolean cleared by Lenis's onComplete,
+     and Lenis does not guarantee that callback: a wheel during the flight calls
+     a fresh scrollTo, which replaces the animation and orphans the previous
+     closure, and scrollTo bails outright without calling it while the instance
+     is stopped (tv.js stops it for every modal). Either path left the flag true
+     for the life of the document, and both consumers below bail on it — so the
+     lit mark, the aria-current and the whole current-chapter state froze while
+     the spine kept filling, which is worse than freezing outright: the device
+     half-works and lies. Reproduced: click a mark, flick the wheel, scroll back
+     to the top, and the rail still names the chapter you jumped to.
+     A deadline cannot fail to release, because time passes on its own. It is
+     also the pattern this codebase already uses for exactly this — see
+     refuseFocusSteal in tv.js. */
+  const FLIGHT_MS = 900;
+  let jumpingUntil = 0;
+  const jumping = () => performance.now() < jumpingUntil;
   let current = -1;
 
   function setCurrent(i) {
@@ -95,8 +126,16 @@ function build() {
     dots.forEach(({ b }, n) => {
       const on = n === i;
       b.classList.toggle('is-on', on);
-      if (on) b.setAttribute('aria-current', 'true');
+      /* "location" is the token defined for the current item in a set that is
+         not a page, a step or a date. */
+      if (on) b.setAttribute('aria-current', 'location');
       else b.removeAttribute('aria-current');
+      /* The single tab stop follows the reader. It used to sit on chapter one
+         forever, so tabbing into the rail at chapter eight landed at the top
+         and cost seven arrow presses — through a device whose whole purpose is
+         one press. Never while the rail has focus, which would move it under
+         the user mid-interaction. */
+      if (!rail.contains(document.activeElement)) b.tabIndex = on ? 0 : -1;
     });
   }
 
@@ -123,14 +162,18 @@ function build() {
       /* Acknowledge the press before reporting the result — otherwise nothing
          changes until the scroll carries the target into the observer band,
          several hundred milliseconds later. */
-      jumping = true;
+      jumpingUntil = performance.now() + (REDUCED ? 0 : FLIGHT_MS);
       setCurrent(i);
       const lenis = window.__srLenis;
       if (lenis && !REDUCED) {
-        lenis.scrollTo(section, { onComplete: () => { jumping = false; } });
+        /* The offset has to be passed: Lenis has no scroll-margin support at
+           all (grep the vendored build — zero mentions), so without it the
+           smooth path lands the heading at y=0, flush under the fixed bar,
+           while the reduced-motion path honours the CSS and lands it at 72.
+           One number, one place. */
+        lenis.scrollTo(section, { offset: -LAND_OFFSET });
       } else {
         section.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
-        setTimeout(() => { jumping = false; }, REDUCED ? 0 : 700);
       }
       /* A native anchor would have moved keyboard focus too. Focus the chapter's
          heading rather than the whole section: the global focus ring would
@@ -162,17 +205,15 @@ function build() {
      by not skipping. It is painted at the right edge either way. */
   main.parentNode.insertBefore(rail, main);
 
-  const io = new IntersectionObserver(entries => {
-    if (jumping) return;
-    for (const e of entries) {
-      if (e.isIntersecting) {
-        const i = dots.findIndex(d => d.els.includes(e.target));
-        if (i > -1) setCurrent(i);
-      }
-    }
-  }, { rootMargin: '-12% 0px -70% 0px', threshold: 0 });
-
-  dots.forEach(({ els }) => els.forEach(el => io.observe(el)));
+  /* One source of truth. There used to be an IntersectionObserver here as well,
+     with its own threshold (a 12%–30% band) against measure()'s 25% line, and
+     whichever fired last won — so the two could disagree, and a late observer
+     entry could overwrite the explicit "light the last chapter at the bottom of
+     the document" guarantee below. measure() already handles every case the
+     observer did, plus three it could not: a chapter shorter than the band, the
+     final chapter at maximum scroll, and the spine, which needs a scroll
+     position rather than an intersection. So the observer earned nothing and
+     cost a desync. */
 
   /* Three things the observer alone cannot do. Its band is 18% of the viewport,
      so a chapter shorter than that can cross without ever intersecting; at
@@ -184,7 +225,7 @@ function build() {
   const measure = () => {
     const max = document.documentElement.scrollHeight - innerHeight;
     if (max > 0) spineFill.style.transform = `scaleY(${Math.min(1, scrollY / max)})`;
-    if (jumping) return;
+    if (jumping()) return;
     if (max > 0 && scrollY >= max - 2) { setCurrent(dots.length - 1); return; }
     const line = innerHeight * 0.25;
     let best = 0;
@@ -202,8 +243,19 @@ function build() {
   measure();
 }
 
-if (document.readyState === 'loading') {
-  addEventListener('DOMContentLoaded', build, { once: true });
-} else {
+function boot() {
   build();
+  /* A window dragged wider, or a tablet turned, crosses the threshold — build
+     once when it does, and never twice. */
+  CAN_PAINT.addEventListener('change', function once() {
+    if (!CAN_PAINT.matches || document.querySelector('.srail')) return;
+    CAN_PAINT.removeEventListener('change', once);
+    build();
+  });
+}
+
+if (document.readyState === 'loading') {
+  addEventListener('DOMContentLoaded', boot, { once: true });
+} else {
+  boot();
 }
