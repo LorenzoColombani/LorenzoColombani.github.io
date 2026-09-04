@@ -101,8 +101,19 @@ export function initSound() {
         return;
       }
       if (!on) return;   // toggled OFF while the score was fetching — stay silent
-      await ctx.resume();
+      /* resume() can reject, and can resolve while leaving the context
+         suspended, when there is no user activation to spend — which is exactly
+         the case the session resume below introduces: a fresh document, nobody
+         has clicked anything yet. Unguarded, that left an ON chip over silence,
+         which is the one thing this module exists not to do. */
+      try { await ctx.resume(); } catch { /* handled by the state check below */ }
       if (!on) return;
+      if (ctx.state !== 'running') {
+        on = false;
+        chip.setAttribute('aria-pressed', 'false');
+        label.textContent = 'SOUND OFF';
+        return;
+      }
       ramp(MUSIC_GAIN, 1.2);
     } else {
       ramp(0, 0.6);
@@ -130,7 +141,12 @@ export function initSound() {
      If the context cannot start without a fresh gesture, set() already reverts
      the chip honestly rather than showing ON over silence. */
   try {
-    if (sessionStorage.getItem(KEY) === 'on') set(true);
+    if (sessionStorage.getItem(KEY) === 'on') {
+      /* set() reverts the chip honestly if the context will not start without a
+         gesture, so the worst case is the visitor pressing it once — the same
+         cost as before this existed, never an ON chip over silence. */
+      set(true);
+    }
   } catch { /* private mode: the choice simply does not carry, which is fine */ }
 
   window.SRSound = { play, get enabled() { return on; } };
