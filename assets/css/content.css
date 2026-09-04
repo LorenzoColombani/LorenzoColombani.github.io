@@ -1,7 +1,7 @@
 /* ============================================================
    CONTENT — the small additions the Stage 1 inner pages need.
-   Loads after main.css; adds only what main.css has no class for.
-   Tokens, type and spacing all come from main.css.
+   Loads after main.css and adds only what main.css has no class for;
+   tokens, type and spacing all come from there.
    ============================================================ */
 
 /* ---------- breadcrumb, above the page title ---------- */
@@ -46,7 +46,11 @@
 .feat-case::after{content:"";position:absolute;left:50%;top:50%;width:100%;height:44px;transform:translate(-50%,-50%)}
 .feat-case:hover{gap:14px;color:var(--gold)}
 
-/* ---------- previous / next, at the foot of a case study ---------- */
+/* ---------- previous / next, at the foot of a case study ----------
+   Markup contract — a div, NOT a nav (a second landmark makes html-validate
+   demand a name on every nav), and each link MUST carry the label span:
+   <div class="pager"><a href="/work/the-bridge/"><span class="pager-label">Previous</span>The Bridge</a>
+   <a href="/work/openbots/"><span class="pager-label">Next</span>OpenBots</a></div> */
 .pager{
   display:flex;justify-content:space-between;gap:clamp(20px,4vw,60px);
   margin-top:var(--sec-gap);padding-top:clamp(24px,3vw,36px);
@@ -63,9 +67,7 @@
 /* ---------- a still, with its caption ---------- */
 figure.still-frame{margin:clamp(28px,4vw,48px) 0;background:var(--surface);border:1px solid var(--hairline);border-radius:8px;overflow:hidden}
 figure.still-frame img{display:block;width:100%;height:auto}
-figure.still-frame figcaption{
-  padding:12px 16px;font:400 12px/1.5 var(--mono);letter-spacing:.06em;color:var(--dim);
-}
+figure.still-frame figcaption{padding:12px 16px;font:400 12px/1.5 var(--mono);letter-spacing:.06em;color:var(--dim)}
 
 /* ---------- a code block ---------- */
 pre.code{
