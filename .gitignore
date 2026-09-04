@@ -1,0 +1,11 @@
+# The identity project's scratch workspace. This clone lives inside
+# ~/Developer/lorenzo-identity, so a tool run from the wrong directory can
+# drop the ledger, the briefs and the review reports in here — it happened
+# twice on 2026-09-04. They belong to the private project repo, never to the
+# public site.
+.superpowers/
+
+# Playwright MCP writes here when it is driven from this directory.
+.playwright-mcp/
+
+.DS_Store
