@@ -204,54 +204,119 @@ pre.code{
 /* ============================================================
    THE SECTION RAIL — where am I inside this page, and what is left.
 
-   Built for the document pages because the film transport cannot serve them:
-   it resolves its ticks from the home's section ids, so on a case study it
-   renders as a fill with no landmarks. The rail takes over there and the
-   transport is hidden, so a page never carries two progress devices.
+   Built for the document pages because the film transport cannot serve them: it
+   resolves its ticks from the home's section ids, so on a case study it renders
+   as a fill with no landmarks. The rail takes over there and the transport is
+   hidden, so a page never carries two progress devices.
 
-   Sizes come from the site's own floors: the dot is 5px because the transport's
-   tick is 1px and this one has to read as pressable, and the hit area is 44px
-   because that is the tap target main.css sets for .btn-hire. The label lives
-   on hover and focus so the resting state is six quiet marks, not a menu.
+   Rewritten 2026-09-04 after a three-lens audit. What the lenses changed:
+   the pointer guard (a touch device at this width got marks whose destinations
+   could never be revealed); the plate under the label (it was 10px dim ink on
+   whatever happened to scroll under it, including a full-width screenshot); the
+   hover reach (the labels sat left of the only hover zone, so moving to read one
+   erased it); the shape of the states (hover and current were both plain gold,
+   two pixels apart); the focus ring (it framed the 44px hit box, not the 5px
+   mark); the width (44px crossed into the content column below 1240px, the same
+   sin main.css:682 records the transport being fixed for); and the anchoring
+   (a viewport offset drifts 666px from the column at 2560px).
    ============================================================ */
 .srail{display:none}
 
-@media (min-width:1100px){
-  body:has(main.doc) #transport{display:none}   /* one wayfinding device per page */
-
-  .srail{
+/* Gated like the transport it replaces, for the reason main.css:667 gives: this
+   is a pointer device, and every label here is revealed by hover. A touch
+   device would get marks it cannot read and no transport either. */
+@media (min-width:1100px) and (hover:hover) and (pointer:fine){
+  body:has(main.doc) .srail{
     display:flex;flex-direction:column;align-items:flex-end;gap:2px;
-    position:fixed;top:50%;right:calc(18px + var(--safe-r,0px));transform:translateY(-50%);
-    z-index:54;                                   /* under the nav (55), over the page */
+    position:fixed;top:50%;transform:translateY(-50%);
+    /* anchored to the content column, not to the viewport, so the marks stay a
+       constant distance from the text at any width above 1280px instead of
+       drifting into empty ground */
+    right:calc(20px + max(0px, (100vw - 1280px) / 2));
+    z-index:54;                       /* above #nav (50), below #transport (55) */
   }
+
+  /* the spine: the honest half of the device. Marks encode order; this encodes
+     distance, filled from the top to the scroll position. */
+  .srail-spine{
+    position:absolute;right:12px;top:0;bottom:0;width:1px;
+    background:var(--hairline);
+  }
+  .srail-fill{
+    position:absolute;inset:0;transform-origin:50% 0;transform:scaleY(0);
+    background:linear-gradient(to bottom,var(--gold-line-hi),var(--gold));
+  }
+
   .srail-dot{
     position:relative;display:flex;align-items:center;justify-content:flex-end;
-    width:44px;height:26px;padding:0;border:0;background:none;cursor:pointer;
+    /* 26px wide, not 44 — main.css:682 records why the transport's tick halo was
+       cut to 26: a 44px halo reached into the page and shadowed real links, and
+       44 is the touch spec on a device that has no touch. Height stays 26 so the
+       column keeps a comfortable pitch. */
+    width:26px;height:26px;padding:0;border:0;background:none;cursor:pointer;
   }
   /* the mark itself — the button is the target, this is the signifier */
   .srail-dot::after{
     content:"";width:5px;height:5px;border-radius:50%;
     background:var(--gold-line-hi);
-    transition:background .3s var(--ease),width .3s var(--ease),height .3s var(--ease);
+    transition:background .3s var(--ease),transform .3s var(--ease),box-shadow .3s var(--ease);
   }
-  .srail-dot:hover::after,.srail-dot:focus-visible::after{background:var(--gold)}
-  .srail-dot.is-on::after{width:7px;height:7px;background:var(--gold)}
+  /* Current is FILLED, hovered is RINGED. They were both plain gold two pixels
+     apart, so during a hover the only thing separating "where you are" from
+     "what you are pointing at" was 2px of diameter. Scale rather than width, so
+     the mark grows from its own centre and the column keeps one axis. */
+  .srail-dot.is-on::after{background:var(--gold);transform:scale(1.4)}
+  .srail-dot:hover::after{box-shadow:0 0 0 1px var(--gold);background:var(--gold)}
+  /* the focus ring belongs on the mark, not on the invisible box around it */
+  .srail-dot:focus-visible{outline:none}
+  .srail-dot:focus-visible::after{
+    background:var(--gold);
+    box-shadow:0 0 0 2px var(--stage),0 0 0 4px var(--gold);
+  }
+  .srail-dot:active::after{transform:scale(1.1)}
 
   .srail-label{
-    position:absolute;right:24px;white-space:nowrap;
+    position:absolute;right:22px;white-space:nowrap;
     font:400 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
-    color:var(--dim);opacity:0;transform:translateX(6px);pointer-events:none;
-    transition:opacity .3s var(--ease),transform .3s var(--ease),color .3s var(--ease);
+    color:var(--dim);
+    /* the plate is the transport's own (main.css:692) — a fixed overlay label
+       has no control over the ground scrolling under it, and this one crosses
+       full-width screenshots */
+    background:rgba(11,10,16,.92);padding:6px 9px;border-radius:3px;
+    opacity:0;transform:translateX(6px);pointer-events:none;
+    /* The delay does two jobs. Coming in it is hover intent, so a mouse crossing
+       the edge does not detonate ten labels. Going out it is a linger: the
+       labels sit to the LEFT of the only hover-able column, so without it a
+       reader whose eye and cursor drift left to read one erases the thing being
+       read. Widening the column instead would put a 220px invisible corridor
+       over the article text, and a corridor that cannot be hovered — which is
+       what pointer-events:none makes it — buys nothing at all. */
+    transition:opacity .3s var(--ease) .45s,transform .3s var(--ease) .45s,color .3s var(--ease);
   }
   /* hovering anywhere on the rail reveals the whole map, which is the question
      you are actually asking when you reach for it */
-  .srail:hover .srail-label,.srail-dot:focus-visible .srail-label{opacity:1;transform:none}
-  .srail-dot:hover .srail-label,.srail-dot.is-on .srail-label{color:var(--gold)}
-  .srail:hover .srail-dot.is-on .srail-label{color:var(--gold)}
+  .srail:hover .srail-label,.srail-dot:focus-visible .srail-label{
+    opacity:1;transform:none;
+    transition-delay:.12s;            /* quick in, slow out */
+  }
+  /* Same rule as the marks: two meanings must not share one value. The one you
+     are pointing at goes gold; the one you are IN goes ivory, so during a hover
+     the page can still tell you where you actually are. */
+  .srail-dot:hover .srail-label,.srail-dot:focus-visible .srail-label{color:var(--gold)}
+  .srail-dot.is-on .srail-label{color:var(--ivory)}
 }
 
+/* Outside the width and pointer query, so a document page never falls back to
+   the landmark-less transport fill the rail exists to escape. */
+body:has(main.doc) #transport{display:none}
+
+/* One landing for both jump paths — the Lenis flight and the native fallback
+   reduced-motion visitors take. It was a magic number inside the Lenis call, so
+   the two landed in different places. */
+.doc > section{scroll-margin-top:72px}
+
 @media (prefers-reduced-motion:reduce){
-  .srail-dot::after,.srail-label{transition:none}
+  .srail-dot::after,.srail-label,.srail-fill{transition:none}
 }
 
 /* the hire button opens a mail client, which is a surprise unless the button
