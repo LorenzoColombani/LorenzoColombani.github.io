@@ -346,3 +346,14 @@ body:has(main.doc) #transport{display:none}
   transition:color .3s var(--ease),border-color .3s var(--ease);
 }
 .hire-address a:hover,.hire-address a:focus-visible{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* In the closer, Email and LinkedIn shipped as identical rows at identical
+   weight — and LinkedIn is both the lower-commitment click and the one that
+   asks the visitor to compose nothing. So the cheapest path was not the one
+   the site exists for. The mail row is the distinct one now; LinkedIn stays,
+   quieter, because a second door matters when a mailto silently fails. */
+.doc .closer .contact-link:first-child{background:rgba(212,165,116,.05)}
+.doc .closer .contact-link:first-child .cl-label{color:var(--gold);opacity:1}
+.doc .closer .contact-link:first-child .cl-value{color:var(--ivory)}
+.doc .closer .contact-link:first-child:hover{background:rgba(212,165,116,.09)}
+.doc .closer .contact-link:not(:first-child) .cl-value{color:var(--dim)}
