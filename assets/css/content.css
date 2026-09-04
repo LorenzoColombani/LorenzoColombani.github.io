@@ -46,6 +46,12 @@
 .feat-case::after{content:"";position:absolute;left:50%;top:50%;width:100%;height:44px;transform:translate(-50%,-50%)}
 .feat-case:hover{gap:14px;color:var(--gold)}
 
+/* ---------- a screen shown on its own, with no copy column ----------
+   .feat is a two-column grid (main.css). A case-study page reuses the screen
+   half alone — so the viewer in tv.js still binds — and this gives it the whole
+   row instead of the 1fr side of a 1fr/1.2fr split. */
+.feat-solo{grid-template-columns:minmax(0,1fr)}
+
 /* ---------- previous / next, at the foot of a case study ----------
    Markup contract — a div, NOT a nav (a second landmark makes html-validate
    demand a name on every nav), and each link MUST carry the label span:

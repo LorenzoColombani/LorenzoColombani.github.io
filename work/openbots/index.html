@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>OpenBots — persistent AI teammates for macOS · Lorenzo Colombani</title>
+    <meta name="description" content="How Lorenzo Colombani designed and developed OpenBots, a native macOS app that turns Claude into persistent, named teammates — durable state, explicit approvals, Swift 6.">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://lorenzocolombani.com/work/openbots/">
+    <meta property="og:title" content="OpenBots — persistent AI teammates for macOS · Lorenzo Colombani">
+    <meta property="og:description" content="How Lorenzo Colombani designed and developed OpenBots, a native macOS app that turns Claude into persistent, named teammates — durable state, explicit approvals, Swift 6.">
+    <meta property="og:url" content="https://lorenzocolombani.com/work/openbots/">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://lorenzocolombani.com/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Lorenzo Colombani">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="OpenBots — persistent AI teammates for macOS · Lorenzo Colombani">
+    <meta name="twitter:description" content="How Lorenzo Colombani designed and developed OpenBots, a native macOS app that turns Claude into persistent, named teammates — durable state, explicit approvals, Swift 6.">
+    <meta name="twitter:image" content="https://lorenzocolombani.com/og-image.png">
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://lorenzocolombani.com/#lorenzo-colombani",
+      "name": "Lorenzo Colombani",
+      "url": "https://lorenzocolombani.com",
+      "image": "https://lorenzocolombani.com/assets/img/lorenzo.webp",
+      "jobTitle": "AI Product Designer & Developer",
+      "description": "AI product designer and developer — AI products, learning systems, interactive web experiences. I make humans and machines intelligible to each other. Hannover, Germany.",
+      "disambiguatingDescription": "The Lorenzo Colombani who is an AI product designer and developer based in Hannover, Germany — background in learning design (MCR Groupe), French law and court mediation; Board Member of the Wharton Alumni AI Studio.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Hannover",
+        "addressCountry": "DE"
+      },
+      "email": "mailto:lorenzo.colombani@live.fr",
+      "sameAs": [
+        "https://www.linkedin.com/in/locolombani/",
+        "https://github.com/LorenzoColombani",
+        "https://medium.com/@lorenzocolombani",
+        "https://www.researchgate.net/profile/Lorenzo-Colombani",
+        "https://paris-sorbonne.academia.edu/LorenzoColombani"
+      ],
+      "knowsAbout": [
+        "AI product design and development",
+        "Learning systems and instructional design",
+        "Interactive web experiences",
+        "AI governance and the EU AI Act",
+        "AI adoption for organizations",
+        "Negotiation (Getting More method)",
+        "Court mediation",
+        "Gamification implemented as software",
+        "Evaluation discipline for AI systems",
+        "Data Vault 2.1",
+        "GDPR and the Digital Markets Act"
+      ],
+      "knowsLanguage": [
+        "fr",
+        "en"
+      ],
+      "alumniOf": [
+        {
+          "@type": "EducationalOrganization",
+          "name": "University of Pennsylvania Carey Law School"
+        },
+        {
+          "@type": "EducationalOrganization",
+          "name": "Sciences Po Paris"
+        },
+        {
+          "@type": "EducationalOrganization",
+          "name": "Université Paris-Sorbonne"
+        },
+        {
+          "@type": "EducationalOrganization",
+          "name": "University of Pittsburgh"
+        }
+      ],
+      "award": [
+        "Fulbright Scholarship",
+        "Penn-Wharton Innovation Award",
+        "Dean's Scholarship, Penn Carey Law"
+      ],
+      "worksFor": {
+        "@id": "https://lorenzocolombani.com/#independent-practice"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://lorenzocolombani.com/#website",
+      "url": "https://lorenzocolombani.com",
+      "name": "Lorenzo Colombani — Portfolio",
+      "publisher": {
+        "@id": "https://lorenzocolombani.com/#lorenzo-colombani"
+      },
+      "inLanguage": "en"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://lorenzocolombani.com/work/openbots/#app",
+      "name": "OpenBots",
+      "url": "https://lorenzocolombani.com/work/openbots/",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "macOS 14+",
+      "softwareVersion": "0.5.0",
+      "datePublished": "2026-09-01",
+      "license": "https://opensource.org/licenses/MIT",
+      "codeRepository": "https://github.com/LorenzoColombani/openbots",
+      "description": "A native macOS app that turns Claude into a team of persistent, named teammates with durable local state and explicit approvals. Preview build: the executor for consequential actions is disabled.",
+      "creator": {
+        "@id": "https://lorenzocolombani.com/#lorenzo-colombani"
+      },
+      "isPartOf": {
+        "@id": "https://lorenzocolombani.com/#website"
+      }
+    }
+  ]
+}
+    </script>
+    <link rel="preload" href="/assets/fonts/playfair-display-v40-latin-700.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/dm-sans-v17-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="/assets/css/content.css">
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<nav id="nav">
+    <a class="nav-brand" href="/"><span class="nav-mark">LC</span> <span class="nav-name">Lorenzo Colombani</span></a>
+    <ul class="nav-links">
+        <li><a href="/work/">Work</a></li>
+        <li><a href="/about/">About</a></li>
+        <li><a href="/background/">Background</a></li>
+        <li><a href="/#contact">Contact</a></li>
+        <li class="nav-icon"><a href="https://www.linkedin.com/in/locolombani/" target="_blank" rel="noopener" aria-label="LinkedIn (opens in a new tab)"><svg class="nav-svg" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a></li>
+        <li class="nav-icon"><a href="https://github.com/LorenzoColombani" target="_blank" rel="noopener" aria-label="GitHub (opens in a new tab)"><svg class="nav-svg" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a></li>
+    </ul>
+    <button id="sound-chip" type="button" aria-pressed="false">
+        <span class="chip-note" aria-hidden="true">♪</span> <span class="chip-label">SOUND OFF</span>
+    </button>
+    <button id="nav-menu-btn" type="button" aria-expanded="false" aria-controls="nav-menu">
+        <span class="mb-bars" aria-hidden="true"><i></i><i></i></span> <span class="mb-label">Menu</span>
+    </button>
+    <div id="nav-menu">
+        <ul class="nm-links">
+            <li><a href="/work/">Work</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/background/">Background</a></li>
+            <li><a href="/#contact">Contact</a></li>
+        </ul>
+        <div class="nm-foot"><a class="nm-icon" href="https://www.linkedin.com/in/locolombani/" target="_blank" rel="noopener" aria-label="LinkedIn (opens in a new tab)"><svg class="nav-svg" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a><a class="nm-icon" href="https://github.com/LorenzoColombani" target="_blank" rel="noopener" aria-label="GitHub (opens in a new tab)"><svg class="nav-svg" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a></div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+    <section class="bg-intro">
+        <p class="crumbs"><a href="/work/">Work</a> / OpenBots</p>
+        <header class="section-head">
+            <p class="section-label">Case study · AI product</p>
+            <h1 class="section-title">OpenBots</h1>
+        </header>
+        <blockquote class="epigraph">A native macOS app that turns Claude into a team of persistent, named teammates you hire, brief and fence yourself.</blockquote>
+    </section>
+
+    <section>
+        <div class="creds">
+            <ul class="creds-list">
+                <li class="cred-item"><span class="cred-name">Designer &amp; developer, sole author</span><span class="cred-meta">Role</span></li>
+                <li class="cred-item"><span class="cred-name">v0.5.0, preview build, released 1 September 2026</span><span class="cred-meta">Status</span></li>
+                <li class="cred-item"><span class="cred-name">Swift 6, SwiftUI + AppKit, the system SQLite, zero third-party dependencies</span><span class="cred-meta">Stack</span></li>
+                <li class="cred-item"><span class="cred-name">MIT, open source</span><span class="cred-meta">Licence</span></li>
+                <li class="cred-item"><span class="cred-name">macOS 14, 15 and 26, Apple Silicon; needs the Claude Code CLI on a subscription</span><span class="cred-meta">Runs on</span></li>
+                <li class="cred-item"><span class="cred-name"><a href="/ai-products/">AI products</a></span><span class="cred-meta">Practice</span></li>
+            </ul>
+        </div>
+
+        <p class="practice-links"><a href="https://github.com/LorenzoColombani/openbots" target="_blank" rel="noopener">Repository <span aria-hidden="true"><svg class="ext-glyph" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6.5 3.5H3.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9.5M9.5 2.5h4v4M13.5 2.5 7 9"/></svg></span></a> <a href="https://github.com/LorenzoColombani/openbots/releases/tag/v0.5.0" target="_blank" rel="noopener">Release notes, v0.5.0 <span aria-hidden="true"><svg class="ext-glyph" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6.5 3.5H3.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9.5M9.5 2.5h4v4M13.5 2.5 7 9"/></svg></span></a></p>
+
+        <article class="feat feat-solo" data-embed="shot" data-src="https://github.com/LorenzoColombani/openbots">
+            <h3 class="feat-title sr-only">OpenBots</h3>
+            <div class="feat-screen is-shot">
+                <img class="still" src="/assets/previews/openbots.gif" alt="OpenBots — Scout’s thread in a fresh workspace, with the teammate family in the sidebar" width="960" height="640" loading="lazy" decoding="async">
+                <div class="screen-acts">
+                    <button class="tv-full" type="button"><span aria-hidden="true">⤢</span> Full screen</button>
+                </div>
+                <a class="feat-mark" href="https://github.com/LorenzoColombani/openbots" target="_blank" rel="noopener" aria-label="Open OpenBots on GitHub in a new tab"><span aria-hidden="true"><svg class="ext-glyph" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6.5 3.5H3.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9.5M9.5 2.5h4v4M13.5 2.5 7 9"/></svg></span></a>
+            </div>
+        </article>
+    </section>
+
+    <section>
+        <header class="section-head">
+            <p class="section-label">Premise</p>
+            <h2 class="section-title">The premise</h2>
+        </header>
+        <div class="prose">
+            <p>Claude Code answers one prompt at a time and forgets you when the window closes. OpenBots gives it a roster. Six characters are built in. Each teammate is a named character with its own voice, memory and permissions; you hire it in a conversation, brief it, and it keeps its history across restarts. The app is for one operator on one Mac — someone who already works with Claude all day and wants colleagues rather than a chat box.</p>
+        </div>
+    </section>
+
+    <section>
+        <header class="section-head">
+            <p class="section-label">The build</p>
+            <h2 class="section-title">What is in the build</h2>
+        </header>
+        <div class="prose">
+            <ul class="item-points">
+                <li>A chat-first native interface: sidebar and detail, stable teammate identities and avatars, conversational hiring with an explicit confirmation, per-conversation drafts, paged history, workspace search, and archive and restore without data loss.</li>
+                <li>Durable local state: protected SQLite in an app-owned folder, atomic repositories, an exact restore of the workspace on reopen, and scoped Markdown memory that is explicitly non-authoritative.</li>
+                <li>Claude through your own CLI: every reply is one local call to the Claude Code command line against the subscription you already have. No API key, no accounts, no server, no telemetry. Everything lives on your Mac.</li>
+                <li>Approvals that mean something: a consequential action becomes an immutable proposal whose exact payload you see and approve. An acknowledgement is never treated as acceptance; an approval is never silently treated as execution.</li>
+                <li>Attachments and previews: durable owned attachments, in-chat saved text, image and PDF preview with scope fences and cancellation.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <header class="section-head">
+            <p class="section-label">Approvals</p>
+            <h2 class="section-title">Why the approvals are the product</h2>
+        </header>
+        <div class="prose">
+            <p>The hard part of an agent app is not the model. It is what the app lets the model do, and how honestly it reports what happened. OpenBots is built on one rule: a saved plan is never presented as an executed action. A proposal is frozen with its exact payload; a decision is recorded against that payload and nothing else; an expired, foreign or tampered proposal cannot reach a decision at all. Most of the test suite exists to defend that rule.</p>
+        </div>
+    </section>
+
+    <section>
+        <header class="section-head">
+            <p class="section-label">Architecture</p>
+            <h2 class="section-title">Architecture</h2>
+        </header>
+        <div class="prose">
+            <p>Swift 6, SwiftUI for the views, AppKit where the Mac needs it. State lives in the system SQLite library, called directly, with no third-party dependencies: app-owned folders with restrictive permissions, atomic writes, and an exact restore on reopen. On macOS 14 and 15 the bundled SQLite predates version 3.44 and refuses a full-text index inside triggers under a hardened schema, so the app checks the linked SQLite at launch and trusts the schema only where that is needed. Found and fixed while releasing.</p>
+        </div>
+    </section>
+
+    <section>
+        <header class="section-head">
+            <p class="section-label">Testing</p>
+            <h2 class="section-title">Testing</h2>
+        </header>
+        <div class="prose">
+            <p>1494 tests in the frozen inventory of v0.5.0 — XCTest and Swift Testing, none of them making live calls — counted from the repository on 4 September 2026. Many are adversarial by design: tampered payloads, hard-linked attachments, replaced roots, oversize sources, foreign receipts. Continuous integration runs the same suite plus forbidden-content scans on every push, on macOS 15 and macOS 26.</p>
+        </div>
+    </section>
+
+    <section>
+        <header class="section-head">
+            <p class="section-label">Method</p>
+            <h2 class="section-title">How it was built</h2>
+        </header>
+        <div class="prose">
+            <p>I design the product and make the technical calls — architecture, stack, interactions — then direct AI coding tools that build to my spec. I review and test everything that ships.</p>
+            <p>The repository carries the same disclosure in its own words.</p>
+        </div>
+    </section>
+
+    <section>
+        <header class="section-head">
+            <p class="section-label">Status</p>
+            <h2 class="section-title">Where it stands</h2>
+        </header>
+        <div class="prose">
+            <p>v0.5.0 is a deliberate rebuild, not a feature release. v0.1.0, developed under the working name Agency and released as source on 17 August 2026, proved the product and outgrew its foundations, so the app was rebuilt from a clean slate. It has fewer visible features than v0.1.0 and a much better app underneath; web search, connectors and the shared vault are being reintroduced one by one on the new architecture. The executor for consequential actions is deliberately disabled in this build: the app records exact, immutable proposals and approvals, but does not yet execute external actions. I use it myself. It has no other users to claim, and this page claims none.</p>
+        </div>
+    </section>
+
+    <section>
+        <header class="section-head">
+            <p class="section-label">Install</p>
+            <h2 class="section-title">Get it</h2>
+        </header>
+        <div class="prose">
+            <p>Requires macOS 14 or later on Apple Silicon, full Xcode 16 or later, and the Claude Code CLI logged into a subscription. One line in Terminal fetches the latest release and builds it locally:</p>
+        </div>
+        <pre class="code">curl -fsSL https://raw.githubusercontent.com/LorenzoColombani/openbots/main/install.sh | sh</pre>
+
+        <div class="pager">
+            <a href="/work/the-bridge/"><span class="pager-label">Previous</span>The Bridge</a>
+            <a href="/work/data-vault-foundations/"><span class="pager-label">Next</span>Data Vault Foundations</a>
+        </div>
+    </section>
+
+
+</main>
+
+<footer>
+    <p class="footer-claim">Lorenzo Colombani — I make humans and machines intelligible to each other.</p>
+    <ul class="footer-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/work/">Work</a></li>
+        <li><a href="/writing/">Writing</a></li>
+        <li><a href="https://www.linkedin.com/in/locolombani/" target="_blank" rel="noopener">LinkedIn</a></li>
+        <li><a href="https://github.com/LorenzoColombani" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://medium.com/@lorenzocolombani" target="_blank" rel="noopener">Medium</a></li>
+    </ul>
+    <p class="footer-meta" lang="fr">Lorenzo Colombani — designer et développeur : produits IA, systèmes d'apprentissage, expériences web interactives. Travaille en français et en anglais.</p>
+    <p class="footer-meta">Original score generated in-house. · © 2026 Lorenzo Colombani</p>
+</footer>
+
+<div id="transport" aria-hidden="true"></div>
+<div id="vignette" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
+
+<script defer src="/assets/vendor/gsap.min.js"></script>
+<script defer src="/assets/vendor/ScrollTrigger.min.js"></script>
+<script defer src="/assets/vendor/lenis.min.js"></script>
+<script type="module" src="/assets/js/main.js"></script>
+</body>
+</html>
