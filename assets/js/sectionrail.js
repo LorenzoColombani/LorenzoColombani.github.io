@@ -229,6 +229,10 @@ function build() {
      Measuring covers all three, and seeds the opening state instead of asserting
      chapter one on a page that may have opened halfway down. */
   const measure = () => {
+    /* The gate at build() is one-directional: a window that starts wide builds
+       the rail, and narrowing below the threshold used to leave this running
+       every frame for a column nobody can see any more. */
+    if (!CAN_PAINT.matches) return;
     const max = document.documentElement.scrollHeight - innerHeight;
     if (max > 0) spineFill.style.transform = `scaleY(${Math.min(1, scrollY / max)})`;
     if (jumping()) return;
