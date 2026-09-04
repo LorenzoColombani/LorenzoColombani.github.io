@@ -84,3 +84,46 @@ pre.code{
 }
 /* one narrow-screen fix: the two card links stack instead of keeping the gap */
 @media (max-width:620px){.feat-case{margin-left:0;margin-top:4px}}
+
+/* ============================================================
+   DOCUMENT PAGES — the rhythm of reading, not of screens.
+
+   main.css sizes a section around a full-bleed project screen: 99px of air
+   above and below it, a 72px drop under every heading, and an h2 that runs
+   to 2.6rem. All correct on the home, where each section IS a screen. On a
+   page whose section is two rows or one paragraph, the same numbers read as
+   an empty page — which is what Lorenzo saw on /work/ and on the case
+   studies, and he was right. Every rule below is scoped to <main class="doc">,
+   so index.html and background/index.html keep the spacing they shipped with.
+   ============================================================ */
+.doc > section{padding-top:clamp(30px,4vw,52px);padding-bottom:clamp(30px,4vw,52px)}
+.doc > section.bg-intro{padding-top:clamp(108px,13vw,150px);padding-bottom:clamp(26px,3.4vw,44px)}
+.doc > section:last-of-type{padding-bottom:clamp(48px,6vw,84px)}
+.doc .section-head{margin-bottom:clamp(18px,2.2vw,28px)}
+.doc .bg-intro .section-head{margin-bottom:clamp(22px,2.6vw,32px)}
+
+/* the h2 steps down so the page has four clear levels rather than two:
+   page title 3.2rem · section 1.95rem · row title 1.3rem · body 1.125rem. */
+.doc h2.section-title{font-size:clamp(1.45rem,2.1vw,1.95rem);max-width:34ch;letter-spacing:-.005em}
+
+/* a definition sentence, where the timeline row carries an organisation.
+   .item-org is 10.5px uppercase mono at .14em tracking — right for
+   "MCR Groupe", unreadable for a ninety-character sentence. /work/ says
+   what each piece IS, so its rows use this instead. */
+.item-lede{margin-top:8px;font-size:.94rem;line-height:1.55;color:var(--ivory);opacity:.82;max-width:64ch}
+
+/* the links row is a caption above the screen, not a lid sitting on it */
+.practice-links + .feat{margin-top:clamp(22px,2.6vw,34px)}
+
+/* the pager inherits --sec-gap (up to 160px) from main.css; on a document
+   page the section padding already carries that air */
+.doc .pager{margin-top:clamp(30px,4vw,52px)}
+
+/* the meta grid sits directly above a full-width screen on a case study, so
+   it takes the same width — main.css caps .creds at 900px, which is right on
+   the home where nothing full-width follows it. And the last cell stretches
+   to the end of its row: an odd number of meta rows otherwise leaves a lit
+   empty square, because the grid paints its own hairline background. */
+.doc .creds{max-width:none}
+.doc .creds-list{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.doc .cred-item:last-child{grid-column:auto/-1}
