@@ -101,12 +101,23 @@ function build() {
        states that rule for the viewers and it holds here. This was written onto
        the button only, so the identical behaviour was announced on three pages
        and silent on nine. Every upgraded target gets it now. */
-    if (!a.dataset.hire) {
+    /* One promise per block. A closer that carries both the button and the
+       address row would otherwise print the same sentence twice, once under
+       each — and the button is the one a scanning visitor reads. */
+    const block = a.closest('section') || main;
+    const spoken = block.querySelector('.hire-hint');
+    if (!a.dataset.hire && !(spoken && !a.classList.contains('btn-hire'))) {
       a.dataset.hire = '1';
       const hint = document.createElement('span');
       hint.className = 'hire-hint';
       hint.textContent = 'Opens a draft that is already written, with room for what you need.';
-      (a.classList.contains('btn-hire') ? a : a.closest('.contact-link') || a).after(hint);
+      /* After the list, never inside it. .contact-links is a bordered column
+         and each row carries its own rule, so a caption dropped between Email
+         and LinkedIn joined the set and read as a third contact method. */
+      const anchorPoint = a.classList.contains('btn-hire')
+        ? a
+        : a.closest('.contact-links') || a.closest('.contact-link') || a;
+      anchorPoint.after(hint);
 
       /* The one acknowledgement this mechanism can honestly give. A mailto on a
          machine with no handler does nothing, forever, and says nothing — so

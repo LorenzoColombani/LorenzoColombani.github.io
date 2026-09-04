@@ -102,15 +102,26 @@ pre.code{
 .doc .section-head{margin-bottom:clamp(18px,2.2vw,28px)}
 .doc .bg-intro .section-head{margin-bottom:clamp(22px,2.6vw,32px)}
 
-/* the h2 steps down so the page has four clear levels rather than two:
-   page title 3.2rem · section 1.95rem · row title 1.3rem · body 1.125rem. */
-.doc h2.section-title{font-size:clamp(1.45rem,2.1vw,1.95rem);max-width:34ch;letter-spacing:-.005em}
+/* Four levels, measured rather than asserted. The first version of this rule
+   put the h2 within 2.4px of the row title it governs — a 1.115 step where
+   main.css declares a 1.25 scale — because it was sized against the h1 and not
+   against the h3s that today's heading repair placed under it. Resolved sizes
+   at 1440: h1 41.6px · h2 33.9px · row title 19.2px · body 18px. The h2 also
+   wraps before the h1 does, which a subordinate heading should. */
+.doc h2.section-title{font-size:clamp(1.6rem,2.4vw,2.2rem);max-width:26ch;letter-spacing:-.008em}
+.doc .item-title,.doc .pub-title{font-size:clamp(1.1rem,1.35vw,1.2rem)}
 
 /* a definition sentence, where the timeline row carries an organisation.
    .item-org is 10.5px uppercase mono at .14em tracking — right for
    "MCR Groupe", unreadable for a ninety-character sentence. /work/ says
    what each piece IS, so its rows use this instead. */
-.item-lede{margin-top:8px;font-size:.94rem;line-height:1.55;color:var(--ivory);opacity:.82;max-width:64ch}
+/* This sat at 15.04px above an .item-desc running 16–18px, so the sentence
+   that says what the thing IS was smaller and tighter than the role-and-status
+   line under it. main.css §19 raised the dossier's small text to a 16px floor
+   for the same reason; this is inside that floor now, and the metadata below it
+   drops to the mono meta voice it actually is. */
+.item-lede{margin-top:8px;font-size:clamp(1rem,1.15vw,1.1rem);line-height:1.55;color:var(--ivory);max-width:64ch}
+.doc .exp-item .item-desc{font:400 12px/1.6 var(--mono);letter-spacing:.06em;color:var(--dim);margin-top:10px}
 
 /* the links row is a caption above the screen, not a lid sitting on it */
 .practice-links + .feat{margin-top:clamp(22px,2.6vw,34px)}
@@ -126,9 +137,13 @@ pre.code{
    empty square, because the grid paints its own hairline background. */
 .doc .creds{max-width:none}
 .doc .creds-list{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
-.doc .creds-list::after{content:"";background:var(--stage)}   /* paints the empty track;
-   stretching the last cell instead made its width depend on the item count — 6 items gave
-   the Practice cell one column, 4 gave it three. */
+/* No count patch. The grid painted its own hairline through the gaps, so any
+   partial last row lit an empty square; the first fix stretched the last cell
+   (width then depended on the item count) and the second added one filler cell
+   (which at six items produced a spurious third row). The rule moves onto the
+   cells, so the grid stops caring how many there are. */
+.doc .creds-list{background:transparent;border:0;gap:0}
+.doc .cred-item{box-shadow:inset 0 0 0 1px var(--hairline)}
 
 /* ============================================================
    STATES — what the four-lens audit of 2026-09-04 found missing.
@@ -144,7 +159,10 @@ pre.code{
 
 /* the whole row is the target, the way .card and .feat-case already do it */
 .doc .exp-item:has(.item-title a){position:relative;transition:background .34s var(--ease)}
-.doc .exp-item:has(.item-title a):hover{background:rgba(212,165,116,.05)}
+.doc .exp-item:has(.item-title a):hover{
+  background:rgba(212,165,116,.06);
+  box-shadow:inset 2px 0 0 var(--gold-line-hi);
+}
 .doc .item-title a::after{content:"";position:absolute;inset:0}
 .doc .exp-item:has(.item-title a:hover) .item-title a,
 .doc .exp-item:has(.item-title a:focus-visible) .item-title a{color:var(--gold)}
@@ -188,13 +206,21 @@ pre.code{
 
 /* nothing on twelve pages said which one you were on, and the practice row
    linked the page you were standing on */
-.doc [aria-current="page"]{color:var(--gold);cursor:default}
+/* The nav and the footer are siblings of <main class="doc">, not inside it, so
+   scoping this under .doc announced "you are here" to assistive tech and painted
+   it nowhere — a fix that left sighted and screen-reader visitors holding
+   different models, which is worse than the silence it replaced. Verified safe
+   to unscope: neither live page carries a single aria-current, so the rule is
+   inert on both. */
+[aria-current="page"]{color:var(--gold)}
+#nav [aria-current="page"],footer [aria-current="page"]{cursor:default}
+#nav [aria-current="page"]::after{display:none}   /* no underline sweep on the page you are on */
 .doc .practice-links [aria-current="page"]{border-bottom:1px solid var(--gold-line-hi);padding-bottom:3px}
 
 /* press acknowledgement: no :active rule existed anywhere in either sheet,
    so a click on a link that triggers a document load returned nothing at all
    between the press and the repaint */
-.doc .exp-item:has(.item-title a):active,.doc a.pub-row:active{background:rgba(212,165,116,.09)}
+.doc .exp-item:has(.item-title a):active,.doc a.pub-row:active{background:rgba(212,165,116,.26)}
 .doc .btn-hire:active,.doc .pager a:active,.doc .practice-links a:active{opacity:.75}
 
 /* the closing action — the four lenses agreed this was the site's worst gap:
@@ -225,7 +251,8 @@ pre.code{
 /* Gated like the transport it replaces, for the reason main.css:667 gives: this
    is a pointer device, and every label here is revealed by hover. A touch
    device would get marks it cannot read and no transport either. */
-@media (min-width:1100px) and (hover:hover) and (pointer:fine){
+@media (min-width:1240px) and (hover:hover) and (pointer:fine){
+  body:has(main.doc) #transport{display:none}   /* one wayfinding device per page */
   body:has(main.doc) .srail{
     display:flex;flex-direction:column;align-items:flex-end;gap:2px;
     position:fixed;top:50%;transform:translateY(-50%);
@@ -238,8 +265,11 @@ pre.code{
 
   /* the spine: the honest half of the device. Marks encode order; this encodes
      distance, filled from the top to the scroll position. */
+  /* On the marks' own axis. It ran 12px inward while the marks sat 0–5px
+     inward, so the progress line and its stops were two parallel hairlines
+     10px apart rather than one instrument. */
   .srail-spine{
-    position:absolute;right:12px;top:0;bottom:0;width:1px;
+    position:absolute;right:2px;top:0;bottom:0;width:1px;
     background:var(--hairline);
   }
   .srail-fill{
@@ -306,9 +336,11 @@ pre.code{
   .srail-dot.is-on .srail-label{color:var(--ivory)}
 }
 
-/* Outside the width and pointer query, so a document page never falls back to
-   the landmark-less transport fill the rail exists to escape. */
-body:has(main.doc) #transport{display:none}
+/* Inside the rail's own query, not outside it. Hiding the transport
+   unconditionally left a fine-pointer window between roughly 700 and 1099px —
+   a browser dragged to half a laptop screen beside Slack, which is how a
+   forwarded link is usually opened — with neither device, where this morning it
+   had the transport. A landmark-less fill beats nothing. */
 
 /* One landing for both jump paths — the Lenis flight and the native fallback
    reduced-motion visitors take. It was a magic number inside the Lenis call, so
@@ -331,14 +363,14 @@ body:has(main.doc) #transport{display:none}
    at the body's small size in sentence case. */
 .hire-hint{
   display:block;margin-top:12px;max-width:52ch;
-  font-size:.86rem;line-height:1.5;color:var(--dim);
+  font-size:clamp(15px,1vw,16px);line-height:1.5;color:var(--dim);
 }
 /* after the click it stops being a label and becomes the recovery */
 .hire-hint.is-live{color:var(--ivory)}
 
 /* the static address beside the button — the fallback for a swallowed click,
    present in the markup so it survives the script being blocked */
-.hire-address{margin-top:14px;font-size:.86rem;line-height:1.5;color:var(--dim);max-width:52ch}
+.hire-address{margin-top:14px;font-size:clamp(15px,1vw,16px);line-height:1.5;color:var(--dim);max-width:52ch}
 .hire-address strong{color:var(--ivory);font-weight:500}
 .hire-address a{
   color:var(--ivory);text-decoration:none;
@@ -352,8 +384,14 @@ body:has(main.doc) #transport{display:none}
    asks the visitor to compose nothing. So the cheapest path was not the one
    the site exists for. The mail row is the distinct one now; LinkedIn stays,
    quieter, because a second door matters when a mailto silently fails. */
-.doc .closer .contact-link:first-child{background:rgba(212,165,116,.05)}
-.doc .closer .contact-link:first-child .cl-label{color:var(--gold);opacity:1}
-.doc .closer .contact-link:first-child .cl-value{color:var(--ivory)}
-.doc .closer .contact-link:first-child:hover{background:rgba(212,165,116,.09)}
+/* The first version asserted a promotion it did not make: two of its three
+   declarations repeated values main.css already sets, and its tint measured
+   1.06:1 — below the site's own hairline, so invisible. The visible difference
+   was entirely the demotion of the row beside it. The mail row now carries a
+   gold edge, which is a real signal at any tint. */
+.doc .closer .contact-link:first-child{
+  background:rgba(212,165,116,.16);
+  box-shadow:inset 3px 0 0 var(--gold);
+}
+.doc .closer .contact-link:first-child:hover{background:rgba(212,165,116,.24)}
 .doc .closer .contact-link:not(:first-child) .cl-value{color:var(--dim)}

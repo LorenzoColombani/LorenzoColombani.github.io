@@ -86,6 +86,7 @@ export function initSound() {
   async function set(v) {
     on = v;
     store.set(v ? 'on' : 'off');
+    try { sessionStorage.setItem(KEY, v ? 'on' : 'off'); } catch { /* politeness only */ }
     chip.setAttribute('aria-pressed', String(v));
     label.textContent = v ? 'SOUND ON' : 'SOUND OFF';
     chip.classList.remove('pulse-once');
@@ -116,6 +117,21 @@ export function initSound() {
 
   // first visit only: one quiet invitation, then never again
   if (store.get() === null) chip.classList.add('pulse-once');
+
+  /* Carry the choice across a click, but not across a visit.
+     The politeness rule above — "a stored 'on' does NOT auto-start on the next
+     visit" — was written when this was one document, so "next visit" and "next
+     page" were the same thing. The site is fourteen documents now, so a reader
+     who opts in and then presses Next was having their own choice thrown away
+     on every navigation: up to eleven discards on a five-case-study path.
+     sessionStorage draws the line where the original rule meant to draw it —
+     nobody arrives to unexpected sound on a genuinely new visit, and nobody has
+     to re-press the chip for moving through one.
+     If the context cannot start without a fresh gesture, set() already reverts
+     the chip honestly rather than showing ON over silence. */
+  try {
+    if (sessionStorage.getItem(KEY) === 'on') set(true);
+  } catch { /* private mode: the choice simply does not carry, which is fine */ }
 
   window.SRSound = { play, get enabled() { return on; } };
 }
