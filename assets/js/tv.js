@@ -51,7 +51,15 @@ export function initTV() {
   });
 
   addEventListener('keydown', e => {
-    if (e.key === 'Escape' && live) { e.preventDefault(); closeLive(); }
+    if (e.key === 'Escape' && live) {
+      e.preventDefault();
+      // Escape in full screen only leaves full screen, the way a video player does.
+      // The browser may already have spent this very key leaving native full
+      // screen, so a key that lands just after that exit is not a second Escape.
+      if (live.fill) { exitFill(); return; }
+      if (performance.now() - lastFillExit < 400) return;
+      closeLive();
+    }
     if (e.key === 'Tab' && live?.isModal) trapTab(e);
   });
 
@@ -73,7 +81,7 @@ export function initTV() {
    reload it, throwing away wherever the visitor had scrolled to inside someone
    else's site. A frame keeps the kind it was born with; only its scale moves. */
 function rescaleLive() {
-  if (!live?.scaled?.length) return;
+  if (!live?.scaled?.length || live.fill) return;
   for (const { frame, pane } of live.scaled) {
     if (!frame.isConnected || !pane.isConnected) continue;
     const w = pane.clientWidth;
@@ -178,6 +186,127 @@ function closeButton() {
   return x;
 }
 
+/* ---- full screen for a preview that is already running ------------------
+   Lorenzo, 2026-09-14: a started preview must go full screen without starting
+   over — a video player's corner icon, shown on hover. Moving an iframe in the
+   DOM reloads it, so nothing moves: the preview's own wrapper takes the screen.
+   Native Fullscreen API where the browser has it for elements; iPhone Safari
+   does not, so there the wrapper is pinned over the viewport instead. A pinned
+   element is only pinned to the viewport if no ancestor makes a containing
+   block or a stacking context of its own (the reveal animation leaves an inline
+   transform on every .feat), so those ancestors are neutralised while it lasts. */
+let lastFillExit = -Infinity;
+
+const FS_ENTER = 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5';
+const FS_EXIT  = 'M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5';
+
+function fsElement() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
+
+// the browser may already be leaving on its own (its Escape): a refused exit is not an error
+function leaveNativeFullscreen() {
+  try { (document.exitFullscreen || document.webkitExitFullscreen).call(document)?.catch?.(() => {}); } catch { /* already out */ }
+}
+
+function fillButton() {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'tv-fs';
+  b.setAttribute('aria-label', 'Full screen');
+  b.setAttribute('aria-pressed', 'false');
+  b.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="${FS_ENTER}"/></svg>`;
+  b.addEventListener('click', () => (live?.fill ? exitFill() : enterFill()));
+  return b;
+}
+
+function setFillState(on) {
+  if (!live) return;
+  live.fill = on;
+  const btn = live.host.querySelector('.tv-fs');
+  if (btn) {
+    btn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+    btn.setAttribute('aria-pressed', String(on));
+    btn.querySelector('path')?.setAttribute('d', on ? FS_EXIT : FS_ENTER);
+  }
+  // full screen: the framed page gets the whole screen at its own size, so a
+  // responsive site lays itself out for it; back in the bezel: the scaled desktop
+  const s = live.scaled?.[0];
+  if (s) {
+    const f = s.frame.style;
+    if (on) { f.width = '100%'; f.height = '100%'; f.transform = 'none'; }
+    else {
+      f.width = FRAME_W + 'px'; f.height = FRAME_H + 'px';
+      f.transform = `scale(${s.pane.clientWidth / FRAME_W})`;
+    }
+  }
+  if (!on) lastFillExit = performance.now();
+}
+
+function enterFill() {
+  if (!live || live.fill) return;
+  const host = live.host;
+  const req = host.requestFullscreen || host.webkitRequestFullscreen;
+  const enabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+  if (req && enabled) {
+    try {
+      const p = req.call(host, { navigationUI: 'hide' });
+      if (p?.catch) p.catch(() => pinFill(true));
+      return;                                   // fullscreenchange sets the state
+    } catch { /* fall through to the pinned wrapper */ }
+  }
+  pinFill(true);
+}
+
+function exitFill() {
+  if (!live?.fill) return;
+  if (live.pinned) { pinFill(false); return; }
+  if (fsElement()) leaveNativeFullscreen();
+  else setFillState(false);
+}
+
+function onFullscreenChange() {
+  if (!live || live.pinned) return;
+  setFillState(fsElement() === live.host);
+}
+document.addEventListener('fullscreenchange', onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+function pinFill(on) {
+  if (!live) return;
+  const host = live.host;
+  if (on) {
+    const undo = [];
+    for (let a = host.parentElement; a && a !== document.documentElement; a = a.parentElement) {
+      const cs = getComputedStyle(a);
+      const set = {};
+      if (cs.transform !== 'none') set.transform = 'none';
+      if (cs.filter !== 'none') set.filter = 'none';
+      if (cs.perspective !== 'none') set.perspective = 'none';
+      if ((cs.backdropFilter || cs.webkitBackdropFilter || 'none') !== 'none') { set.backdropFilter = 'none'; set.webkitBackdropFilter = 'none'; }
+      if (/paint|layout|strict|content/.test(cs.contain)) set.contain = 'none';
+      if (/transform|filter|perspective/.test(cs.willChange)) set.willChange = 'auto';
+      if (cs.isolation === 'isolate') set.isolation = 'auto';
+      if (cs.zIndex !== 'auto' && cs.position !== 'static') set.zIndex = '2147483000';
+      const keys = Object.keys(set);
+      if (!keys.length) continue;
+      const prev = Object.fromEntries(keys.map(k => [k, a.style[k]]));
+      keys.forEach(k => { a.style[k] = set[k]; });
+      undo.push(() => keys.forEach(k => { a.style[k] = prev[k]; }));
+    }
+    live.unpin = () => undo.forEach(f => f());
+    live.pinned = true;
+    host.classList.add('is-pinned');
+    setScrollLock(true);
+    setFillState(true);
+  } else {
+    host.classList.remove('is-pinned');
+    live.unpin?.();
+    live.unpin = null;
+    live.pinned = false;
+    setScrollLock(false);
+    setFillState(false);
+  }
+}
+
 function liveDot() {
   const d = document.createElement('span');
   d.className = 'tv-dot';
@@ -205,7 +334,7 @@ function openInPane(pane, data, btn) {
 
   // the player wears its own chrome — a second LIVE badge just stacks on it
   const x = closeButton();
-  wrap.append(frame, ...(isWidget ? [] : [liveDot()]), x);
+  wrap.append(frame, ...(isWidget ? [] : [liveDot(), fillButton()]), x);
   pane.appendChild(wrap);
 
   // widget frames are native (fluid) — only the scaled ones need re-scaling
@@ -377,6 +506,12 @@ function trapTab(e) {
 
 export function closeLive() {
   if (!live) return;
+  // leave full screen before the preview goes: the browser would otherwise keep
+  // a black full-screen shell, and a pinned wrapper would leave its ancestors bare
+  if (live.fill) {
+    if (live.pinned) pinFill(false);
+    else if (fsElement()) leaveNativeFullscreen();
+  }
   const it = live;
   live = null;                                  // drop the handle first: the retract is async
   document.removeEventListener('focusin', guardModalFocus);
