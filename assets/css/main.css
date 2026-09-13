@@ -839,6 +839,31 @@ footer{
 .btn-hire-alt::after{content:"";position:absolute;left:50%;top:50%;width:100%;min-width:44px;height:44px;transform:translate(-50%,-50%)}
 .btn-hire-alt:hover{color:var(--ivory)}
 
+/* the Workshop door — a quiet way into the 3D world, under the hire row so it
+   never competes with "Hire me". One lit point says "a place, and it is on". */
+.hero-door{
+  margin-top:clamp(18px,2.6vw,30px);display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;
+  max-width:62ch;
+}
+.door-link{
+  position:relative;display:inline-flex;align-items:center;gap:10px;
+  font:400 11px/1.7 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ivory);
+  transition:color .3s var(--ease);
+}
+.door-link::before{content:"";position:absolute;left:0;bottom:-4px;width:100%;height:1px;background:var(--gold-line)}
+.door-link::after{content:"";position:absolute;left:50%;top:50%;width:100%;min-width:44px;height:44px;transform:translate(-50%,-50%)}
+.door-link:hover,.door-link:focus-visible{color:var(--gold)}
+.door-light{
+  width:7px;height:7px;border-radius:50%;flex:none;background:#9fe8da;
+  box-shadow:0 0 0 3px rgba(159,232,218,.14),0 0 14px rgba(159,232,218,.55);
+  animation:door-breathe 3.2s ease-in-out infinite;
+}
+@keyframes door-breathe{50%{box-shadow:0 0 0 5px rgba(159,232,218,.06),0 0 20px rgba(159,232,218,.3)}}
+.door-note{font-size:.84em;line-height:1.6;color:var(--dim)}
+.door-note a{color:var(--dim);text-decoration:underline;text-decoration-color:var(--gold-line);text-underline-offset:3px}
+.door-note a:hover,.door-note a:focus-visible{color:var(--ivory)}
+@media (max-height:450px){.door-note{display:none}.hero-door{margin-top:10px}}
+
 /* offer — three surface cards with a ghost roman numeral, like the stacks */
 .offer-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,2vw,28px)}
 .offer-item{
