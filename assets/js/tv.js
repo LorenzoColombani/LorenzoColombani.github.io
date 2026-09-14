@@ -188,7 +188,8 @@ function closeButton() {
 
 /* ---- full screen for a preview that is already running ------------------
    Lorenzo, 2026-09-14: a started preview must go full screen without starting
-   over — a video player's corner icon, shown on hover. Moving an iframe in the
+   over — a video player's corner icon, shown on hover; then "make it the same for
+   all other live embedded sites": the archive cards' projector and the stage too. Moving an iframe in the
    DOM reloads it, so nothing moves: the preview's own wrapper takes the screen.
    Native Fullscreen API where the browser has it for elements; iPhone Safari
    does not, so there the wrapper is pinned over the viewport instead. A pinned
@@ -241,9 +242,11 @@ function setFillState(on) {
   if (!on) lastFillExit = performance.now();
 }
 
+function fillTarget() { return live.fillTarget || live.host; }
+
 function enterFill() {
   if (!live || live.fill) return;
-  const host = live.host;
+  const host = fillTarget();
   const req = host.requestFullscreen || host.webkitRequestFullscreen;
   const enabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
   if (req && enabled) {
@@ -265,14 +268,14 @@ function exitFill() {
 
 function onFullscreenChange() {
   if (!live || live.pinned) return;
-  setFillState(fsElement() === live.host);
+  setFillState(fsElement() === fillTarget());
 }
 document.addEventListener('fullscreenchange', onFullscreenChange);
 document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
 function pinFill(on) {
   if (!live) return;
-  const host = live.host;
+  const host = fillTarget();
   if (on) {
     const undo = [];
     for (let a = host.parentElement; a && a !== document.documentElement; a = a.parentElement) {
@@ -302,7 +305,7 @@ function pinFill(on) {
     live.unpin?.();
     live.unpin = null;
     live.pinned = false;
-    setScrollLock(false);
+    setScrollLock(!!live.isModal);           // a modal under the pin keeps its own lock
     setFillState(false);
   }
 }
@@ -417,6 +420,7 @@ function openStage(feat, btn) {
     frame.addEventListener('load', () => skel.remove());
     pane.appendChild(frame);
     pane.appendChild(liveDot());
+    pane.appendChild(fillButton());
 
     const go = document.createElement('a');
     go.className = 'stage-go';
@@ -426,7 +430,7 @@ function openStage(feat, btn) {
   }
   dlg.appendChild(bar);
 
-  live = { host: dlg, restoreFocus: btn, isModal: true, from, pane, isStage: true };
+  live = { host: dlg, restoreFocus: btn, isModal: true, from, pane, isStage: true, fillTarget: frame ? pane : null };
 
   if (!REDUCED) {
     const to = pane.getBoundingClientRect();
@@ -481,11 +485,12 @@ function openProjector(data, btn) {
   frame.addEventListener('load', () => skel.remove());
   pane.appendChild(frame);
   pane.appendChild(liveDot());
+  pane.appendChild(fillButton());
 
   dlg.addEventListener('click', e => { if (e.target === dlg) closeLive(); });
 
   // `small` chose native (fluid) vs scaled at open; only the scaled one re-scales
-  live = { host: dlg, restoreFocus: btn, isModal: true, scaled: small ? [] : [{ frame, pane }] };
+  live = { host: dlg, restoreFocus: btn, isModal: true, scaled: small ? [] : [{ frame, pane }], fillTarget: pane };
   x.focus();
   keepKeysReachable(dlg, x);
   refuseFocusSteal(frame, x);
