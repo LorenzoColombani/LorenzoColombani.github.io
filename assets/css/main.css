@@ -436,16 +436,21 @@ section{
 .tv-fs::after{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
 .tv-live:hover .tv-fs,.stage-pane:hover .tv-fs,.projector-pane:hover .tv-fs,.tv-fs:focus-visible{opacity:1}
 .tv-fs:hover,.tv-fs:focus-visible{background:var(--gold);color:var(--stage)}
-@media (hover:none){.tv-fs{opacity:1}}
+@media (hover:none),(any-pointer:coarse){.tv-fs{opacity:1}}
 /* whichever surface is playing takes the screen: the in-card wrapper, the
    projector's pane, the stage's pane (no -webkit- selector inside :is — one
    unknown selector would void the whole rule) */
 :is(.tv-live,.stage-pane,.projector-pane):fullscreen{background:#000;border:0;border-radius:0}
 .tv-live:-webkit-full-screen,.stage-pane:-webkit-full-screen,.projector-pane:-webkit-full-screen{background:#000;width:100%;height:100%;border:0;border-radius:0}
 :is(.tv-live,.stage-pane,.projector-pane).is-pinned{position:fixed;inset:0;z-index:2147483000;width:auto;height:auto;aspect-ratio:auto;background:#000;border:0;border-radius:0}
-:is(.tv-live,.stage-pane,.projector-pane):fullscreen .tv-fs,.is-pinned .tv-fs{right:18px;bottom:18px}
+:is(.tv-live,.stage-pane,.projector-pane):fullscreen .tv-fs{right:18px;bottom:18px}
+/* the pinned rules stand alone: the pin exists for browsers without element
+   full screen, and one of them failing to parse :fullscreen would void a shared rule */
+.is-pinned .tv-fs{right:calc(18px + var(--safe-r));bottom:calc(18px + var(--safe-b))}
+.is-pinned .tv-x{top:calc(10px + var(--safe-t));right:calc(12px + var(--safe-r))}
 /* full screen is the work itself: the LIVE badge sat on top of its own logo */
-:is(.tv-live,.stage-pane,.projector-pane):fullscreen .tv-dot,.is-pinned .tv-dot{display:none}
+:is(.tv-live,.stage-pane,.projector-pane):fullscreen .tv-dot{display:none}
+.is-pinned .tv-dot{display:none}
 .tv-live:-webkit-full-screen .tv-dot,.stage-pane:-webkit-full-screen .tv-dot,.projector-pane:-webkit-full-screen .tv-dot{display:none}
 
 /* <400ms feedback: the pane is never just dark while a page connects */

@@ -60,7 +60,7 @@ export function initTV() {
       if (performance.now() - lastFillExit < 400) return;
       closeLive();
     }
-    if (e.key === 'Tab' && live?.isModal) trapTab(e);
+    if (e.key === 'Tab' && (live?.isModal || live?.fill)) trapTab(e);
   });
 
   /* A scaled frame is sized ONCE, at open, from the pane width — so rotating the
@@ -127,8 +127,18 @@ function nativeFrame(url) {
    one-shot refocus on `load` is too early to help.) */
 function guardModalFocus(e) {
   if (!live?.isModal) return;
-  if (live.host.contains(e.target)) return;
-  live.host.querySelector('.tv-x')?.focus({ preventScroll: true });
+  if (focusScope().contains(e.target)) return;
+  homeButton()?.focus({ preventScroll: true });
+}
+
+/* Where the keyboard may be while something is live. In full screen only the
+   surface on screen can hold focus — the ✕ and the stage bar sit outside it and
+   the browser refuses them (review 2026-09-14: Tab dropped to BODY on the stage,
+   and stuck on the icon in the projector) — so the scope and its home button
+   narrow to that surface and its full-screen icon. */
+function focusScope() { return live.fill ? fillTarget() : live.host; }
+function homeButton() {
+  return live.fill ? fillTarget().querySelector('.tv-fs') : live.host.querySelector('.tv-x');
 }
 
 /* And the steal itself: framed pages focus themselves shortly after load
@@ -160,8 +170,10 @@ function refuseFocusSteal(frame, closeBtn) {
    also closes on click, because a full-screen overlay should. */
 function keepKeysReachable(host, closeBtn, { backdropCloses = true } = {}) {
   const reclaim = () => {
-    if (closeBtn.isConnected && document.activeElement !== closeBtn) {
-      closeBtn.focus({ preventScroll: true });
+    // in full screen the ✕ may be off screen: hand the key to the visible icon
+    const home = live?.fill ? homeButton() : closeBtn;
+    if (home?.isConnected && document.activeElement !== home) {
+      home.focus({ preventScroll: true });
     }
   };
   host.addEventListener('pointermove', reclaim, { passive: true });
@@ -213,7 +225,6 @@ function fillButton() {
   b.type = 'button';
   b.className = 'tv-fs';
   b.setAttribute('aria-label', 'Full screen');
-  b.setAttribute('aria-pressed', 'false');
   b.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="${FS_ENTER}"/></svg>`;
   b.addEventListener('click', () => (live?.fill ? exitFill() : enterFill()));
   return b;
@@ -225,7 +236,6 @@ function setFillState(on) {
   const btn = live.host.querySelector('.tv-fs');
   if (btn) {
     btn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
-    btn.setAttribute('aria-pressed', String(on));
     btn.querySelector('path')?.setAttribute('d', on ? FS_EXIT : FS_ENTER);
   }
   // full screen: the framed page gets the whole screen at its own size, so a
@@ -239,7 +249,6 @@ function setFillState(on) {
       f.transform = `scale(${s.pane.clientWidth / FRAME_W})`;
     }
   }
-  if (!on) lastFillExit = performance.now();
 }
 
 function fillTarget() { return live.fillTarget || live.host; }
@@ -262,13 +271,19 @@ function enterFill() {
 function exitFill() {
   if (!live?.fill) return;
   if (live.pinned) { pinFill(false); return; }
-  if (fsElement()) leaveNativeFullscreen();
+  if (fsElement()) { live.exitingByUs = true; leaveNativeFullscreen(); }
   else setFillState(false);
 }
 
 function onFullscreenChange() {
   if (!live || live.pinned) return;
-  setFillState(fsElement() === fillTarget());
+  const on = fsElement() === fillTarget();
+  // only a browser-driven exit can have spent the visitor's Escape: arm the
+  // guard for that one, never for our own icon or Escape handler (review
+  // 2026-09-14: a real Escape 100 ms after leaving by the icon was swallowed)
+  if (!on && live.fill && !live.exitingByUs) lastFillExit = performance.now();
+  live.exitingByUs = false;
+  setFillState(on);
 }
 document.addEventListener('fullscreenchange', onFullscreenChange);
 document.addEventListener('webkitfullscreenchange', onFullscreenChange);
@@ -500,7 +515,7 @@ function openProjector(data, btn) {
 
 /* keep tabbing inside the modal — an iframe is one stop, so this is short */
 function trapTab(e) {
-  const stops = live.host.querySelectorAll('button, iframe, a[href]');
+  const stops = focusScope().querySelectorAll('button, iframe, a[href]');
   if (!stops.length) return;
   const first = stops[0], last = stops[stops.length - 1];
   if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
