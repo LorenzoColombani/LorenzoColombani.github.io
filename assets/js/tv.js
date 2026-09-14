@@ -12,7 +12,7 @@ const FRAME_H = 800;                       // 16:10, same ratio as the bezel
 const GROW    = 0.52;                      // s — panel → full screen, and back
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-let live = null;                           // { host, restoreFocus, isModal, isStage, from, pane }
+let live = null;                           // { host, restoreFocus, covered, scaled, isModal, isStage, from, pane, fill, pinned, sentinel }
 
 /* the hero keeps its own rAF loop; a framed three.js film would run a second
    WebGL context on top of it. Same signal both ways. */
@@ -568,7 +568,9 @@ export function closeLive() {
   const it = live;
   live = null;                                  // drop the handle first: the retract is async
   document.removeEventListener('focusin', guardModalFocus);
-  it.covered?.forEach(el => { el.inert = false; });   // before focus goes back to ▶
+  // give back what the preview covered here, never in the delayed done(): the next open
+  // skips what is still inert, and restoreFocus points into it (review 2026-09-14)
+  it.covered?.forEach(el => { el.inert = false; });
   // blank before removing: some pages keep audio alive through a detach
   it.host.querySelectorAll('iframe').forEach(f => { f.src = 'about:blank'; });
   setScrollLock(false);
