@@ -451,6 +451,8 @@ section{
 /* full screen is the work itself: the LIVE badge sat on top of its own logo */
 :is(.tv-live,.stage-pane,.projector-pane):fullscreen .tv-dot{display:none}
 .is-pinned .tv-dot{display:none}
+/* the full-screen focus catcher before the frame: takes no space, never seen */
+.tv-sentinel{position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
 .tv-live:-webkit-full-screen .tv-dot,.stage-pane:-webkit-full-screen .tv-dot,.projector-pane:-webkit-full-screen .tv-dot{display:none}
 
 /* <400ms feedback: the pane is never just dark while a page connects */

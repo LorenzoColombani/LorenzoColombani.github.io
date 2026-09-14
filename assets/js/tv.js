@@ -126,7 +126,9 @@ function nativeFrame(url) {
    puts ESC back in reach. (Measured: Wix steals focus ~600ms after load, so a
    one-shot refocus on `load` is too early to help.) */
 function guardModalFocus(e) {
-  if (!live?.isModal) return;
+  // modals always; the in-card preview only while it is full screen (review
+  // 2026-09-14: pinned, Shift+Tab out of the frame landed on the covered ⤢)
+  if (!live || (!live.isModal && !live.fill)) return;
   if (focusScope().contains(e.target)) return;
   homeButton()?.focus({ preventScroll: true });
 }
@@ -151,7 +153,8 @@ function refuseFocusSteal(frame, closeBtn) {
   const until = performance.now() + 3000;      // measured: Wix steals twice, ~1.2s and ~2.4s
   const id = setInterval(() => {
     if (!closeBtn.isConnected || performance.now() > until) { clearInterval(id); return; }
-    if (document.activeElement === frame) closeBtn.focus({ preventScroll: true });
+    // in full screen the ✕ may be off the surface and refuse focus: take it to the icon
+    if (document.activeElement === frame) (live?.fill ? homeButton() : closeBtn)?.focus({ preventScroll: true });
   }, 160);
 }
 
@@ -233,6 +236,24 @@ function fillButton() {
 function setFillState(on) {
   if (!live) return;
   live.fill = on;
+  /* In native full screen nothing outside the surface can take focus, and a key
+     pressed inside the cross-origin frame never reaches trapTab — so Shift+Tab
+     from the frame's first control fell through to BODY (review 2026-09-14). A
+     focusable sentinel before the frame catches that step and hands it to the
+     icon. Inserting it next to the iframe does not reload the iframe. */
+  if (on && !live.sentinel) {
+    const sentinel = document.createElement('span');
+    sentinel.tabIndex = 0;
+    sentinel.className = 'tv-sentinel';
+    sentinel.addEventListener('focus', () => homeButton()?.focus({ preventScroll: true }));
+    fillTarget().prepend(sentinel);
+    live.sentinel = sentinel;
+  } else if (!on && live.sentinel) {
+    live.sentinel.remove();
+    live.sentinel = null;
+  }
+  // a tap or a Safari click does not focus the icon: give the keyboard a place on the surface
+  if (on && !focusScope().contains(document.activeElement)) homeButton()?.focus({ preventScroll: true });
   const btn = live.host.querySelector('.tv-fs');
   if (btn) {
     btn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
@@ -271,7 +292,7 @@ function enterFill() {
 function exitFill() {
   if (!live?.fill) return;
   if (live.pinned) { pinFill(false); return; }
-  if (fsElement()) { live.exitingByUs = true; leaveNativeFullscreen(); }
+  if (fsElement()) { live.exitAskedAt = performance.now(); leaveNativeFullscreen(); }
   else setFillState(false);
 }
 
@@ -281,8 +302,11 @@ function onFullscreenChange() {
   // only a browser-driven exit can have spent the visitor's Escape: arm the
   // guard for that one, never for our own icon or Escape handler (review
   // 2026-09-14: a real Escape 100 ms after leaving by the icon was swallowed)
-  if (!on && live.fill && !live.exitingByUs) lastFillExit = performance.now();
-  live.exitingByUs = false;
+  // "ours" is a recent ask, not a flag: a refused exit fires no change, and a flag
+  // would stay set and pass off the browser's next exit as ours (review 2026-09-14)
+  const ours = performance.now() - (live.exitAskedAt ?? -Infinity) < 1000;
+  if (!on && live.fill && !ours) lastFillExit = performance.now();
+  if (!on) live.exitAskedAt = null;
   setFillState(on);
 }
 document.addEventListener('fullscreenchange', onFullscreenChange);
@@ -358,6 +382,7 @@ function openInPane(pane, data, btn) {
   // widget frames are native (fluid) — only the scaled ones need re-scaling
   live = { host: wrap, restoreFocus: btn, scaled: isWidget ? [] : [{ frame, pane }] };
   x.focus();
+  document.addEventListener('focusin', guardModalFocus);   // inert until full screen; closeLive removes it
   keepKeysReachable(wrap, x, { backdropCloses: false });
   refuseFocusSteal(frame, x);
   announce(true);
