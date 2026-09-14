@@ -379,8 +379,16 @@ function openInPane(pane, data, btn) {
   wrap.append(frame, ...(isWidget ? [] : [liveDot(), fillButton()]), x);
   pane.appendChild(wrap);
 
+  /* The preview covers the panel's own ▶ and ⤢, but the keyboard could still
+     reach them: Shift+Tab out of the frame landed on the hidden ⤢, and Enter
+     opened the stage and started the page over (review 2026-09-14; WCAG 2.2
+     2.4.11, focus not obscured). A mouse can't reach them, so neither can the
+     keyboard or a screen reader while it plays. closeLive gives them back. */
+  const covered = [...pane.children].filter(el => el !== wrap && !el.inert);
+  covered.forEach(el => { el.inert = true; });
+
   // widget frames are native (fluid) — only the scaled ones need re-scaling
-  live = { host: wrap, restoreFocus: btn, scaled: isWidget ? [] : [{ frame, pane }] };
+  live = { host: wrap, restoreFocus: btn, covered, scaled: isWidget ? [] : [{ frame, pane }] };
   x.focus();
   document.addEventListener('focusin', guardModalFocus);   // inert until full screen; closeLive removes it
   keepKeysReachable(wrap, x, { backdropCloses: false });
@@ -560,6 +568,7 @@ export function closeLive() {
   const it = live;
   live = null;                                  // drop the handle first: the retract is async
   document.removeEventListener('focusin', guardModalFocus);
+  it.covered?.forEach(el => { el.inert = false; });   // before focus goes back to ▶
   // blank before removing: some pages keep audio alive through a detach
   it.host.querySelectorAll('iframe').forEach(f => { f.src = 'about:blank'; });
   setScrollLock(false);
