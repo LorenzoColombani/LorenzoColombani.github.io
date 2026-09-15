@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Workshop — Lorenzo Colombani</title>
+<meta name="description" content="The Workshop by Lorenzo Colombani — where we build AI tools and ship them fast. Explore previous projects in an interactive invention space.">
+<meta name="robots" content="noindex,nofollow">
+<!-- share-preview:start -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Workshop">
+<meta property="og:title" content="The Workshop — Lorenzo Colombani">
+<meta property="og:description" content="Open The Workshop: an interactive space where we build AI tools and ship them fast. Explore previous projects.">
+<meta property="og:url" content="https://the-workshop-lorenzo-preview.netlify.app/workshop/">
+<meta property="og:image" content="https://the-workshop-lorenzo-preview.netlify.app/workshop/assets/social-preview.png?v=repair-9">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1733">
+<meta property="og:image:height" content="907">
+<meta property="og:image:alt" content="The Workshop: Lorenzo’s droid beside an illuminated teal orb and an ivory optical table overlooking the ocean.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Workshop — Lorenzo Colombani">
+<meta name="twitter:description" content="Open The Workshop: an interactive space where we build AI tools and ship them fast. Explore previous projects.">
+<meta name="twitter:image" content="https://the-workshop-lorenzo-preview.netlify.app/workshop/assets/social-preview.png?v=repair-9">
+<meta name="twitter:image:alt" content="The Workshop sharing artwork with Lorenzo’s droid, a teal orb, an ivory optical table, and a blue-hour ocean.">
+<!-- share-preview:end -->
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=repair-9">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
+</head>
+<body>
+<canvas id="world" aria-label="An interactive three-dimensional invention space overlooking the ocean"></canvas>
+<div class="screen-shade" aria-hidden="true"></div>
+<div class="load-screen" id="loader"><span class="load-mark" aria-hidden="true">✳</span><p>Establishing a little perspective.</p><span class="load-line"></span></div>
+<div id="fallback" hidden><h1>A little more space is needed.</h1><p>This scene needs WebGL. You can still explore the work.</p><a href="../work/">Explore Lorenzo’s work ↗</a></div>
+<header class="top-bar">
+<a class="identity" id="workshop-home" href="./" aria-label="The Workshop home — return to the general workshop view"><span class="identity-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3v34M3 20h34M8 8l24 24M8 32 32 8"/></svg></span><span>Lorenzo<br>Colombani</span></a>
+<div class="top-actions"><button id="sound-toggle" aria-pressed="false" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8v4h3l4 3V5L6 8H3m10-2q4 4 0 8m2-10q6 6 0 12"/></svg><span>Sound off</span></button><button id="info-toggle" type="button" aria-label="About this experiment">?</button></div>
+</header>
+<div id="world-controls" aria-label="Controls attached to the instruments"></div>
+<main class="interface">
+<section class="intro reactor-intro" id="intro" aria-labelledby="welcome-title">
+<div class="welcome-copy"><h1 id="welcome-title">The <em>Workshop.</em></h1><p class="welcome-subtitle">Where we build AI tools and ship them. <span class="shipping-punch">Fast.</span></p></div>
+<button class="reactor-entry" id="enter-button" type="button" aria-label="Explore previous projects — enter the workshop" aria-describedby="entry-status">
+<svg class="entry-reactor" viewBox="0 0 180 180" aria-hidden="true"><defs><radialGradient id="entry-light"><stop offset="0" stop-color="#ecfff9"/><stop offset=".35" stop-color="#b1ffe9" stop-opacity=".55"/><stop offset="1" stop-color="#75e8d5" stop-opacity="0"/></radialGradient></defs>
+<circle class="reactor-aura" cx="90" cy="90" r="84" fill="url(#entry-light)"/>
+<g class="reactor-outer"><circle cx="90" cy="90" r="77"/><circle class="reactor-trace" cx="90" cy="90" r="71"/><path d="M90 7 V17 M90 163 V173 M7 90 H17 M163 90 H173"/></g>
+<g class="reactor-coils"><g transform="rotate(0 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(30 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(60 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(90 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(120 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(150 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(180 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(210 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(240 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(270 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(300 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(330 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g></g>
+<g class="reactor-iris"><circle cx="90" cy="90" r="43"/><path d="M90 47 L127 69 L127 111 L90 133 L53 111 L53 69 Z"/><path d="M90 57 L119 107 H61 Z"/><path d="M90 69 L108 101 H72 Z" class="reactor-heart"/></g>
+<circle class="reactor-release" cx="90" cy="90" r="62"/>
+</svg><span class="reactor-entry-label">Explore previous projects</span><span id="entry-status" class="reactor-entry-status">ENTER THE WORKSHOP</span>
+</button></section>
+<section class="workbench accessibility-controls" id="workbench" hidden aria-label="Workshop controls">
+<div class="workbench-heading"><span class="eyebrow">THE WORKBENCH</span><h2>Put an idea<br> <em>in motion.</em></h2><p>Reach for an instrument. See what happens.</p></div>
+<div class="instruments" role="group" aria-label="Choose an instrument">
+<button class="instrument active" data-project="field" aria-pressed="true" type="button"><span class="instrument-num">01</span><span><strong>The gravity field</strong><small>A living experiment</small></span><span class="instrument-arrow" aria-hidden="true">↗</span></button>
+<button class="instrument" data-project="tva" aria-pressed="false" type="button"><span class="instrument-num">02</span><span><strong>TVA Case File</strong><small>Motion. Type. A different timeline.</small></span><span class="instrument-arrow" aria-hidden="true">↗</span></button>
+<button class="instrument" data-project="openbots" aria-pressed="false" type="button"><span class="instrument-num">03</span><span><strong>OpenBots</strong><small>A team at your fingertips</small></span><span class="instrument-arrow" aria-hidden="true">↗</span></button>
+</div>
+</section>
+</main>
+<div class="focus-card accessibility-controls" id="focus-card" hidden>
+<div class="focus-top"><span class="status-light"></span><span id="focus-eyebrow">LIVE / GENERATIVE FIELD</span><span class="focus-index" id="focus-index">01</span></div>
+<h2 id="focus-title">Find the frequency.</h2><p id="focus-description">Touch the field. Shape its orbit. Let it go.</p>
+<div id="field-controls"><div class="orb-control"><div class="orb-orbit orbit-a"></div><div class="orb-orbit orbit-b"></div><div class="liquid-orb"><span class="orb-specular"></span><svg viewBox="0 0 120 120" aria-hidden="true"><path id="orb-wave" d="M20 60Q40 25 60 60T100 60"/><circle cx="60" cy="60" r="40"/></svg></div><input id="coherence" type="range" min="0" max="100" value="28" aria-label="Field coherence"><span class="orb-axis axis-left">−</span><span class="orb-axis axis-right">+</span></div><div class="field-readout"><span id="coherence-readout">28% COHERENCE</span><span>SHAPE THE FIELD</span></div><p class="gesture-hint">Drag this lens or the orb in the room.</p><button class="project-button" id="release-button" type="button"><span class="action-seal" aria-hidden="true">◎</span><span>Release the field<small>LET IT GO</small></span><span aria-hidden="true">↗</span></button><button class="capture-button" id="capture-button" type="button">Save your view <span aria-hidden="true">↓</span></button></div>
+<div id="project-controls" hidden><button class="project-button" id="deploy-button" type="button"><span class="action-seal" aria-hidden="true">◇</span><span>Unfold the experience<small>PROJECT INTO SPACE</small></span><span aria-hidden="true">↗</span></button><a id="case-link" class="quiet-link" href="../work/tva-case-file/">Read the case study ↗</a></div>
+</div>
+<div class="scene-hotspot" id="robot-hotspot" aria-hidden="true"><span>COMPANION / 01</span><i></i></div>
+<footer class="bottom-bar"><div class="view-controls" aria-label="Scene controls"><button id="light-toggle" type="button" aria-pressed="false"><span aria-hidden="true">◐</span> Blue hour</button></div></footer>
+<p id="announcer" class="sr-only" role="status" aria-live="polite"></p>
+<dialog class="experience-dialog" id="experience-dialog" aria-labelledby="experience-title"><header><div><span class="eyebrow">PROJECTED / FROM THE WORKBENCH</span><h2 id="experience-title">TVA Case File</h2></div><div class="experience-actions"><a id="experience-external" href="https://tva-case-file-l1607.netlify.app" target="_blank" rel="noopener">Open in a new tab ↗</a><button id="experience-close" type="button">Return to the workshop <span aria-hidden="true">×</span></button></div></header><div id="experience-content"></div><p class="experience-help">Open the case-file source in a new tab.</p></dialog>
+<dialog id="about-dialog" class="about-dialog" aria-labelledby="about-title"><button class="about-close" type="button" aria-label="Close information">×</button><span class="eyebrow">AN INDEPENDENT EXPERIMENT</span><h2 id="about-title">A little space<br>for <em>possibility.</em></h2><p>An original interactive environment for Lorenzo Colombani. A place to make things, play with ideas, and see the work.</p><p>Drag the central orb to shape its field. Touch an instrument to unfold its experience. The labels travel with their objects and work with a keyboard. Optional text controls are available below.</p><button class="text-controls-toggle" id="text-controls-toggle" type="button" aria-pressed="false">Show text controls</button><div class="about-links"><a href="../work/">Explore all work ↗</a><a href="mailto:lorenzo.colombani@live.fr">Get in touch ↗</a></div><p class="about-credit">Original synthesized soundtrack. Three.js, MIT. Local visual experiment.</p></dialog>
+<noscript><div class="noscript">This interactive scene needs JavaScript. <a href="../work/">Explore the work instead ↗</a></div></noscript>
+<script type="module" src="bootstrap.js?v=repair-9"></script>
+</body>
+</html>

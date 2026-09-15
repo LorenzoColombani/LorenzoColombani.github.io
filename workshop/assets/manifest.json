@@ -1,0 +1,128 @@
+{
+  "robot": {
+    "bounds_blender_z_up": [
+      [
+        -0.9880000352859497,
+        -0.9200000166893005,
+        0.014999999664723873
+      ],
+      [
+        0.9200000166893005,
+        0.9200000166893005,
+        3.508000135421753
+      ]
+    ],
+    "triangles": 44456,
+    "objects": 50,
+    "nodes": [
+      "robot",
+      "lower_arm",
+      "elbow",
+      "head"
+    ],
+    "file_bytes": 2001152,
+    "finish": {
+      "textures": [
+        {
+          "name": "robot painted color",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "robot painted roughness",
+          "size": [
+            1024,
+            1024
+          ]
+        }
+      ],
+      "ao_baked": true,
+      "note": "Original generated paint and directional metal roughness, baked to shared UV atlases; cavity modulation capped at 18 percent. No direct lighting baked."
+    }
+  },
+  "sofa": {
+    "bounds_blender_z_up": [
+      [
+        -1.899999976158142,
+        -0.9100000262260437,
+        0.002412710338830948
+      ],
+      [
+        1.899999976158142,
+        0.9100000262260437,
+        1.7681562900543213
+      ]
+    ],
+    "triangles": 23604,
+    "objects": 18,
+    "nodes": [
+      "sofa"
+    ],
+    "file_bytes": 1379956,
+    "finish": {
+      "textures": [
+        {
+          "name": "sofa painted color",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "sofa painted roughness",
+          "size": [
+            1024,
+            1024
+          ]
+        }
+      ],
+      "ao_baked": true,
+      "note": "Original generated material variation and directional roughness in shared UV atlases; contact shading capped at 18 percent; no direct lighting baked."
+    }
+  },
+  "plant": {
+    "bounds_blender_z_up": [
+      [
+        -0.6010000109672546,
+        -0.6107498407363892,
+        0.006000000052154064
+      ],
+      [
+        0.6010000109672546,
+        0.6105421781539917,
+        2.7300000190734863
+      ]
+    ],
+    "triangles": 18412,
+    "objects": 44,
+    "nodes": [
+      "plant"
+    ],
+    "file_bytes": 1451396,
+    "finish": {
+      "textures": [
+        {
+          "name": "plant painted color",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "plant painted roughness",
+          "size": [
+            1024,
+            1024
+          ]
+        }
+      ],
+      "ao_baked": true,
+      "note": "Original generated material variation and directional roughness in shared UV atlases; contact shading capped at 18 percent; no direct lighting baked."
+    }
+  },
+  "finish": {
+    "note": "See each asset finish record for texture dimensions and baked shading details."
+  }
+}

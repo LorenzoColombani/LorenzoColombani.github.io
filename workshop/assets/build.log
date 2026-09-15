@@ -1,0 +1,144 @@
+/Users/lorenzocolombani/.codex/worktrees/773a/LorenzoColombani.github.io/workshop/assets/build-props.py:11: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m=bpy.data.materials.new(name); m.diffuse_color=(*color,1); m.use_nodes=True
+INFO Draco is available, use library at /Applications/Blender.app/Contents/Resources/5.2/scripts/addons_core/io_scene_gltf2/libbf_intern_draco_bridge.dylib
+INFO MeshOptimizer is available, use library at /Applications/Blender.app/Contents/Resources/5.2/scripts/addons_core/io_scene_gltf2/libbf_intern_meshopt_bridge.dylib
+15:23:23 | INFO: Starting glTF 2.0 export
+15:23:23 | INFO: Extracting primitive: base mint seam
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: ceramic base fairing
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Sphere.001
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: elbow satin axle
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: elbow satin axle.001
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: aerial
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Sphere.008
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Sphere.003
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: head shell parting seam
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Sphere.005
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Sphere.006
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Sphere.007
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Sphere.002
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Sphere.004
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: upper curved shell
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: exposed actuator
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: lower curved shell
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Sphere
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: weighted base
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Finished glTF 2.0 export in 0.03192019462585449 s
+
+15:23:23 | INFO: Starting glTF 2.0 export
+15:23:23 | INFO: Extracting primitive: crowned seat cushion
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: crowned seat cushion.001
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Cube.001
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: reclined back cushion
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: reclined back cushion.001
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: seat stitched welt
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: seat stitched welt.001
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: soft arm bolster
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: soft arm bolster.001
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Cube.002
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Cube.003
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Cube.004
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Cube.005
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: Cube.006
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Finished glTF 2.0 export in 0.030436038970947266 s
+
+15:23:23 | INFO: Starting glTF 2.0 export
+15:23:23 | INFO: Extracting primitive: ceramic planter
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: curved pointed leaf
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.001
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.002
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.003
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.004
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.005
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.006
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.007
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.008
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.009
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.010
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.011
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: curved pointed leaf.012
+15:23:23 | INFO: Primitives created: 2
+15:23:23 | INFO: Extracting primitive: leaf stem
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.001
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.002
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.003
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.004
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.005
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.006
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.007
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.008
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.009
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.010
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.011
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: leaf stem.012
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: pot rim inset
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Extracting primitive: soil
+15:23:23 | INFO: Primitives created: 1
+15:23:23 | INFO: Finished glTF 2.0 export in 0.028622150421142578 s
+/Users/lorenzocolombani/.codex/worktrees/773a/LorenzoColombani.github.io/workshop/assets/build-props.py:11: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m=bpy.data.materials.new(name); m.diffuse_color=(*color,1); m.use_nodes=True
+00:08.876  render           | Saved: '/Users/lorenzocolombani/.codex/worktrees/773a/LorenzoColombani.github.io/workshop/assets/props-preview.png'
+
+PROP_REPORT {"robot": {"bounds_blender_z_up": [[-0.9200000166893005, -0.9200000166893005, 0.014999999664723873], [0.9200000166893005, 0.9200000166893005, 3.508000135421753]], "triangles": 21740, "objects": 23, "nodes": ["robot", "lower_arm", "elbow", "head"], "file_bytes": 414464}, "sofa": {"bounds_blender_z_up": [[-1.899999976158142, -0.9100000262260437, 0.002412710338830948], [1.899999976158142, 0.9100000262260437, 1.7681562900543213]], "triangles": 36104, "objects": 15, "nodes": ["sofa"], "file_bytes": 656800}, "plant": {"bounds_blender_z_up": [[-0.6317366361618042, -0.6998170614242554, 0.014999999664723873], [0.6100000143051147, 0.6743539571762085, 2.7300000190734863]], "triangles": 12472, "objects": 30, "nodes": ["plant"], "file_bytes": 254512}, "finish": {"textures": [], "ao_baked": false, "note": "Modeled recesses and folds; physically based palette materials. No textures or external assets."}}
+Blender 5.2.1 LTS (hash 9e2066aef7ef built 2026-08-25 01:35:57)
+
+Blender quit

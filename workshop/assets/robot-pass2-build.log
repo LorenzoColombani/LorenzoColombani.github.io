@@ -1,0 +1,110 @@
+/Users/lorenzocolombani/.codex/worktrees/773a/LorenzoColombani.github.io/workshop/assets/build-props.py:12: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m=bpy.data.materials.new(name); m.diffuse_color=(*color,1); m.use_nodes=True
+INFO Draco is available, use library at /Applications/Blender.app/Contents/Resources/5.2/scripts/addons_core/io_scene_gltf2/libbf_intern_draco_bridge.dylib
+INFO MeshOptimizer is available, use library at /Applications/Blender.app/Contents/Resources/5.2/scripts/addons_core/io_scene_gltf2/libbf_intern_meshopt_bridge.dylib
+15:35:39 | INFO: Starting glTF 2.0 export
+15:35:39 | INFO: Extracting primitive: base mint seam
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: ceramic base fairing
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.001
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: elbow satin axle
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: elbow satin axle.001
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: aerial
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.013
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: cheek copper bearing rim
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: cheek copper bearing rim.001
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.011
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.012
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.007
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.009
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.006
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: eye satin bezel
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: eye satin bezel.001
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.003
+15:35:39 | INFO: Primitives created: 2
+15:35:39 | INFO: Extracting primitive: head rear access seam
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: mint iris ring
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: mint iris ring.001
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.002
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.008
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.010
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: optical eye well
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: optical eye well.001
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.005
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere.004
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: upper curved shell
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: upper shell pale ridge
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: wrist recessed collar
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: exposed actuator
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: lower curved shell
+15:35:39 | INFO: Primitives created: 2
+15:35:39 | INFO: Extracting primitive: lower shell panel seam
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: shoulder articulation collar
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: Sphere
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Extracting primitive: weighted base
+15:35:39 | INFO: Primitives created: 1
+15:35:39 | INFO: Finished glTF 2.0 export in 0.04660916328430176 s
+/Users/lorenzocolombani/.codex/worktrees/773a/LorenzoColombani.github.io/workshop/assets/build-props.py:12: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m=bpy.data.materials.new(name); m.diffuse_color=(*color,1); m.use_nodes=True
+00:09.590  render           | Saved: '/Users/lorenzocolombani/.codex/worktrees/773a/LorenzoColombani.github.io/workshop/assets/robot-pass2.png'
+00:19.904  render           | Saved: '/Users/lorenzocolombani/.codex/worktrees/773a/LorenzoColombani.github.io/workshop/assets/robot-pass2-detail.png'
+
+15:35:58 | INFO: Data are loaded, start creating Blender stuff
+15:35:58 | INFO: Blender create Mesh node base mint seam
+15:35:58 | INFO: Blender create Mesh node ceramic base fairing
+15:35:58 | INFO: Blender create Mesh node Sphere.001
+15:35:58 | INFO: Blender create Mesh node elbow satin axle
+15:35:58 | INFO: Blender create Mesh node elbow satin axle.001
+15:35:58 | INFO: Blender create Mesh node aerial
+15:35:58 | INFO: Blender create Mesh node Sphere.008
+15:35:58 | INFO: Blender create Mesh node Sphere.003
+15:35:58 | INFO: Blender create Mesh node head shell parting seam
+15:35:58 | INFO: Blender create Mesh node Sphere.005
+15:35:58 | INFO: Blender create Mesh node Sphere.006
+15:35:58 | INFO: Blender create Mesh node Sphere.007
+15:35:58 | INFO: Blender create Mesh node Sphere.002
+15:35:58 | INFO: Blender create Mesh node Sphere.004
+15:35:58 | INFO: Blender create Mesh node upper curved shell
+15:35:58 | INFO: Blender create Mesh node exposed actuator
+15:35:58 | INFO: Blender create Mesh node lower curved shell
+15:35:58 | INFO: Blender create Mesh node Sphere
+15:35:58 | INFO: Blender create Mesh node weighted base
+15:35:58 | INFO: glTF import finished in 0.03s
+00:30.063  render           | Saved: '/Users/lorenzocolombani/.codex/worktrees/773a/LorenzoColombani.github.io/workshop/assets/robot-pass1-detail.png'
+00:40.484  render           | Saved: '/Users/lorenzocolombani/.codex/worktrees/773a/LorenzoColombani.github.io/workshop/assets/robot-pass1.png'
+PROP_REPORT {"robot": {"bounds_blender_z_up": [[-0.9880000352859497, -0.9200000166893005, 0.014999999664723873], [0.9200000166893005, 0.9200000166893005, 3.508000135421753]], "triangles": 39964, "objects": 40, "nodes": ["robot", "lower_arm", "elbow", "head"], "file_bytes": 848524}, "sofa": {"bounds_blender_z_up": [[-1.899999976158142, -0.9100000262260437, 0.002412710338830948], [1.899999976158142, 0.9100000262260437, 1.7681562900543213]], "triangles": 36104, "objects": 15, "nodes": ["sofa"], "file_bytes": 656800}, "plant": {"bounds_blender_z_up": [[-0.6317366361618042, -0.6998170614242554, 0.014999999664723873], [0.6100000143051147, 0.6743539571762085, 2.7300000190734863]], "triangles": 12472, "objects": 30, "nodes": ["plant"], "file_bytes": 254512}, "finish": {"textures": [], "ao_baked": false, "note": "Modeled recesses and folds; physically based palette materials. No textures or external assets."}}
+Blender 5.2.1 LTS (hash 9e2066aef7ef built 2026-08-25 01:35:57)
+
+Blender quit

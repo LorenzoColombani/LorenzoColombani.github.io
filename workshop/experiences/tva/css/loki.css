@@ -1,0 +1,367 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   HOW I AM LOKI — page chrome.
+   The film itself is rendered to #print (canvas + WebGL grade); this file
+   only dresses the gate, the replay tab, and the accessibility layer.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* the four letterforms of the show wordmark (assets/show, gitignored) */
+@font-face { font-family: "LokiUSAngel";    src: url("../assets/show/fonts/usangel.ttf") format("truetype"); font-display: block; }
+@font-face { font-family: "LokiOldEnglish"; src: url("../assets/show/fonts/old-english-five.regular.ttf") format("truetype"); font-display: block; }
+@font-face { font-family: "LokiARB85";      src: url("../assets/show/fonts/ARB 85 Poster Script JAN-39 FRE.ttf") format("truetype"); font-display: block; }
+@font-face { font-family: "LokiCloister";   src: url("../assets/show/fonts/CloisterBlack.ttf") format("truetype"); font-display: block; }
+
+:root {
+  --ink-void: #120d08;
+  --manila:   #e6cf9f;
+  --manila-dim: #c9a86a;
+  --amber:    #d9a54c;
+  --bone:     #f2e7cf;
+  --phosphor: #79ffa2;
+  --tva:  "Righteous", "Arial Rounded MT Bold", sans-serif;
+  --mono: "Courier Prime", "Courier New", monospace;
+  --paper-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.6 0.4 0 0 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+html { touch-action: manipulation; } /* kill iOS double-tap-zoom tap-swallowing; pan+pinch stay (BRIDGE law) */
+body { background: var(--ink-void); color: var(--manila); font-family: var(--mono); overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
+
+/* ═══════════════ GATE — the case file itself ═══════════════ */
+#gate {
+  position: fixed; inset: 0; z-index: 40;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4vh;
+  background:
+    radial-gradient(100% 80% at 50% 30%, rgba(232, 168, 80, 0.13), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.16) 0 3px, transparent 3px 90px),
+    linear-gradient(180deg, #241809 0%, var(--ink-void) 78%);
+  transition: opacity 1.15s ease, visibility 1.15s;
+}
+#gate::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: var(--paper-noise); opacity: 0.35; mix-blend-mode: overlay;
+}
+#gate::before { /* the print's grain boil, on the cover too — the record is already rolling (r5).
+  Neutral grayscale noise (full alpha) + overlay blend ≈ the shader's luminance-weighted grain:
+  strongest on the midtone paper, near-silent on the black desk. steps(1) holds each of the 8
+  offsets — a ~12 fps boil, like the film pass. z-index lifts it above the positioned cover;
+  the ::after paper fibre stays static (it is the paper, not the grain). */
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='fg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23fg)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay; opacity: 0.12;
+  animation: gate-grain 0.66s steps(1) infinite;
+}
+@keyframes gate-grain {
+  0%    { background-position: 0 0; }
+  12.5% { background-position: -37px 21px; }
+  25%   { background-position: 23px -44px; }
+  37.5% { background-position: -51px -19px; }
+  50%   { background-position: 41px 33px; }
+  62.5% { background-position: -13px 47px; }
+  75%   { background-position: 53px -7px; }
+  87.5% { background-position: -29px -37px; }
+}
+#gate.gate-out { opacity: 0; visibility: hidden; }
+.desk-pool {
+  position: absolute; left: 50%; top: 58%; width: min(80vmin, 700px); height: 20vmin;
+  transform: translate(-50%, -30%);
+  background: radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,0.55), transparent 70%);
+  pointer-events: none;
+}
+
+/* the cover page — the same paper as the file inside, flat on the desk.
+   Lifting it starts the record. */
+.cover {
+  position: relative; border: 0; padding: 0; cursor: pointer;
+  /* --pw is the paper's own width — EVERY size on the cover derives from it,
+     so the cover scales like a printed object. The rem floors that used to
+     let type outgrow a vmin-shrunk paper (wide-short windows) are gone;
+     at --pw = 430px the derived sizes equal the old clamp maxima exactly. */
+  --pw: min(56vmin, 430px);
+  width: var(--pw); aspect-ratio: 660 / 840;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.22 0.12 0 0 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(168deg, #e2cb99 0%, #d6bc7d 46%, #cbae6e 100%);
+  border-radius: 3px;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.72),
+    0 4px 18px rgba(0, 0, 0, 0.5),
+    inset 0 0 90px rgba(146, 100, 40, 0.28),
+    inset 0 0 26px rgba(96, 62, 18, 0.35);
+  transform: rotate(-1.2deg);
+  transition: transform 0.45s cubic-bezier(.2,.9,.3,1.2), opacity 0.45s ease;
+  font-family: inherit; text-align: left; color: #3c2712; /* buttons don't inherit by default */
+}
+.cover:disabled { cursor: wait; }
+.cover:not(:disabled):focus-visible { transform: rotate(-1deg) translateY(-7px); }
+.cover:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 8px; }
+/* hover poses only where hover EXISTS — on iOS a :hover rule makes the first
+   tap a hover-arm instead of an open (the double-tap he reported). */
+@media (hover: hover) {
+  .cover:not(:disabled):hover { transform: rotate(-1deg) translateY(-7px); }
+  .cover:not(:disabled):hover .c-tab { background: #c9481a; }
+}
+.cover::before { /* punch strip, as on every page of the file */
+  content: ""; position: absolute; top: 0; bottom: 0; left: 4.5%; width: 2px;
+  background: repeating-linear-gradient(180deg, transparent 0 calc(var(--pw) * 34 / 430), rgba(90, 58, 20, 0.5) calc(var(--pw) * 34 / 430) calc(var(--pw) * 36 / 430));
+}
+.cover::after { /* the holes */
+  content: ""; position: absolute; top: 4%; bottom: 4%; left: 1.4%; width: calc(var(--pw) * 12 / 430);
+  background-image: radial-gradient(circle, rgba(70, 44, 14, 0.36) 0 calc(var(--pw) * 3.5 / 430), transparent calc(var(--pw) * 4.5 / 430));
+  background-size: calc(var(--pw) * 12 / 430) 11.4%; background-repeat: repeat-y;
+}
+#gate.opening .cover { /* the cover is lifted off the file */
+  /* keyframes instead of a transition so the lift can carry ANTICIPATION:
+     a hand presses a cover down before lifting it. 0% starts near the hover
+     pose (-4px) because the click almost always lands from hover; the 14%
+     press passes through +4px, then the lift. forwards keeps it gone. */
+  animation: cover-lift 1.05s cubic-bezier(.45,.05,.3,1) forwards;
+}
+@keyframes cover-lift {
+  0%   { transform: rotate(-1.1deg) translateY(-4px);           opacity: 1; }
+  14%  { transform: rotate(-1.3deg) translateY(4px) scale(.997); opacity: 1; }
+  40%  { opacity: 1; }
+  100% { transform: rotate(-3deg) translateY(-9%) scale(1.03);   opacity: 0; }
+}
+.c-fold { /* dog-eared corner, same as the pages after */
+  position: absolute; right: 0; bottom: 0; width: 0; height: 0;
+  border-style: solid; border-width: 0 0 calc(var(--pw) * 46 / 430) calc(var(--pw) * 46 / 430);
+  border-color: transparent transparent rgba(60, 36, 10, 0.16) transparent;
+}
+.c-topline {
+  position: absolute; top: 5%; left: 9%; right: 7%;
+  display: flex; justify-content: space-between; gap: 1em;
+  font-family: var(--mono); font-weight: 700;
+  font-size: calc(var(--pw) * 9.6 / 430);
+  letter-spacing: 0.16em; color: #5a3a14;
+  border-bottom: 2px solid #5a3a14; padding-bottom: 1.6%;
+}
+.c-topline span { white-space: nowrap; }
+.c-case {
+  position: absolute; top: 12%; left: 9%; white-space: nowrap;
+  font-family: var(--tva); font-size: calc(var(--pw) * 30.4 / 430); color: #5a3a14;
+}
+.c-note {
+  position: absolute; top: 20.5%; left: 9%;
+  font-family: var(--mono); font-weight: 700;
+  font-size: calc(var(--pw) * 9.6 / 430);
+  letter-spacing: 0.26em; color: #7a5518; white-space: nowrap;
+}
+.c-subj { position: absolute; top: 30%; left: 9%; white-space: nowrap; font-size: calc(var(--pw) * 18.4 / 430); color: #2f2010; }
+.c-stamp {
+  position: absolute; right: 8%; bottom: 14%;
+  font-family: var(--tva); font-size: calc(var(--pw) * 38.4 / 430);
+  color: rgba(201, 57, 27, 0.85); border: 0.16em solid rgba(201, 57, 27, 0.8);
+  border-radius: 0.28em; padding: 0.08em 0.32em; letter-spacing: 0.1em;
+  transform: rotate(-9deg);
+  -webkit-mask-image: var(--paper-noise); mask-image: var(--paper-noise);
+  -webkit-mask-size: 170px; mask-size: 170px;
+}
+.c-tab {
+  position: absolute; left: 9%; bottom: -4.5%;
+  font-family: var(--mono); font-weight: 700;
+  font-size: calc(var(--pw) * 11.52 / 430); letter-spacing: 0.3em;
+  color: #e8d5a8; background: #7a2913;
+  padding: 0.7em 1.4em; border-radius: 0 0 6px 6px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+  transition: background 0.3s, color 0.3s;
+}
+.cover:not(:disabled) .c-tab { background: #a03a10; color: #ffe9c2; }
+.gate-fine {
+  font-size: clamp(0.6rem, 1.7vw, 0.72rem);
+  letter-spacing: 0.22em; color: #7d6338;
+}
+
+/* ═══════════════ THE PRINT ═══════════════ */
+#stage { position: fixed; inset: 0; background: #000; } /* cursor hides only via .pl-idle (player.js idle state) */
+#print { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+#replay-tab { position: absolute; bottom: calc(4vh + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; display: flex; justify-content: center; z-index: 8; cursor: auto; }
+#replay-tab[hidden] { display: none; }
+#replay-btn {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.4em;
+  color: var(--manila-dim); background: rgba(30, 20, 8, 0.72);
+  border: 1px solid #4a3517; border-radius: 4px; padding: 0.8em 1.7em; cursor: pointer;
+  transition: color .3s, border-color .3s; opacity: 0; animation: tab-in 1.6s ease forwards;
+}
+@keyframes tab-in { to { opacity: 1; } }
+#replay-btn:hover, #replay-btn:focus-visible { color: var(--bone); border-color: var(--amber); outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  #gate { transition: none; }
+  .cover, #gate.opening .cover { transition: none; }
+  #gate.opening .cover { animation: none; opacity: 0; }
+  #gate::before { animation: none; opacity: 0.06; } /* static, halved — mirrors __REDUCED grain */
+}
+
+/* ── exhibit tags: evidence pinned to the branch tips (paper, per the bible) ── */
+#exhibits { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.ex-tag {
+  position: absolute; left: 0; top: 0;
+  /* rides the film's own scale: the print draws type ∝ viewport height, so the
+     tag does too — 16.5px at the 810px design height, floored for tap-ability.
+     Hard px here was why phones showed a chip DWARFING the card title (his catch). */
+  font: 700 clamp(9px, 2.04vh, 16.5px)/1.25 "Courier Prime", monospace;
+  letter-spacing: .09em; white-space: nowrap;
+  color: #2b2318; background: #b8a878;
+  border: 1px solid #6d5c38; border-radius: 0.18em;
+  padding: 0.455em 0.818em 0.364em 1.727em;
+  box-shadow: 0 1.5px 9px rgba(0,0,0,.45);
+  opacity: 0; visibility: hidden;
+  transform: translate(-8px, -130%) rotate(-1.4deg); /* JS-owned per frame (main.js tag loop) */
+  /* the print's lamp reaches the DOM layer: without this the tags are the only
+     pixels on screen with no warmth and no grade — crisp UI floating over film */
+  filter: sepia(.14) saturate(.88) contrast(.95) brightness(.92);
+  /* resting pose sits 7px above the pin. The independent `translate` property
+     COMPOSES with the JS-written transform, so enter/exit choreography never
+     touches the placement engine. Enter = hung on the branch (settles down);
+     exit = lifted off the file (rises away). Asymmetric on purpose:
+     arrivals invite, departures shouldn't linger. */
+  translate: 0 -7px;
+  transition: opacity .32s cubic-bezier(.4,0,.7,.4),
+              translate .32s cubic-bezier(.4,0,.7,.4),
+              visibility 0s linear .32s;
+  pointer-events: none; text-decoration: none;
+}
+.ex-tag::before {
+  content: ""; position: absolute; left: 0.545em; top: 50%;
+  width: 0.636em; height: 0.636em; border-radius: 50%;
+  transform: translateY(-50%);
+  background: #0a0805; box-shadow: inset 0 0 0 0.136em #6d5c38;
+}
+.ex-tag.on {
+  opacity: .92; visibility: visible; pointer-events: auto;
+  translate: 0 0;
+  transition: opacity .45s ease-out,
+              translate .6s cubic-bezier(.22,.61,.25,1); /* soft landing — paper doesn't bounce */
+}
+a.ex-tag::after { content: " ↗"; opacity: .55; }
+a.ex-tag.on:hover, a.ex-tag.on:focus-visible {
+  background: #c9bd96; border-color: #8a7448; outline: none;
+  translate: 0 -2px; /* the invitation is a lift, not a repaint */
+  box-shadow: 0 5px 14px rgba(0,0,0,.55);
+  transition: opacity .18s ease-out, translate .18s ease-out, box-shadow .18s ease-out,
+              background .18s ease-out, border-color .18s ease-out;
+}
+@media (prefers-reduced-motion: reduce) { .ex-tag { transition: none; translate: 0 0; } }
+
+/* ═══════════════ PLAYER — the record's own timeline as furniture ═══════════════
+   The rail IS the film's phosphor band; the playhead is a junction node;
+   the notches are the file's beats. Wakes on activity, sleeps when idle. */
+#player {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+  display: flex; align-items: center; gap: 14px;
+  /* notch/home-indicator clearance — env() is 0 everywhere else, so desktop is byte-identical */
+  padding: 30px max(20px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(180deg, rgba(18, 13, 8, 0) 0%, rgba(18, 13, 8, 0.85) 82%);
+  font-family: var(--mono);
+  transition: opacity 0.35s ease;
+}
+#player.pl-hidden { opacity: 0; pointer-events: none; }
+/* paused + idle: recede, never vanish — the frame is returned to the viewer
+   while the paused state stays legible. Slow to leave, quick to return
+   (the return rides #player's own .35s transition). */
+#player.pl-dim { opacity: 0.2; transition: opacity 1.4s ease; }
+#stage.pl-idle { cursor: none; }
+#pl-toggle {
+  flex: none; font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em;
+  color: var(--manila-dim); background: rgba(30, 20, 8, 0.72);
+  border: 1px solid #4a3517; border-radius: 4px; padding: 0.42em 0.85em; cursor: pointer;
+  transition: color 0.25s, border-color 0.25s; min-width: 3.1em;
+}
+#pl-toggle:hover, #pl-toggle:focus-visible { color: var(--bone); border-color: var(--amber); outline: none; }
+#pl-rail { position: relative; flex: 1; height: 26px; cursor: pointer; touch-action: none; }
+#pl-rail::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 3px;
+  transform: translateY(-50%); border-radius: 2px;
+  background: rgba(121, 255, 162, 0.24);
+  box-shadow: 0 0 6px rgba(121, 255, 162, 0.12);
+}
+#pl-fill {
+  position: absolute; left: 0; top: 50%; height: 3px; width: 0;
+  transform: translateY(-50%); border-radius: 2px;
+  background: var(--phosphor);
+  box-shadow: 0 0 9px rgba(121, 255, 162, 0.5);
+}
+#pl-head {
+  position: absolute; top: 50%; left: 0; width: 11px; height: 11px;
+  transform: translate(-50%, -50%); border-radius: 50%;
+  background: #eafff0;
+  box-shadow: 0 0 10px 2px rgba(121, 255, 162, 0.85);
+}
+#pl-rail:focus-visible { outline: 1px solid var(--amber); outline-offset: 5px; }
+#pl-rail[aria-disabled="true"] { cursor: default; }
+#pl-rail[aria-disabled="true"] #pl-head, #pl-rail[aria-disabled="true"] #pl-fill { opacity: 0.35; }
+.pl-tick {
+  position: absolute; top: 50%; width: 1px; height: 9px;
+  transform: translate(-50%, -50%);
+  background: rgba(242, 231, 207, 0.5);
+}
+/* the four act marks — VARIANT, THE TURN, CREDO, STINGER — carry the structure */
+.pl-tick-major { height: 13px; background: rgba(242, 231, 207, 0.78); }
+#pl-tip {
+  position: absolute; bottom: 24px; transform: translateX(-50%);
+  background: rgba(30, 20, 8, 0.94); border: 1px solid #4a3517; border-radius: 3px;
+  color: var(--bone); font-size: 0.6rem; letter-spacing: 0.26em;
+  padding: 0.5em 0.85em; white-space: nowrap; pointer-events: none;
+}
+#pl-tip.typing { animation: tip-type 0.26s steps(18, end) both; }
+@keyframes tip-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@media (prefers-reduced-motion: reduce) { #pl-tip.typing { animation: none; } }
+#pl-time { flex: none; font-size: 0.64rem; letter-spacing: 0.2em; color: var(--manila-dim); white-space: nowrap; }
+@media (max-width: 700px) { #pl-time { display: none; } }
+@media (prefers-reduced-motion: reduce) { #player, #player.pl-dim { transition: none; } }
+
+/* ═══════════════ PHONES — THE BRIDGE's shipped mobile grammar, ported ═══════════════ */
+/* Safari iPhone: LANDSCAPE chrome hides COMPLETELY only on a user scroll — every
+   film layer here is fixed, so the page scrolls and only the BARS move (the
+   runway idiom, film.css:352). Coarse pointers only; desktop keeps its lock. */
+@media (pointer: coarse) {
+  body { overflow-y: auto; min-height: calc(100lvh + 320px); }
+  /* touch targets: the rail's hit band grows to thumb size — its visuals stay
+     centered on top:50%, so nothing moves; the pause chip gains real padding */
+  #pl-rail { height: 44px; }
+  #pl-toggle { padding: 0.62em 1.1em; }
+  /* exhibit tags: floor a point higher on touch so the tap box clears the
+     24px AA target (measured 23.9 at the 9px floor). The 44px AAA bar is a
+     documented trade — these are optional exhibit links; the primary
+     controls (rail, buttons) meet it. */
+  .ex-tag { font-size: clamp(10px, 2.04vh, 16.5px); }
+}
+
+/* the record plays in widescreen — portrait phones are asked to turn the file
+   (BRIDGE #rotate, refiled in TVA stock). visibility (not display) on the film
+   layers also removes them from the focus order — no Tab holes behind the card. */
+#rotate {
+  position: fixed; inset: 0; z-index: 60; display: none;
+  place-items: center; text-align: center;
+  background:
+    radial-gradient(100% 80% at 50% 30%, rgba(232, 168, 80, 0.10), transparent 60%),
+    var(--ink-void);
+  padding: 8vh 10vw;
+}
+#rotate .r-eyebrow {
+  font-family: var(--mono); font-weight: 700; font-size: 0.62rem;
+  letter-spacing: 0.3em; color: #7a5518;
+}
+#rotate .r-line {
+  font-family: var(--tva); font-size: clamp(1.2rem, 6.4vw, 1.9rem);
+  color: var(--manila); margin-top: 2.2vh; line-height: 1.35;
+}
+#rotate .r-phone {
+  display: inline-block; width: 26px; height: 44px; margin-top: 5vh;
+  border: 2px solid var(--manila-dim); border-radius: 5px;
+  animation: r-tip 2.6s ease-in-out infinite;
+}
+@keyframes r-tip { 0%, 55% { transform: rotate(0); } 70%, 100% { transform: rotate(-90deg); } }
+@media (prefers-reduced-motion: reduce) { #rotate .r-phone { animation: none; transform: rotate(-90deg); } }
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate { display: grid; }
+  #gate, #stage { visibility: hidden; }
+}
