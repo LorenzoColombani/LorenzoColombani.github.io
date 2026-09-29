@@ -1,21 +1,107 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from './vendor/RoundedBoxGeometry.js';
 
-// Adapted mechanisms: the library's eight-coil reactor charge/surge and low-opacity tapered projector.
-export function createProjector(scene){
- const group=new THREE.Group();group.position.y=1.90;scene.add(group);const coils=[],ticks=[];
- const base=new THREE.MeshStandardMaterial({color:0x17373c,metalness:.8,roughness:.3});
- const plate=new THREE.Mesh(new THREE.CylinderGeometry(1.27,1.19,.065,80),base);group.add(plate);
- const coreMat=new THREE.MeshStandardMaterial({color:0xafdaca,emissive:0x74dcca,emissiveIntensity:.6,metalness:.65,roughness:.25});
- const core=new THREE.Mesh(new THREE.CylinderGeometry(.43,.4,.07,64),coreMat);core.position.y=.06;group.add(core);
- for(let i=0;i<8;i++){const a=i*Math.PI/4;const mat=new THREE.MeshBasicMaterial({color:0x9af3dc,transparent:true,opacity:.1});const coil=new THREE.Mesh(new THREE.TorusGeometry(.16,.022,8,32),mat);coil.rotation.x=Math.PI/2;coil.position.set(Math.cos(a)*.87,.07,Math.sin(a)*.87);group.add(coil);coils.push(coil);}
- for(let i=0;i<24;i++){const a=i*Math.PI/12;const mat=new THREE.MeshBasicMaterial({color:0xc7fff1,transparent:true,opacity:.15});const tick=new THREE.Mesh(new THREE.BoxGeometry(.035,.008,.13),mat);tick.position.set(Math.cos(a)*1.12,.041,Math.sin(a)*1.12);tick.rotation.y=-a+Math.PI/2;group.add(tick);ticks.push(tick);}
- const beamMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,uniforms:{power:{value:0},tint:{value:new THREE.Color(0x92f4dd)}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;uniform float power;uniform vec3 tint;void main(){float endFade=smoothstep(0.,.1,vUv.y)*(1.-smoothstep(.75,1.,vUv.y));float strands=.65+.35*pow(.5+.5*sin(vUv.x*150.),8.);gl_FragColor=vec4(tint,.014*power*endFade*strands);}'});
- const beam=new THREE.Mesh(new THREE.CylinderGeometry(1.8,.12,5.0,64,1,true),beamMat);beam.position.y=2.55;group.add(beam);
- const scanMat=new THREE.MeshBasicMaterial({color:0xd6fff0,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});const scan=new THREE.Mesh(new THREE.TorusGeometry(1,.012,8,90),scanMat);scan.rotation.x=Math.PI/2;group.add(scan);
- const seed=new Float32Array(420*3);for(let i=0;i<420;i++){seed[i*3]=i/420;seed[i*3+1]=Math.sin(i*71.31)*.5+.5;seed[i*3+2]=Math.cos(i*31.29)*.5+.5;}const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(seed,3));
- const moteMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{time:{value:0},power:{value:0},tint:{value:new THREE.Color(0xa9ffdf)}},vertexShader:'uniform float time,power;varying float alpha;void main(){float h=fract(position.x+time*.16);float a=position.y*6.283;float r=(.12+h*1.6)*(.3+position.z*.7);vec3 p=vec3(cos(a)*r,h*4.9,sin(a)*r);vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(28./-mv.z,1.,3.);alpha=power*sin(h*3.14159)*.6;}',fragmentShader:'uniform vec3 tint;varying float alpha;void main(){float a=1.-smoothstep(.1,.5,length(gl_PointCoord-.5));gl_FragColor=vec4(tint,alpha*a);}'});const motes=new THREE.Points(geometry,moteMat);motes.frustumCulled=false;group.add(motes);
- let previousActive=false,surge=0;const color=new THREE.Color();
- function update({dt,time,charge,active,opening=0,kind='field',cue=0}){if(active&&!previousActive)surge=1.4;previousActive=active;surge=Math.max(0,surge-dt);const strength=active?.65:charge;const pulse=surge/1.4;const f=Math.max(strength,pulse,cue);color.set(kind==='tva'?0xffd49a:0xa0f3df);coreMat.emissive.copy(color);coreMat.emissiveIntensity=.6+f*1.4;core.scale.setScalar(1+pulse*.08);coils.forEach((m,i)=>{m.material.color.copy(color);m.material.opacity=.08+Math.max(0,Math.min(1,charge*8-i))*.8+(active?.34:0);});ticks.forEach((m,i)=>{m.material.color.copy(color);m.material.opacity=.12+((i/24)<f?.7:0);});beamMat.uniforms.power.value=f;beamMat.uniforms.tint.value.copy(color);moteMat.uniforms.time.value=time;moteMat.uniforms.power.value=f;moteMat.uniforms.tint.value.copy(color);const top=kind==='guide'?6.3:5.0;scan.position.y=.04+opening*top;scan.scale.setScalar(.12+opening*1.7);scanMat.opacity=active&&opening<.995?.6*Math.sin(opening*Math.PI):0;scanMat.color.copy(color);}
- function dispose(){scene.remove(group);const gs=new Set(),ms=new Set();group.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)ms.add(o.material);});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());}
- return {update,dispose};
+// The square optical surface is the visible source of the volume: fine etched
+// matrix, traveling traces and sparse upward light, without a solid beam cone.
+export function createProjector(scene) {
+  const group = new THREE.Group(); group.name = 'Workshop / square optical emitter';
+  group.position.y = 1.89; scene.add(group);
+  const geometries = new Set(), materials = new Set(), textures = new Set();
+  function add(geometry, material, y = 0) {
+    geometries.add(geometry); materials.add(material);
+    const mesh = new THREE.Mesh(geometry, material); mesh.position.y = y;
+    mesh.raycast = () => {}; group.add(mesh); return mesh;
+  }
+  const base = add(new RoundedBoxGeometry(3.48, .14, 3.48, 4, .055), new THREE.MeshStandardMaterial({ color: 0x0b252f, roughness: .21, metalness: .58 }), -.085);
+  base.receiveShadow = true;
+  const etching=document.createElement('canvas');etching.width=etching.height=1024;
+  const ink=etching.getContext('2d');ink.fillStyle='#000';ink.fillRect(0,0,1024,1024);ink.strokeStyle='#b0b0b0';ink.lineWidth=1;
+  for(const sx of [-1,1])for(const sy of [-1,1]){
+    const X=x=>512+sx*x,Y=y=>512+sy*y;
+    for(let row=0;row<5;row++){
+      const x=84+row*45,y=52+row*29;
+      ink.beginPath();ink.moveTo(X(x),Y(y));ink.lineTo(X(x),Y(y+75));ink.lineTo(X(x+26),Y(y+101));ink.lineTo(X(330),Y(y+101));ink.stroke();
+      ink.fillStyle='#999';ink.fillRect(X(x)-2,Y(y)-2,4,4);
+    }
+    ink.fillStyle='#adadad';ink.fillRect(X(185)-36,Y(105)-10,72,20);
+    ink.fillStyle='#646464';ink.fillRect(X(244)-28,Y(218)-17,56,34);
+    for(let i=0;i<8;i++)ink.fillRect(X(198+i*7),Y(270),2,12);
+    ink.strokeRect(X(322)-14,Y(322)-14,28,28);
+    ink.beginPath();ink.moveTo(X(305),Y(322));ink.lineTo(X(254),Y(322));ink.lineTo(X(228),Y(348));ink.stroke();
+  }
+  const etchTexture=new THREE.CanvasTexture(etching);textures.add(etchTexture);
+  const uniforms = { time: { value: 0 }, power: { value: .15 }, tint: { value: new THREE.Color(0x9bdaee) }, opening: { value: 0 }, etching:{value:etchTexture} };
+  const surfaceMaterial = new THREE.ShaderMaterial({
+    uniforms, transparent: true, depthWrite: false,
+    vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader: `varying vec2 vUv;uniform float time,power,opening;uniform vec3 tint;uniform sampler2D etching;
+      float line(float x,float width){return 1.-smoothstep(width,width+fwidth(x),abs(x));}
+      void main(){vec2 p=vUv*2.-1.;vec2 g=abs(fract(vUv*32.-.5)-.5)/max(fwidth(vUv*32.),vec2(.0001));
+      float grid=1.-min(min(g.x,g.y),1.);
+      float border=line(max(abs(p.x),abs(p.y))-.945,.006);
+      float inner=line(max(abs(p.x),abs(p.y))-.82,.002);
+      float aperture=exp(-dot(p,p)*4.0),track=0.;
+      for(int i=0;i<4;i++){float offset=float(i)*.38-.57;
+        float scan=fract(time*.08+float(i)*.23)*2.-1.;
+        track+=line(p.x-offset,.003)*exp(-pow((p.y-scan)/.14,2.));}
+      float corners=step(.78,abs(p.x))*line(abs(p.y)-.945,.013)+step(.78,abs(p.y))*line(abs(p.x)-.945,.013);
+      float etch=texture2D(etching,vUv).r;
+      vec3 c=vec3(.49,.80,.93)*(.88+power*.25)*(1.-etch*.70);
+      c+=tint*(grid*.025+inner*.10+aperture*.18);
+      c+=vec3(.75,1.65,2.0)*(border*.52+corners*.40+track*(.6+power));
+      c+=vec3(.52,.32,.13)*line(p.y-(opening*1.8-.9),.004)*power*.22;
+      gl_FragColor=vec4(c,.95);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+      }`,
+  });
+  const surface = add(new THREE.PlaneGeometry(3.39, 3.39), surfaceMaterial, -.002); surface.rotation.x = -Math.PI / 2;
+  add(new RoundedBoxGeometry(3.40, .012, 3.40, 3, .004), new THREE.MeshPhysicalMaterial({
+    color: 0x81b6cf, metalness: .25, roughness: .12, clearcoat: .8, transparent: true, opacity: .10, depthWrite: false,
+  }), .009);
+  const seeds = new Float32Array(144 * 3);
+  for (let i = 0; i < 144; i++) { seeds[i * 3] = i / 144; seeds[i * 3 + 1] = (i * .618033) % 1; seeds[i * 3 + 2] = (i * .381966) % 1; }
+  const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(seeds, 3)); geometries.add(geometry);
+  const moteMaterial = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { time: { value: 0 }, power: { value: 0 }, tint: { value: new THREE.Color(0x9ce5ff) } },
+    vertexShader: `uniform float time,power;varying float alpha;
+      void main(){float h=fract(position.x+time*.12);float a=position.y*6.283;
+      float r=mix(1.42,.45,h)*(.35+position.z*.65);
+      vec3 p=vec3(cos(a)*r,.03+h*1.45,sin(a)*r);
+      vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+      gl_PointSize=clamp(15./-mv.z,1.,2.5);alpha=power*sin(h*3.14159)*.38;}`,
+    fragmentShader: `uniform vec3 tint;varying float alpha;void main(){float a=1.-smoothstep(.02,.48,length(gl_PointCoord-.5));gl_FragColor=vec4(tint,alpha*a);}`,
+  }); materials.add(moteMaterial);
+  const motes = new THREE.Points(geometry, moteMaterial); motes.frustumCulled = false; motes.raycast = () => {}; group.add(motes);
+  // The volume itself owns the light between this surface and its form.
+  // This footprint is only the same moving shape registered on the emitter.
+  const footprintGeometry=new THREE.BufferGeometry();footprintGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(24*3),3));geometries.add(footprintGeometry);
+  const footprintMaterial=new THREE.LineBasicMaterial({color:0x7bbacf,transparent:true,opacity:.5,depthWrite:false});materials.add(footprintMaterial);
+  const footprint=new THREE.LineLoop(footprintGeometry,footprintMaterial);footprint.raycast=()=>{};scene.add(footprint);
+  const cool = new THREE.Color(0x6cc6e7), warm = new THREE.Color(0xe4bd82);
+  let previousActive = false, surge = 0, disposed = false;
+  return {
+    objects:[group,footprint],
+    update({ dt, time, charge, active, opening = 0, kind = 'field', cue = 0, fieldRelease = 0, fieldVisible = true, projectionPoints = [] }) {
+      if (active && !previousActive) surge = 1; previousActive = active;
+      surge = Math.max(0, surge - dt * 1.5);
+      const power = Math.max(active ? .4 : .18 + charge * .7, surge, cue, fieldRelease * .85);
+      uniforms.time.value = time; uniforms.power.value = power; uniforms.opening.value = opening;
+      uniforms.tint.value.copy(kind === 'tva' && active ? warm : cool);
+      moteMaterial.uniforms.time.value = time;
+      moteMaterial.uniforms.power.value = fieldVisible ? .32 + power * .35 : active ? .24 : 0;
+      moteMaterial.uniforms.tint.value.copy(uniforms.tint.value);
+      footprint.visible=fieldVisible&&projectionPoints.length===24;
+      for(let i=0;i<projectionPoints.length&&i<24;i++){
+        const point=projectionPoints[i],x=THREE.MathUtils.clamp(point.x*.76,-1.55,1.55),z=THREE.MathUtils.clamp(point.z*.76,-1.55,1.55);
+        footprintGeometry.attributes.position.setXYZ(i,x,1.922,z);
+      }
+      footprintGeometry.attributes.position.needsUpdate=true;
+    },
+    dispose() {
+      if (disposed) return; disposed = true; group.removeFromParent();footprint.removeFromParent();
+      geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose());textures.forEach(texture=>texture.dispose());
+    },
+  };
 }

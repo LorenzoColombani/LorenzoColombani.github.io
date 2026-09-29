@@ -473,5 +473,5 @@ export function createDroidWork({scene, getHead}) {
     geometries.forEach(geometry => geometry.dispose());
     materials.forEach(material => material.dispose());
   }
-  return {update, dispose};
+  return {update, dispose, objects:[group,rays,optics,motes]};
 }

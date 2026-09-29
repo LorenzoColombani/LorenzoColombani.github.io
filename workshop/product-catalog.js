@@ -1,0 +1,291 @@
+// Catalogue from the public home and /work/ pages, verified 2026-09-24.
+// Descriptions are portfolio copy; external pages open only on explicit link activation.
+export const PRODUCTS = [
+  {
+    "id": "bridge",
+    "symbol": "Br",
+    "title": "The Bridge",
+    "category": "Web Film",
+    "description": "An interactive web film — Three.js portals, GLSL, GSAP. A 4.5-minute proof that a method can be a place you walk through. Score: Kevin MacLeod.",
+    "url": "https://lorenzocolombani.com/work/the-bridge/",
+    "featured": true,
+    "linkLabel": "View case study",
+    "number": "01"
+  },
+  {
+    "id": "tva",
+    "symbol": "Lk",
+    "title": "Loki · TVA Case File",
+    "category": "Title Sequence",
+    "description": "A motion-and-typography case file in the language of the Loki title sequence: seven “deviations,” one timeline. The craft proof — a method you can watch, right here.",
+    "url": "https://lorenzocolombani.com/work/tva-case-file/",
+    "featured": true,
+    "linkLabel": "View case study",
+    "number": "02"
+  },
+  {
+    "id": "the-workshop",
+    "symbol": "Ws",
+    "title": "The Workshop",
+    "category": "3D World · In progress",
+    "description": "A portfolio you walk into: a real-time 3D pavilion over the ocean, where the work sits on a table and opens when you touch it. Drag to look around, touch an object to use it. Still being built — shown as it renders today.",
+    "url": "https://lorenzocolombani.com/work/the-workshop/",
+    "featured": false,
+    "linkLabel": "View case study",
+    "number": "03"
+  },
+  {
+    "id": "openbots",
+    "symbol": "Ob",
+    "title": "OpenBots",
+    "category": "Native macOS App",
+    "description": "Claude as a team of persistent, named teammates — v0.5.0, the ground-up rebuild of Agency: durable local state, explicit approvals, six built-in characters. No API key; it rides the subscription. Swift 6, MIT, open source. Preview build: the executor for consequential actions is disabled.",
+    "url": "https://lorenzocolombani.com/work/openbots/",
+    "featured": false,
+    "linkLabel": "View case study",
+    "number": "04"
+  },
+  {
+    "id": "data-vault-foundations",
+    "symbol": "Dv",
+    "title": "Data Vault Foundations",
+    "category": "Learning Platform",
+    "description": "A 14-chapter interactive learning platform — Data Vault architecture, SQL, dbt, EU compliance, Python — with quests, feedback and hands-on exercises. Independent work; for certification and enterprise Data Vault, see Scalefree.",
+    "url": "https://lorenzocolombani.com/work/data-vault-foundations/",
+    "featured": false,
+    "linkLabel": "View case study",
+    "number": "05"
+  },
+  {
+    "id": "ai-applied",
+    "symbol": "Ai",
+    "title": "AI, Applied.",
+    "category": "Curation · Wharton",
+    "description": "A searchable library of 87 real-world AI use cases. I convened the contributors and built the site for the Wharton Alumni AI Studio (an alumni nonprofit) — spotlight rotation, fuzzy search, contributor profiles; Astro, React, GSAP.",
+    "url": "https://lorenzocolombani.com/work/ai-applied/",
+    "website": {"url": "https://wharton-ai-use-cases.netlify.app/", "prototype": true, "enabled": false, "pendingPermission": false, "poster": "../assets/previews/wharton.webp"},
+    "featured": false,
+    "linkLabel": "View case study",
+    "number": "06"
+  },
+  {
+    "id": "active-listening-ai",
+    "symbol": "Al",
+    "title": "Active Listening AI",
+    "category": "ai-tools",
+    "description": "Unwind. Too many thoughts on your mind? Talk to our AI. It will actively listen to you and help you work through your thoughts without offering unsolicited advice. No clock. Free. Available 24/7.",
+    "url": "https://www.makeworkingfun.com/s-projects-side-by-side",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "07"
+  },
+  {
+    "id": "one-thing-today",
+    "symbol": "Ot",
+    "title": "One Thing Today",
+    "category": "ai-tools",
+    "description": "Use this tool to increase your feeling of self-reliance. Focus on accomplishing one meaningful thing each day to build momentum and confidence.",
+    "url": "https://www.makeworkingfun.com/one-thing-today",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "08"
+  },
+  {
+    "id": "star-wars-decluttering-app",
+    "symbol": "Sw",
+    "title": "Star Wars Decluttering App",
+    "category": "ai-tools",
+    "description": "An engaging, interactive Star Wars-themed decluttering app offering actionable advice for physical and digital organization. Integrates strategies from Dana K. White's \"Decluttering at the Speed of Life\" and Cal Newport's \"Digital Minimalism\".",
+    "url": "https://lorenzocolombani.com/star-wars-decluttering/",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "09"
+  },
+  {
+    "id": "can-you-understand-an-email",
+    "symbol": "Ei",
+    "title": "Can You Understand an Email?",
+    "category": "ai-tools",
+    "description": "Based on groundbreaking scientific research by Kruger, Epley, Parker, and Zhi-Wen Ng, this mini-website turns their world-famous paper on communication illusions into a tangible minigame.",
+    "url": "https://lorenzocolombani.com/tone-illusion/",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "10"
+  },
+  {
+    "id": "privacy-protection-meta-data-eraser",
+    "symbol": "Pr",
+    "title": "Privacy Protection (Meta-Data Eraser)",
+    "category": "ai-tools",
+    "description": "Protect your privacy and personal data by using this meta-data erasing webapp. Remove hidden information from your files before sharing.",
+    "url": "https://gemini.google.com/share/bdcca660a5df",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "11"
+  },
+  {
+    "id": "ios-assistant-for-senior-citizens",
+    "symbol": "Is",
+    "title": "iOS Assistant for Senior Citizens",
+    "category": "ai-tools",
+    "description": "A French webapp teaching iOS basics for seniors: swipe gestures, sending emails, messaging apps, intro to phishing and scamming, and basic troubleshooting.",
+    "url": "https://lorenzocolombani.com/ios-assistant-seniors/",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "12"
+  },
+  {
+    "id": "multicultural-job-applicants-guide",
+    "symbol": "Mh",
+    "title": "Multicultural Job Applicants Guide",
+    "category": "ai-tools",
+    "description": "Sometimes we lose great talents because of cultural misunderstanding. This tool takes you on a short, impactful journey to discover why — and how to fix it.",
+    "url": "https://lorenzocolombani.com/multicultural-hiring-guide/",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "13"
+  },
+  {
+    "id": "text-readability-guide",
+    "symbol": "Tr",
+    "title": "Text Readability Guide",
+    "category": "ai-tools",
+    "description": "Write more impactful sentences. A concise one-pager with practical tips for clearer, more effective written communication.",
+    "url": "https://lorenzocolombani.com/text-readability-guide/",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "14"
+  },
+  {
+    "id": "easy-local-llm-guide",
+    "symbol": "Ll",
+    "title": "Easy Local LLM Guide",
+    "category": "ai-tools",
+    "description": "A website explaining what local LLMs are, how they protect your privacy, and easy-to-follow guides for installing the most popular ones on Mac.",
+    "url": "https://lorenzocolombani.com/easy-local-llm-guide/",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "15"
+  },
+  {
+    "id": "gamification-helper-tool",
+    "symbol": "Gm",
+    "title": "Gamification Helper Tool",
+    "category": "ai-tools",
+    "description": "An interactive tool inspired by Yu-Kai Chou's Octalysis framework from \"Actionable Gamification\". Design engaging experiences using the 8 Core Drives of human motivation.",
+    "url": "https://lorenzocolombani.com/octalysis-explorer",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "16"
+  },
+  {
+    "id": "what-it-feels-like",
+    "symbol": "Wf",
+    "title": "What it Feels Like",
+    "category": "mental-health",
+    "description": "It's difficult to understand depression from an outsider's perspective. Play this idle game — for fun, or to broaden your horizons. Desktop version functional.",
+    "url": "https://www.makeworkingfun.com/what-it-feels-like1",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "17"
+  },
+  {
+    "id": "thinkh-think-tank",
+    "symbol": "Tt",
+    "title": "ThinkH+ Think Tank",
+    "category": "ai-policy",
+    "description": "Founded and led a think tank focused on AI governance and human augmentation regulation. Submitted formal recommendations to France's National Ethics Committee and contributed to the Villani Mission on AI.",
+    "url": "https://www.thplus.org",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "18"
+  },
+  {
+    "id": "policy-regulation-portfolio",
+    "symbol": "Po",
+    "title": "Policy & Regulation Portfolio",
+    "category": "ai-policy",
+    "description": "Comprehensive collection of policy analysis work on AI governance, technology regulation, and human augmentation frameworks.",
+    "url": "https://www.makeworkingfun.com/general-1",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "19"
+  },
+  {
+    "id": "openai-forum-paris",
+    "symbol": "Of",
+    "title": "OpenAI Forum Paris",
+    "category": "ai-policy",
+    "description": "Launched and lead the Paris OpenAI Forum community — a community role, not employment. First event live within two weeks, cross-industry room.",
+    "url": "https://lorenzocolombani.com/#portfolio",
+    "featured": false,
+    "linkLabel": "View portfolio entry",
+    "number": "20"
+  },
+  {
+    "id": "what-is-it-like-to-be-french",
+    "symbol": "Fr",
+    "title": "What is it Like to be French?",
+    "category": "creative",
+    "description": "In modern day Paris, Socrates meets Emma and Vincent, who have diverging opinions about what \"being French\" means. A re-imagined Socratic dialogue.",
+    "url": "https://soundcloud.com/lorenzo-274791895/what-is-it-like-to-be-french-a-socratic-dialogue",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "21"
+  },
+  {
+    "id": "a-demonstration-of-the-3d-data-vault-mechanism",
+    "symbol": "3D",
+    "title": "A Demonstration of the 3D Data Vault Mechanism",
+    "category": "creative",
+    "description": "A rendered 3D demonstration of how Data Vault loads data: tables materialize from motes, records flow through a transformation gate, and reform as an information mart — with an original procedural score.",
+    "url": "https://youtu.be/k6M3Icsbx6Q",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "22"
+  },
+  {
+    "id": "process-automation-workflows",
+    "symbol": "Au",
+    "title": "Process Automation Workflows",
+    "category": "workflow",
+    "description": "Collection of iOS Shortcuts and automation workflows designed to streamline daily tasks and boost productivity.",
+    "url": "https://www.makeworkingfun.com/single-project-1",
+    "featured": false,
+    "linkLabel": "Open original project",
+    "number": "23"
+  },
+  {
+    "id": "process-optimization-at-mcr-groupe",
+    "symbol": "Op",
+    "title": "Process Optimization at MCR Groupe",
+    "category": "workflow",
+    "description": "Redesigned the firm’s workflows using Lean principles and automated its Qualiopi certification workflow — one task, from a day’s work to minutes.",
+    "url": "https://lorenzocolombani.com/#portfolio",
+    "featured": false,
+    "linkLabel": "View portfolio entry",
+    "number": "24"
+  },
+  {
+    "id": "corporate-training-gamification",
+    "symbol": "Cg",
+    "title": "Corporate Training Gamification",
+    "category": "workflow",
+    "description": "Designed and delivered negotiation training programs built on gamification principles, for client teams from startups to large groups — 50+ sessions.",
+    "url": "https://lorenzocolombani.com/#portfolio",
+    "featured": false,
+    "linkLabel": "View portfolio entry",
+    "number": "25"
+  },
+  {
+    "id": "exam-pacer",
+    "symbol": "Ep",
+    "title": "Exam Pacer",
+    "category": "Offline tool",
+    "description": "A zero-dependency offline exam pacing timer with banked time, review reserve and session restore. MIT licensed.",
+    "url": "https://github.com/LorenzoColombani/exam-pacer",
+    "featured": false,
+    "linkLabel": "View on GitHub",
+    "number": "26"
+  }
+];

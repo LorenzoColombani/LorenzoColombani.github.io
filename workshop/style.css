@@ -331,6 +331,25 @@ body:not(.entered) .screen-shade{background:linear-gradient(180deg,#062832eb 0%,
 @media(max-height:520px) and (min-width:601px){.welcome-copy{top:62px}.reactor-intro h1{font-size:30px}.welcome-subtitle{font-size:12px;margin-top:8px}.welcome-subtitle br{display:none}.reactor-entry{bottom:8px;padding-bottom:4px}.entry-reactor{width:62px;height:62px}.reactor-entry-label{font-size:12px;margin-top:0}.reactor-entry-status{font-size:8px;margin-top:1px}}
 @media(prefers-reduced-motion:reduce){.entry-reactor,.welcome-copy{transition:none}.reactor-entry svg *{animation:none!important}.entry-unlocking .welcome-copy{transform:none}}
 
+/* The projected panes are the targets. Empty room remains draggable. */
+#desk-controls{position:fixed;inset:0;z-index:8;pointer-events:none}
+#desk-controls[hidden]{display:none}
+.desk-screen-target{position:absolute;padding:0;border:0;background:transparent;pointer-events:auto;cursor:pointer;touch-action:manipulation}
+.desk-screen-target[hidden]{display:none}
+.desk-screen-target:hover{background:rgba(155,224,249,.045)}
+.desk-screen-target:focus-visible{background:rgba(155,224,249,.10);outline:3px solid #b8eafa;outline-offset:-5px}
+.desk-return{position:absolute;top:max(92px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);pointer-events:auto;min-height:48px;padding:10px 22px;border:1px solid #9fd3e064;border-radius:5px;background:#09141ce8;color:#d7f1f8;font:500 14px/1.4 DM,Arial,sans-serif;white-space:nowrap;text-shadow:none;backdrop-filter:blur(12px)}
+.desk-return:hover{background:#18303ded;border-color:#b8eafa}
+.desk-return:focus-visible{outline:2px solid #b8eafa;outline-offset:4px}
+.desk-return[hidden]{display:none}
+body[data-desk-focus="products"][data-product-return="strip"] .desk-return{top:var(--product-return-top)}
+.desk-switcher{position:absolute;bottom:max(30px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:4px;pointer-events:auto;border:1px solid #9fd3e048;border-radius:6px;padding:4px;background:#09141ceb;backdrop-filter:blur(12px)}
+.desk-switcher[hidden]{display:none}
+.desk-switcher button{min-height:44px;padding:8px 22px;border:1px solid transparent;border-radius:3px;font:500 14px/1.4 DM,Arial,sans-serif;color:#c5dae1;text-shadow:none}
+.desk-switcher button[aria-pressed=true]{background:#17333f;border-color:#9fd3e067;color:#ecfaff}
+.desk-switcher button:focus-visible{outline:2px solid #b8eafa;outline-offset:0}
+body[data-desk-focus] .world-gesture-hint{display:none}
+
 /* Crisp instrument labels and flat audio control: no fuzzy text backplates. */
 .world-caption{padding:5px 9px;background:#f5f1e5eF;border:1px solid #17495080;color:#092f36;text-shadow:none;box-shadow:none;backdrop-filter:none}
 .blue-hour .world-caption{background:#092f36ed;border-color:#c6f2df80;color:#f5f1e5}
@@ -338,3 +357,179 @@ body:not(.entered) .screen-shade{background:linear-gradient(180deg,#062832eb 0%,
 .top-actions #sound-toggle{background:#092f36cc;border:1px solid #c6f2df40;backdrop-filter:none;box-shadow:none;text-shadow:none}
 .top-actions #sound-toggle:hover{background:#123d43;box-shadow:none}
 .top-actions #sound-toggle:focus-visible{outline:2px solid #c6f2df;outline-offset:4px;box-shadow:none}
+
+/* Keep the Bridge document at its final viewport size while it warms silently. */
+.bridge-experience{position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden}
+/* Safari sends scrolling to that warming frame despite pointer-events:none; clip it until opened. */
+.bridge-experience:not(.is-active){clip-path:inset(0 0 100% 0)}
+.bridge-film{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;pointer-events:none;background:#020408}
+.bridge-playing .bridge-film{pointer-events:auto}
+.bridge-experience:not(.is-active)>button,.bridge-experience:not(.is-active)>p{display:none}
+.bridge-exit,.bridge-retry{position:absolute;z-index:2;pointer-events:auto;min-height:46px;padding:10px 16px;border:1px solid #ffc78080;background:#07121ee8;color:#ffe4b5;font:500 14px/1.4 DM,Arial,sans-serif;border-radius:4px;cursor:pointer;box-shadow:none;text-shadow:none}
+.bridge-exit{top:max(16px,env(safe-area-inset-top));left:max(16px,env(safe-area-inset-left))}
+.bridge-retry{bottom:90px;left:50%;transform:translateX(-50%)}
+.bridge-exit:hover,.bridge-retry:hover{background:#402b17}
+.bridge-exit:focus-visible,.bridge-retry:focus-visible{outline:2px solid #ffc875;outline-offset:4px}
+.bridge-playing .bridge-exit{display:none}
+.bridge-status{position:absolute;z-index:2;bottom:26px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 40px);padding:10px 14px;text-align:center;color:#ffe4b5;background:#07121ee8;font:400 14px/1.5 DM,Arial,sans-serif}
+body.bridge-open :is(.top-bar,.bottom-bar,#world-controls,.interface,#focus-card,.screen-shade,#robot-hotspot){visibility:hidden;pointer-events:none}
+
+/* The droid is parked in a garage bay during the navigation-layout pass. */
+#robot-hotspot{display:none!important}
+
+.guide-text-controls{position:absolute;top:92px;left:50%;transform:translateX(-50%);pointer-events:auto;min-height:44px;padding:10px 18px;border:1px solid #9fd3e067;border-radius:5px;background:#09141cf5;color:#d7f1f8;font:500 14px/1.4 DM,Arial,sans-serif;text-shadow:none}
+.guide-text-controls[hidden]{display:none}
+.guide-text-controls:focus-visible{outline:2px solid #b8eafa;outline-offset:4px}
+
+/* The garage should be visible on arrival; do not bury its lighting in teal. */
+body:not(.entered) .screen-shade{background:linear-gradient(180deg,#050a0d4d,transparent 20%,transparent 75%,#050a0d38)}
+.entered .screen-shade{background:linear-gradient(180deg,#050a0d24,transparent 14%,transparent 88%,#050a0d26)}
+
+/* One familiar native selector: track choice and mute, with touch/keyboard support. */
+.sound-control{position:relative;display:flex;align-items:center;min-height:44px}
+.sound-control>svg{position:absolute;left:13px;width:18px;height:18px;pointer-events:none;z-index:1}
+.top-actions #sound-toggle{appearance:none;-webkit-appearance:none;min-height:44px;max-width:190px;padding:10px 31px 10px 40px;border-radius:24px;color:var(--cream);font:12px/1.3 DM,Arial,sans-serif;cursor:pointer;touch-action:manipulation}
+.sound-chevron{position:absolute;right:13px;top:50%;transform:translateY(-60%);pointer-events:none;font-size:17px;color:var(--cream)}
+#sound-toggle option{background:#102d34;color:#f2eee1}
+#sound-toggle:disabled{cursor:wait;opacity:.65}
+@media(max-width:520px){.top-actions #sound-toggle{max-width:170px;padding-left:34px;padding-right:26px;font-size:12px}.sound-control>svg{left:10px;width:16px}.sound-chevron{right:10px}}
+
+/* Product elements: the visible tiles are in WebGL, matching their input planes. */
+#product-element-controls{position:fixed;inset:0;z-index:22;pointer-events:none}
+.product-element-hit{position:absolute;pointer-events:none;touch-action:none}
+.product-element-hit button{position:absolute;left:0;width:100%;border:0;background:transparent;pointer-events:auto;color:transparent}
+.product-element-grab{top:0;bottom:28%;cursor:grab;touch-action:none}
+.product-element-launch{bottom:0;height:28%;min-height:24px;cursor:pointer;touch-action:manipulation}
+.product-element-hit button:focus-visible{outline:2px solid #ffc1dd;outline-offset:-4px;background:#ff86bd0a}
+.is-holding .product-element-grab{cursor:grabbing}
+.product-pages{position:absolute;display:flex;align-items:center;gap:12px;padding:3px 8px;background:#071c29ed;border:1px solid #9fe8ff5c;border-radius:6px;color:#dff7ff;pointer-events:auto}
+.product-pages button{min-width:42px;min-height:42px;font:20px DM,Arial,sans-serif;border-radius:3px}
+.product-pages button:hover{background:#9fe8ff20}.product-pages button:disabled{opacity:.3;cursor:default}
+.product-pages span{min-width:42px;text-align:center;font:12px Mono,monospace}
+.product-move-hint{position:absolute;margin:0;padding:4px 9px;color:#e2f6ff;background:#071c29ed;border:1px solid #9fe8ff33;border-radius:3px;font:11px/1.4 DM,Arial,sans-serif;pointer-events:none}
+.product-table-catch{position:fixed;z-index:21;pointer-events:none;display:grid;place-items:center;border:1px dashed #a9e9ffb0;border-radius:50%;background:radial-gradient(ellipse,#91eaff08 40%,#91eaff25 68%,transparent 72%);color:#ddf6ff;transition:border-color .15s,background .15s}
+.product-table-catch span{align-self:end;margin-bottom:18px;background:#0a2535ed;padding:6px 11px;border:1px solid #b5eaff65;border-radius:4px;font-size:12px}
+.product-table-catch.ready{border:2px solid #ffc0df;background:radial-gradient(ellipse,#ff86bd08 40%,#ff86bd38 68%,transparent 72%)}
+.product-detail{width:min(620px,calc(100vw - 32px));padding:30px;border:1px solid #9fe8ff8c;background:#0a2330f5;color:#e6f8ff;border-radius:7px;max-height:85dvh;overflow:auto}
+.product-detail::backdrop{background:#02101899;backdrop-filter:blur(4px)}
+.product-detail>button{min-height:44px;font-size:13px;color:#a9e9ff;margin-bottom:20px;padding:0 8px}
+.product-detail-index{font:11px Mono,monospace;letter-spacing:.08em;color:#94ccdb;margin:0 0 12px}.product-detail h2{font:500 clamp(26px,4vw,40px)/1.15 DM,Arial,sans-serif;margin-bottom:18px}
+.product-detail-copy{font-size:16px;line-height:1.65;color:#c7dde5}.product-detail-link{display:inline-flex;align-items:center;gap:18px;min-height:48px;margin-top:24px;padding:11px 16px;border:1px solid #afe8fa80;background:#aff0ff13;color:#e8fbff;border-radius:4px}
+@media(max-width:599px){.product-move-hint{font-size:10px}.product-pages{transform:scale(.93);transform-origin:top center}.product-element-launch{min-height:24px}.product-detail{padding:24px}.product-detail-copy{font-size:15px}}
+/* Compact views reflow real holographic cards and keep native targets usable. */
+body[data-product-layout="portrait"] .product-element-launch,
+body[data-product-layout="landscape"] .product-element-launch{height:max(28%,44px);min-height:44px}
+body[data-product-layout="portrait"] .product-element-grab,
+body[data-product-layout="landscape"] .product-element-grab{bottom:max(28%,44px)}
+body[data-product-layout="portrait"] .product-pages,
+body[data-product-layout="landscape"] .product-pages{transform:none;gap:8px}
+body[data-product-layout="portrait"] .product-pages button,
+body[data-product-layout="landscape"] .product-pages button{min-height:48px;min-width:48px}
+body[data-product-layout="portrait"] .product-move-hint,
+body[data-product-layout="landscape"] .product-move-hint{font-size:11px;padding:4px 8px;white-space:nowrap}
+@media(max-width:699px){
+ .top-bar{left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));gap:8px}
+ .identity{gap:8px;font-size:12px}
+ .top-actions{gap:6px}
+ .top-actions #sound-toggle{width:116px;max-width:116px;padding-left:32px;padding-right:24px;font-size:12px}
+ .top-actions #info-toggle{width:44px;min-height:44px;padding:0}
+ .sound-control>svg{left:9px;width:16px}
+ .desk-switcher{bottom:max(14px,env(safe-area-inset-bottom));width:min(440px,calc(100vw - 32px));justify-content:center}
+ .desk-switcher button{flex:1;min-height:48px;font-size:15px;padding:8px 16px}
+ .world-gesture-hint,.projection-open .world-gesture-hint{font-size:11px;line-height:1.5;letter-spacing:.015em}
+}
+@media(max-height:539px){
+ .top-bar{top:max(8px,env(safe-area-inset-top))}
+ .world-gesture-hint{display:none}
+ .welcome-copy{top:60px}
+ .desk-switcher{bottom:max(8px,env(safe-area-inset-bottom))}
+}
+:root{--workshop-safe-bottom:env(safe-area-inset-bottom,0px)}
+body[data-product-layout="portrait"] .desk-return{top:max(92px,calc(env(safe-area-inset-top) + 56px))}
+.projection-return{position:fixed;z-index:44;top:max(92px,calc(env(safe-area-inset-top) + 56px));left:50%;transform:translateX(-50%);min-height:48px;padding:10px 20px;border:1px solid #9fd3e064;border-radius:5px;background:#09141cef;color:#d7f1f8;font:500 14px/1.4 DM,Arial,sans-serif;text-shadow:none;white-space:nowrap}
+.projection-return:hover{background:#18303d;border-color:#b8eafa}
+.projection-return:focus-visible{outline:2px solid #b8eafa;outline-offset:4px}
+.projection-return:disabled{opacity:.65;cursor:default}
+@media(min-width:700px){.projection-return{top:25px}}
+.sky-active .projection-return{top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));transform:none}
+@media(max-width:359px){.identity{gap:6px;font-size:11.5px}.identity-mark,.identity-mark svg{width:24px}}
+.bridge-playback{display:none;position:absolute;z-index:3;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);gap:10px;pointer-events:auto}
+.bridge-playing.bridge-compact .bridge-playback{display:flex}
+.bridge-playing.bridge-compact .bridge-exit{display:block;z-index:3}
+.bridge-playback button{white-space:nowrap;min-width:108px;min-height:48px;border:1px solid #ffc78080;border-radius:5px;background:#10131ded;color:#ffe4b5;font:500 14px DM,Arial,sans-serif;padding:10px 18px}
+.bridge-playback button:focus-visible{outline:2px solid #ffc875;outline-offset:4px}
+/* Website projection: a gently translucent page with an unframed, feathered edge. */
+.website-experience{position:fixed;inset:0;z-index:26;pointer-events:none;background:none;overflow:visible}
+.website-css-scene{position:absolute;inset:0;pointer-events:none}
+.website-open .top-bar{z-index:45}
+.website-open #info-toggle{visibility:hidden;pointer-events:none}
+.holo-website{display:flex;flex-direction:column;inset:auto;margin:0;max-width:none;background:transparent;border:0;border-radius:0;box-shadow:none;isolation:isolate;transform-origin:center;overflow:visible}
+.holo-website-bar{display:none}
+/* Alpha masks soften only the outer pixels; layout and pointer targets keep their size. */
+/* Keep the live browsing context unmasked. The two-axis alpha mask reproduced
+   intermittent lost case clicks during real-user navigation. Optical softness
+   stays in the separate WebGL backing/light, outside the interactive page. */
+.holo-website-content{position:relative;z-index:1;flex:1;min-width:0;min-height:0;background:transparent;overflow:hidden}
+.holo-website-frame{display:block;width:100%;height:100%;border:0;background:transparent;opacity:.90;touch-action:auto}
+.holo-website-status{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;background:#081c2b;text-align:center;color:#cdeef8;font:400 14px/1.5 DM,Arial,sans-serif}
+.holo-website-status::before{content:'';width:32px;height:32px;border:1px solid #8fdcf633;border-top-color:#bcefff;border-radius:50%;animation:web-screen-wake 1.2s linear infinite}
+.holo-website-status p{max-width:38ch}
+.holo-website-status button{min-height:48px;padding:10px 20px;border:1px solid #9de8ff80;border-radius:3px;background:#142b3a;color:#cdeef8;font:500 14px/1.4 DM,Arial,sans-serif}
+.holo-website-status button:hover{background:#203c4c;border-color:#b8eafa}
+.holo-website-status button:active{background:#0e2432}
+.holo-website-status button:focus-visible{outline:2px solid #b8eafa;outline-offset:4px}
+.holo-website-poster{display:block;width:100%;height:100%;object-fit:contain;object-position:top;background:#061829}
+.holo-website-status.permission-pending{top:auto;min-height:56px;padding:10px 18px;background:#081c2b;border-top:1px solid #9de8ff55;font-size:12px}
+.holo-website-status.permission-pending::before{display:none}
+.website-return{pointer-events:auto;z-index:4}
+.website-open:has(.website-experience.is-expanded) .top-bar{visibility:hidden;pointer-events:none}
+@keyframes web-screen-wake{to{transform:rotate(360deg)}}
+@media(prefers-contrast:more),(prefers-reduced-transparency:reduce){.holo-website-frame{opacity:1}.holo-website-content{background:#061829;-webkit-mask-image:none;mask-image:none}}
+@media(prefers-reduced-motion:reduce){.holo-website-status::before{animation:none}}
+
+/* Services: a readable, native contact surface anchored to the room. */
+.services-experience{position:fixed;inset:0;z-index:28;pointer-events:none;background:none}
+.services-css-scene{position:absolute;inset:0;pointer-events:none}
+.services-experience[hidden]{display:none!important}
+.services-pane{display:flex;flex-direction:column;pointer-events:auto;background:#091c27f7;border:1px solid #9fd6e555;border-radius:5px;color:#e9f4f3;font:400 15px/1.5 DM,Arial,sans-serif;overflow:hidden;box-shadow:0 18px 60px #00131b55;isolation:isolate}
+.services-pane *{box-sizing:border-box}
+.services-header{flex:none;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 24px;border-bottom:1px solid #a9ddeb30;background:#102732}
+.services-heading h2{font:500 27px/1.2 DM,Arial,sans-serif;letter-spacing:-.02em;margin:4px 0 0}
+.services-eyebrow{font:10px/1.3 Mono,monospace;letter-spacing:.12em;color:#c7d9dd}
+.services-back{min-height:44px;flex:none;padding:10px 12px;border:1px solid #b5d8df60;border-radius:4px;background:#172f3a;font:500 14px/1.3 DM,Arial,sans-serif;color:#e9f4f3;cursor:pointer}
+.services-content{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-color:#65909a #112832;padding:20px 24px 24px;scroll-padding:16px;touch-action:pan-y}
+.services-intro{margin:0 0 15px;font-size:18px;font-weight:500}
+.services-offers{border:0;padding:0;margin:0;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.services-offer{position:relative;display:flex;flex-direction:column;gap:13px;min-width:0;padding:18px 17px 20px;border:1px solid #a8d8e044;border-radius:4px;background:#112934;cursor:pointer}
+.services-offer:hover{border-color:#c3eaf08c;background:#16323d}
+.services-offer:has(input:checked){border-color:#b6e8e8;background:#183b43;box-shadow:inset 0 0 0 1px #b6e8e8}
+.services-offer:has(input:focus-visible){outline:2px solid #d8fff5;outline-offset:3px}
+.services-offer input{position:absolute;right:14px;top:13px;width:22px;height:22px;margin:0;accent-color:#c3f2e5;cursor:pointer}
+.services-offer-label{display:block;padding-right:27px;color:#b8e7e8;font:12px/1.6 Mono,monospace}
+.services-offer-title{display:block;font-size:18px;line-height:1.35;font-weight:500;color:#f3f8f6}
+.services-offer-description{display:block;font-size:14px;line-height:1.55;color:#cfdee1}
+.services-price{margin:15px 0 18px;font-size:13px;color:#c5d6dc}
+.services-details{border-top:1px solid #b6dce330;padding-top:2px}
+.services-details summary{min-height:48px;padding:13px 2px;color:#d9f4ed;font-weight:500;cursor:pointer}
+.services-fields{display:grid;grid-template-columns:minmax(140px,.7fr) minmax(220px,1.8fr);gap:18px;margin-top:8px}
+.services-fields label{display:flex;flex-direction:column;gap:7px;font-size:14px;color:#e2eeef}
+.services-fields input,.services-fields textarea{display:block;width:100%;min-height:48px;border:1px solid #a5cdd864;border-radius:4px;background:#071820;color:#effaf8;padding:11px 12px;font:400 16px/1.45 DM,Arial,sans-serif;resize:vertical}
+.services-fields textarea{min-height:100px;max-height:230px}
+.services-local-note{font-size:12px;color:#b7cdd4;margin:10px 0 0}
+.services-contact{display:flex;align-items:center;gap:20px;flex-wrap:wrap;flex:none;padding:16px 24px;border-top:1px solid #b6dce33d;background:#102732}
+.services-draft{display:flex;align-items:center;justify-content:center;min-height:48px;min-width:150px;padding:11px 19px;background:#c4eee3;color:#0b2a30!important;border:1px solid #c4eee3;border-radius:4px;text-decoration:none;font-size:16px;font-weight:700;white-space:nowrap}
+.services-draft:hover{background:#e0fff2;border-color:#e0fff2}
+.services-contact-copy{flex:1;min-width:210px}
+.services-draft-help{font-size:13px;color:#cfdee1;margin:0}
+.services-email{display:inline-flex;align-items:center;min-height:44px;max-width:100%;overflow-wrap:anywhere;text-decoration:underline;text-underline-offset:3px;color:#d7efe9;font-size:14px;user-select:all}
+.services-status{flex-basis:100%;margin:0;color:#d7eee5;font-size:13px}
+.services-pane :is(button,a,input,textarea,summary):focus-visible{outline:2px solid #d8fff5;outline-offset:3px}
+.services-content:focus-visible{outline:2px solid #d8fff5;outline-offset:-4px}
+.services-open .top-bar{z-index:45}
+.services-open #info-toggle{visibility:hidden;pointer-events:none}
+@media(max-width:760px){.services-offers{grid-template-columns:1fr}.services-offer{gap:8px;padding:15px}.services-offer-title{font-size:18px}.services-header,.services-contact{padding:14px 17px}.services-content{padding:17px}.services-fields{grid-template-columns:1fr}.services-header{gap:8px}.services-back{font-size:12px;padding:10px}.services-contact{gap:5px 14px}.services-draft{flex:1}.services-contact-copy{flex-basis:100%}.services-draft-help{font-size:12px}.services-email{font-size:13px}.services-heading h2{font-size:23px}.services-eyebrow{font-size:8px}}
+@media(max-height:540px){.services-header{padding:8px 16px}.services-heading h2{font-size:21px}.services-eyebrow{display:none}.services-contact{padding:8px 16px;gap:6px 14px}.services-draft-help{font-size:12px}.services-contact-copy{flex-basis:auto}.services-email{min-height:44px}.services-content{padding:14px 16px}.services-draft{flex:none}}
+@media(prefers-contrast:more),(prefers-reduced-transparency:reduce){.services-pane{background:#091c27}.services-offer{border-color:#b6dae1}.services-offer-description,.services-price,.services-draft-help{color:#edf5f4}}
+/* With a short viewport (including an open phone keyboard), the entire pane
+   scrolls so its return control, email address and status remain reachable. */
+@media(max-height:540px){.services-pane{overflow:auto;overscroll-behavior:contain;scrollbar-color:#65909a #112832}.services-header{position:sticky;top:0;z-index:1}.services-content{flex:0 0 auto;overflow:visible}.services-contact{flex-shrink:0}}

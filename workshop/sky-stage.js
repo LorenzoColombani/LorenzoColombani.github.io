@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { containedFrame } from './viewport-layout.js?v=interaction-round-1';
 
 // The existing, fully graded authored sequence unfolds on a sky surface.
 // It is drawn after the room's grade so the original colors are not graded twice.
@@ -8,15 +9,17 @@ export function createSkyStage({scene,camera,getFrame}){
  const texture=new THREE.CanvasTexture(buffer);texture.colorSpace=THREE.NoColorSpace;texture.generateMipmaps=false;texture.minFilter=THREE.LinearFilter;
  const mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,depthTest:false,toneMapped:false,uniforms:{map:{value:texture},opacity:{value:0},reveal:{value:0},aspect:{value:1},background:{value:0}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;uniform sampler2D map;uniform float opacity,reveal,aspect,background;void main(){vec4 c=texture2D(map,vUv);float r=length((vUv-.5)*vec2(aspect,1.));float edge=reveal*(length(vec2(aspect,1.))*.5+.065)-.02;float a=1.-smoothstep(edge-.045,edge+.015,r);float light=smoothstep(.008,.045,max(c.r,max(c.g,c.b)));gl_FragColor=vec4(c.rgb,c.a*a*opacity*mix(background,1.,light));}'});
  const surface=new THREE.Mesh(new THREE.PlaneGeometry(1,1),mat);surface.position.copy(center);surface.lookAt(seat);skyScene.add(surface);surface.visible=false;
+ const backdrop=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0,depthTest:false,depthWrite:false,toneMapped:false}));backdrop.position.copy(center);backdrop.lookAt(seat);backdrop.renderOrder=-1;skyScene.add(backdrop);backdrop.visible=false;
  const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let boxes=[];
  function hit(event){if(!surface.visible)return null;pointer.set(event.clientX/innerWidth*2-1,1-event.clientY/innerHeight*2);ray.setFromCamera(pointer,camera);return ray.intersectObject(surface)[0]||null;}
  function linkAt(event){const h=hit(event);if(!h)return null;return boxes.find(b=>h.uv.x>=b.x&&h.uv.x<=b.x+b.w&&1-h.uv.y>=b.y&&1-h.uv.y<=b.y+b.h)?.href||null;}
  function update(progress,zoom=1){
-  surface.visible=progress>.60;boxes=[];if(!surface.visible)return;
+  surface.visible=progress>.60;backdrop.visible=surface.visible;boxes=[];if(!surface.visible)return;
   const rise=THREE.MathUtils.smoothstep(progress,.60,.98);mat.uniforms.opacity.value=rise;mat.uniforms.reveal.value=rise;mat.uniforms.aspect.value=camera.aspect;mat.uniforms.background.value=THREE.MathUtils.smoothstep(progress,.78,.985);
-  const distance=seat.distanceTo(center),vh=2*distance*Math.tan(THREE.MathUtils.degToRad(camera.fov/2));const height=vh*1.012,width=height*camera.aspect;surface.scale.set(width*zoom,height*zoom,1);
+  const distance=seat.distanceTo(center),vh=2*distance*Math.tan(THREE.MathUtils.degToRad(camera.fov/2));const height=vh*1.012,width=height*camera.aspect;backdrop.scale.set(width,height,1);backdrop.material.opacity=THREE.MathUtils.smoothstep(progress,.78,.985);
   const frame=getFrame(),doc=frame?.contentDocument,film=frame?.contentWindow?.__LOKI,print=film?.renderCanvas?.();
-  if(!doc||!print?.width||!print?.height||!film?.started()){surface.visible=false;return;}
+  if(!doc||!print?.width||!print?.height||!film?.started()){surface.visible=backdrop.visible=false;return;}
+  const fitted=containedFrame(width,height,print.width/print.height);surface.scale.set(fitted.width*zoom,fitted.height*zoom,1);mat.uniforms.aspect.value=print.width/print.height;
   if(buffer.ownerDocument!==doc){buffer=doc.createElement('canvas');ctx=buffer.getContext('2d');texture.image=buffer;}
   if(buffer.width!==print.width||buffer.height!==print.height){buffer.width=print.width;buffer.height=print.height;}
   ctx.clearRect(0,0,buffer.width,buffer.height);ctx.drawImage(print,0,0);
@@ -32,6 +35,6 @@ export function createSkyStage({scene,camera,getFrame}){
   texture.needsUpdate=true;
  }
  function render(renderer){if(!surface.visible)return;const clear=renderer.autoClear;renderer.autoClear=false;renderer.render(skyScene,camera);renderer.autoClear=clear;}
- function dispose(){surface.geometry.dispose();mat.dispose();texture.dispose();}
+ function dispose(){surface.geometry.dispose();mat.dispose();texture.dispose();backdrop.geometry.dispose();backdrop.material.dispose();}
  return {update,render,hit,linkAt,dispose,center,seat};
 }

@@ -1,0 +1,46 @@
+<!doctype html><meta charset="utf-8"><title>Hologram numerical render check</title>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
+<style>body{background:#10212b;color:#e0f6ff;font:16px monospace}canvas{width:384px;height:384px}pre{white-space:pre-wrap}</style>
+<h1>Hologram numerical render check</h1><pre id="result">Preparing real GPU check…</pre>
+<script type="module">
+import * as THREE from 'three';
+import {createHolographicVolume} from './holographic-table.js?v=arrival-9';
+import {EffectComposer} from './vendor/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from './vendor/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from './vendor/addons/postprocessing/UnrealBloomPass.js';
+const params=new URLSearchParams(location.search),variant=params.get('variant')||'current',frames=Number(params.get('frames')||64);
+const renderer=new THREE.WebGLRenderer({antialias:false});renderer.setSize(384,384);document.body.append(renderer.domElement);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(43,1,.1,100),volume=createHolographicVolume();scene.add(volume.group);volume.group.position.y=4.05;
+if(variant==='legacy-height') volume.group.traverse(object=>{if(object.name==='hologram / continuous source volume'){object.material.fragmentShader=object.material.fragmentShader.replace('float h=clamp(vUv.y,0.,1.);','float h=vUv.y;');object.material.needsUpdate=true;}});
+if(variant==='without-source') volume.group.traverse(object=>{if(object.name==='hologram / continuous source volume')object.visible=false;});
+if(variant==='height-only') volume.group.traverse(object=>{if(object.name==='hologram / continuous source volume'){object.material.fragmentShader=object.material.fragmentShader.replace('float h=vUv.y;','float h=clamp(vUv.y,0.,1.);');object.material.needsUpdate=true;}});
+if(variant==='guarded') volume.group.traverse(object=>{
+ if(!object.material?.isShaderMaterial)return;
+ object.material.fragmentShader=object.material.fragmentShader
+ .replace('fresnel=pow(1.-facing,2.2)','fresnel=pow(max(0.,1.-min(facing,1.)),2.2)')
+ .replace('pow(1.-abs(dot(N,normalize(cameraPosition-vWorld))),2.)','pow(max(0.,1.-min(abs(dot(N,normalize(cameraPosition-vWorld))),1.)),2.)')
+ .replace('float h=vUv.y;','float h=clamp(vUv.y,0.,1.);')
+ .replace('fwidth(vBary)*.70','max(fwidth(vBary)*.70,vec3(.00001))')
+ .replace('width+fwidth(vUv.y)*1.1','width+max(fwidth(vUv.y)*1.1,.000001)')
+ .replace('gl_FragColor=vec4(body+emission,alpha);','gl_FragColor=vec4(body+emission,clamp(alpha,0.,1.));');
+ object.material.needsUpdate=true;
+});
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.setClearColor(0x07304c);
+const target=new THREE.WebGLRenderTarget(384,384,{type:THREE.HalfFloatType,samples:variant==='no-msaa'?0:2,format:THREE.RGBAFormat});
+const composer=new EffectComposer(renderer,target);composer.renderToScreen=false;
+composer.addPass(new RenderPass(scene,camera));composer.addPass(new UnrealBloomPass(new THREE.Vector2(384,384),.23,.32,1.15));
+const pixels=new Uint16Array(384*384*4),result=document.querySelector('#result');
+const badFrames=[];let maxChannel=0;
+for(let frame=0;frame<frames;frame++){
+ const t=frame/6;volume.group.rotation.y=.45+Math.sin(t*.06)*.08;volume.update({time:t,night:1,coherence:.28});
+ const angle=.38+Math.sin(frame*.173)*.45;camera.position.set(Math.sin(angle)*7,4.9+Math.sin(frame*.137)*.5,Math.cos(angle)*7);camera.lookAt(0,4.05,0);
+ composer.render();renderer.readRenderTargetPixels(composer.readBuffer,0,0,384,384,pixels);
+ let nonfinite=0,overbright=0;
+ for(let i=0;i<pixels.length;i+=4){const r=pixels[i],g=pixels[i+1],b=pixels[i+2];if((r&0x7c00)===0x7c00||(g&0x7c00)===0x7c00||(b&0x7c00)===0x7c00)nonfinite++;else{const m=Math.max(r<0x8000?r:0,g<0x8000?g:0,b<0x8000?b:0);maxChannel=Math.max(maxChannel,THREE.DataUtils.fromHalfFloat(m));if(m>0x4c00)overbright++;}}
+ if(nonfinite||overbright)badFrames.push({frame,time:t,nonfinite,overbright});
+ if(frame%12===0){result.textContent=JSON.stringify({state:'running',variant,frame,badFrames,maxChannel});await new Promise(requestAnimationFrame);}
+}
+renderer.setRenderTarget(null);renderer.render(scene,camera);
+result.textContent=JSON.stringify({state:'complete',variant,frames,badFrames,maxChannel});document.body.dataset.complete='true';
+composer.dispose();
+</script>

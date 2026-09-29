@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LORENZO COLOMBANI — THE BRIDGE</title>
+<meta name="description" content="THE BRIDGE — a short film through the realms of Lorenzo Colombani: certified lawyer, mediator, negotiator, AI builder, writer, teacher. Paris.">
+<meta name="theme-color" content="#04060C">
+<meta name="color-scheme" content="dark">
+<!-- standalone / home-screen mode: the chromeless fullscreen path on iPhone
+     (Safari never allows element fullscreen there); Android standalone also
+     gets the manifest's native landscape lock -->
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="THE BRIDGE">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<meta name="robots" content="noindex"><!-- PoC under a temp name — remove at launch (docs/STATUS.md) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="LORENZO COLOMBANI — THE BRIDGE">
+<meta property="og:description" content="Seven realms. One person. A four-and-a-half-minute film.">
+<meta property="og:url" content="https://the-bridge-lc.netlify.app/">
+<meta property="og:image" content="https://the-bridge-lc.netlify.app/assets/og.jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧭%3C/text%3E%3C/svg%3E">
+<script>/* The film is the default for every device (owner's decision, 2026-07-08):
+   prefers-reduced-motion never auto-diverts — the gate's "Prefer to read?" link
+   is the still path. Only no-JS / no-WebGL fall back automatically. */
+document.documentElement.classList.replace('no-js','js');
+if(!matchMedia('(pointer: fine)').matches)document.documentElement.classList.add('coarse');</script>
+<!-- Audio boot loads before typography/3D so the project click can unlock it. -->
+<script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/js/audio.js?v=single-score-1"></script>
+<script src="embed-boot.js?v=interaction-round-1"></script>
+<link rel="stylesheet" href="assets/css/film.css">
+<link rel="stylesheet" href="embed.css?v=interaction-round-1">
+</head>
+<body>
+<button id="bridge-return" type="button" aria-label="Return to the workshop">← Workshop</button>
+<div id="bridge-prompt" role="status" hidden><div><p id="bridge-prompt-text">Ready when you are.</p><button id="bridge-start" class="gbtn primary" type="button">Start film with sound</button><button id="bridge-start-muted" class="gbtn" type="button">Continue muted</button></div></div>
+<a class="skip" href="#transcript">Skip to the text version</a>
+
+<!-- fallback banner (no JS / no WebGL only) -->
+<div id="nofilm" role="note"><span>This page is a short film, but your browser can't play it —
+the full story is below, nothing missing.</span></div>
+
+<canvas id="stage" aria-hidden="true"></canvas>
+
+<div class="matte" id="matte-top" aria-hidden="true"></div>
+<div class="matte" id="matte-bot" aria-hidden="true"></div>
+
+<!-- ============ THE FILM (visual layer; the readable script lives in #transcript) ============ -->
+<div id="film" aria-hidden="true">
+
+  <div class="moment" id="coldopen"><p></p></div>
+
+  <div class="moment" id="wordmark">
+    <div id="wm-flicker"></div>
+    <div>
+      <p id="wm-studio">LC STUDIOS — PARIS</p>
+      <p id="wm-name"></p>
+      <p id="wm-presents">PRESENTS</p>
+    </div>
+  </div>
+
+  <div class="moment" id="titlecard">
+    <div>
+      <h2>THE BRIDGE</h2>
+      <p class="tc-sub">SEVEN REALMS · ONE PERSON</p>
+    </div>
+  </div>
+
+  <div class="moment" id="quote"><div class="q-wrap"><p></p><cite></cite></div></div>
+
+  <div class="moment" id="thesis">
+    <div class="th-wrap">
+      <p>“I bridge communication barriers between specialists.”</p>
+      <p class="th-tag">Most people pick a lane. I build the interchange.</p>
+    </div>
+  </div>
+
+  <div class="moment" id="cta-moment">
+    <div class="cta-wrap">
+      <a class="cta" href="mailto:lorenzo.colombani@me.com">Start the conversation <span class="arrow">→</span></a>
+      <div class="cta-links">
+        <a href="https://github.com/LorenzoColombani" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="https://medium.com/@lorenzocolombani" target="_blank" rel="noopener">Medium ↗</a>
+        <a href="https://www.linkedin.com/in/locolombani/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        <a href="https://www.makeworkingfun.com" target="_blank" rel="noopener">makeworkingfun.com ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="moment" id="rollcall"></div>
+  <div id="parade"></div>
+
+  <div class="moment" id="hud">
+    <span class="hcorner hc-tl"></span><span class="hcorner hc-tr"></span>
+    <span class="hcorner hc-bl"></span><span class="hcorner hc-br"></span>
+    <span class="hdata hd-1">SYS // AGENTIC STACK — ONLINE</span>
+    <span class="hdata hd-2">OPENAI FORUM · PARIS — '25–'26</span>
+    <span class="hdata hd-3">DATA VAULT 2.1 · BI — SCALEFREE</span>
+    <span class="hdata hd-4">WHARTON AI STUDIO — MENTAL HEALTH</span>
+    <span class="hring"></span>
+  </div>
+
+  <div id="ncards"></div>
+  <div id="loccard"></div>
+  <div id="captions"></div>
+
+  <div class="moment" id="credits">
+    <div id="cr-roll">
+      <p class="cr-title">THE BRIDGE</p>
+      <p class="cr-h">Starring</p>
+      <p class="cr-line">LORENZO COLOMBANI <span class="role">as himself</span></p>
+      <p class="cr-h">Cast of trades</p>
+      <p class="cr-line">CERTIFIED LAWYER <span class="role">— French bar (CAPA), 2018</span></p>
+      <p class="cr-line">MEDIATOR <span class="role">— Paris Court of Appeal, 2024–</span></p>
+      <p class="cr-line">NEGOTIATOR <span class="role">— trained under Stuart Diamond</span></p>
+      <p class="cr-line">AI BUILDER <span class="role">— OpenAI Forum Paris Leader, 2025–26</span></p>
+      <p class="cr-line">BI CONSULTANT <span class="role">— Scalefree, now</span></p>
+      <p class="cr-line">WRITER <span class="role">— Medium · Dalloz · audio stories</span></p>
+      <p class="cr-line">TEACHER <span class="role">— ESCP · Make Working Fun</span></p>
+      <p class="cr-h">Featured locations</p>
+      <p class="cr-line">PARIS · VICENZA · PHILADELPHIA · PITTSBURGH · HANNOVER · LUXEMBOURG</p>
+      <p class="cr-h">Written by</p>
+      <p class="cr-line">The public record <span class="role">— every fact verified</span></p>
+      <p class="cr-h">Selected works</p>
+      <p class="cr-line"><a href="https://medium.com/@lorenzocolombani/aristotle-was-a-data-engineer-68937ee300b4" target="_blank" rel="noopener">Aristotle Was a Data Engineer</a></p>
+      <p class="cr-line"><a href="https://medium.com/@lorenzocolombani/ai-detection-tools-are-astrology-for-academics-and-i-can-prove-it-c5c527c729d9" target="_blank" rel="noopener">AI Detection Tools Are Astrology for Academics</a></p>
+      <p class="cr-line"><a href="https://www.makeworkingfun.com/_files/ugd/c5bf90_edfb6bcfee8c449da1eac0c476121cd2.pdf" target="_blank" rel="noopener">Le déséquilibre significatif</a> — Dalloz, 2018</p>
+      <p class="cr-line"><a href="https://www.researchgate.net/publication/395718406_Why_is_France_So_Conflictive_2025_Revised_Version" target="_blank" rel="noopener">Why Is France So Conflictive?</a> — Penn, w/ Stuart Diamond</p>
+      <p class="cr-h">Reach the lead</p>
+      <p class="cr-line"><a href="mailto:lorenzo.colombani@me.com">lorenzo.colombani@me.com</a></p>
+      <p class="cr-line">
+        <a href="https://github.com/LorenzoColombani" target="_blank" rel="noopener">GitHub</a> ·
+        <a href="https://medium.com/@lorenzocolombani" target="_blank" rel="noopener">Medium</a> ·
+        <a href="https://www.linkedin.com/in/locolombani/" target="_blank" rel="noopener">LinkedIn</a> ·
+        <a href="https://www.makeworkingfun.com" target="_blank" rel="noopener">makeworkingfun.com</a>
+      </p>
+      <p class="cr-h">Made with</p>
+      <p class="cr-fine">HTML · CSS · JS · GLSL</p>
+      <p class="cr-fine">MOTION — GSAP 3.13 · RENDER — THREE.JS R185</p>
+      <p class="cr-fine">SOUND EFFECTS — MIXKIT</p>
+      <p class="cr-fine" id="cr-score">SCORE — "THE MASTER OF THE MYSTIC END CREDITS" · MICHAEL GIACCHINO</p>
+      <p class="cr-fine" style="margin-top:2em">NO MARVEL ASSETS WERE USED — THE PORTALS ARE HOMEMADE</p>
+      <div class="cr-gap"></div>
+      <p class="cr-fine">PARIS · 07.2026</p>
+      <div class="cr-gap"></div>
+    </div>
+    <div style="position:absolute;inset:0;display:grid;place-items:center;pointer-events:none">
+      <p id="cr-return" style="opacity:0;visibility:hidden">LORENZO COLOMBANI WILL RETURN</p>
+    </div>
+  </div>
+
+  <div class="moment" id="stinger">
+    <div class="st-wrap">
+      <p class="st-type"></p>
+      <p class="st-punch" style="opacity:0">Lorenzo will return… <em>your email.</em></p>
+      <div class="st-actions" style="opacity:0">
+        <a class="gbtn primary" href="mailto:lorenzo.colombani@me.com">Start the conversation</a>
+        <button class="gbtn" id="st-replay" type="button">↻ Replay</button>
+        <a class="g-alt to-transcript" href="#transcript" style="font-family:var(--mono);font-size:.72rem;color:var(--dim)">read as text</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="flash" aria-hidden="true"></div>
+<p id="swipeup" aria-hidden="true">Swipe up for full screen&nbsp;↑</p>
+
+<!-- ============ PLAYER ============ -->
+<div id="player" aria-label="Film controls">
+  <button class="pbtn" id="btn-play" aria-label="Pause">❚❚</button>
+  <button id="seek" aria-label="Seek to a chapter">
+    <span class="track"></span><span class="fill"></span>
+  </button>
+  <span id="tc-readout">0:00 / 0:00</span>
+  <button class="pbtn" id="btn-skip" aria-label="Skip ahead">SKIP ⏭&#xFE0E;</button>
+  <button class="pbtn" id="btn-restart" aria-label="Restart the film">↻</button>
+  <button class="pbtn" id="btn-fs" aria-label="Full screen" aria-pressed="false">FULLSCREEN</button>
+  <button class="pbtn" id="btn-mute" aria-pressed="false">SOUND ON</button>
+</div>
+
+<!-- ============ GATE (title screen) ============ -->
+<div id="gate">
+  <div>
+    <p class="g-eyebrow">LC STUDIOS — PARIS</p>
+    <h1>LORENZO COLOMBANI</h1>
+    <p class="g-title">THE BRIDGE</p>
+    <p class="g-sub">Seven realms. One person. A four-and-a-half-minute film.</p>
+    <div class="g-actions">
+      <button class="gbtn primary" id="enter-sound" type="button">▶&#xFE0E; Enter — sound on</button>
+      <button class="gbtn" id="enter-muted" type="button">Enter muted</button>
+    </div>
+    <p class="g-alt"><a class="to-transcript" href="#transcript">Prefer to read? The whole story as text ↓</a></p>
+  </div>
+  <p class="g-fine">HTML · GLSL · GSAP · THREE.JS — ALL FACTS PUBLIC RECORD — BEST WITH SOUND</p>
+</div>
+
+<!-- ============ ROTATE GATE (portrait touch — the film is widescreen) ============ -->
+<div id="rotate">
+  <div>
+    <p class="r-eyebrow">This film is composed in widescreen</p>
+    <p class="r-line">ROTATE FOR<br>THE FULL PICTURE</p>
+    <span class="r-phone" aria-hidden="true"></span>
+    <p class="r-alt"><a class="to-transcript" href="#transcript">Prefer to read? The whole story as text&nbsp;↓</a></p>
+  </div>
+</div>
+
+<!-- ============ FULLSCREEN HINT (iPhone Safari: no element fullscreen exists —
+     the home-screen app is the true chromeless path) ============ -->
+<div id="fshint">
+  <div>
+    <p class="r-eyebrow">Full screen on iPhone</p>
+    <p class="r-line">SWIPE UP — THE BARS LEAVE&nbsp;↑</p>
+    <p class="fh-fine">Safari hides all its chrome in landscape when the page scrolls. For the always-chromeless
+      way: Share ↑ → Add to Home Screen → launch THE BRIDGE from its icon.</p>
+    <p class="r-alt"><button class="gbtn" id="fh-close" type="button">Got it</button></p>
+  </div>
+</div>
+
+<!-- ============ TRANSCRIPT — the film as text (full content parity) ============ -->
+<main id="transcript" aria-label="The film, as text">
+  <div class="t-inner">
+    <div class="t-back"><button id="t-close" type="button">▶&#xFE0E; Back to the film</button></div>
+    <p class="t-eyebrow">LC Studios — Paris · The film, as text</p>
+    <h1>THE BRIDGE</h1>
+    <p class="t-lede">Lawyers and engineers. Founders and philosophers. Humans and machines. Every specialist
+    speaks a different language — <strong>Lorenzo Colombani</strong> translates. Certified lawyer, mediator at the
+    Paris Court of Appeal, negotiation coach, and AI builder: born, raised, educated, and worked in
+    multicultural environments, translating the needs of people who don't share a language so their projects
+    ship without friction. Most people pick a lane. I build the interchange.</p>
+
+    <section aria-labelledby="t1">
+      <h2 id="t1"><span class="t-num">I</span>ORIGIN — Between worlds</h2>
+      <p class="t-loc">Paris, France · 48.85° N</p>
+      <ul>
+        <li><strong>Sciences Po Paris</strong> — Master's, political science &amp; business law, 2010–2016. <span class="t-detail">Cum laude.</span></li>
+        <li><strong>La Sorbonne</strong> — M.Phil, philosophy of science &amp; technology, 2010–2014. <span class="t-detail">Magna cum laude. Where the transhumanism thread begins.</span></li>
+        <li><strong>University of Pittsburgh</strong> — exchange year, 2012–2013. <span class="t-detail">Philosophy of science. GPA 4.0. The first American chapter.</span></li>
+        <li><strong>ThinkH+</strong> — founded 2015: “the first think tank on augmented humanity.” <span class="t-detail">Law, ethics &amp; regulation of transhumanism; chief editor of its review, <em>Brainstorm</em>.</span></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="t2">
+      <h2 id="t2"><span class="t-num">II</span>THE ADVOCATE — The letter of the law</h2>
+      <p class="t-loc">Philadelphia — University of Pennsylvania</p>
+      <ul>
+        <li><strong>Licensed to practice law in France</strong> — CAPA, 2018. <span class="t-detail">Called to the French bar.</span></li>
+        <li><strong>LL.M., Penn Carey Law</strong>, 2018–2019 — as a <strong>Fulbright Scholar</strong>. <span class="t-detail">Wharton executive-leadership coursework · Penn-Wharton Innovation Award, 2019.</span></li>
+        <li><strong>Published in Dalloz</strong>, 2018. <span class="t-detail"><a href="https://www.makeworkingfun.com/_files/ugd/c5bf90_edfb6bcfee8c449da1eac0c476121cd2.pdf" target="_blank" rel="noopener">“Le déséquilibre significatif dans les contrats commerciaux : nouvel outil de lutte contre les GAFA”</a> — AJ Contrat.</span></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="t3">
+      <h2 id="t3"><span class="t-num">III</span>THE PEACEMAKER — Both sides of the table</h2>
+      <p class="t-loc">Philadelphia courts → Paris Court of Appeal</p>
+      <ul>
+        <li><strong>Negotiation under Stuart Diamond</strong> (<em>Getting More</em>) · mediation practice at the Philadelphia courts.</li>
+        <li><strong>MCR GROUPE</strong> — Chief Learning Officer &amp; negotiation coach, 2019–2022. <span class="t-detail">Advising companies and individuals through sensitive deals.</span></li>
+        <li><strong>Four hours.</strong> <span class="t-detail">A $1,500 dispute, two years in court — mediated and settled in four hours: “and we made them friends again.”</span></li>
+        <li><strong>The long game.</strong> <span class="t-detail">A year of patient, honest conversations helping someone in grief accept professional help. His proudest work.</span></li>
+        <li><strong>Mediator, Paris Court of Appeal</strong> — 2024 to now. <span class="t-detail">Court-appointed peacemaking, for real stakes.</span></li>
+      </ul>
+      <blockquote>
+        <p>“Negotiation is to human interactions what mathematics is to science: its language.”</p>
+        <cite>Stuart Diamond — Getting More</cite>
+      </blockquote>
+    </section>
+
+    <section aria-labelledby="t4">
+      <h2 id="t4"><span class="t-num">IV</span>THE BUILDER — The modern scribe</h2>
+      <p class="t-loc">Paris — OpenAI Forum · Wharton AI Studio · Scalefree</p>
+      <ul>
+        <li><strong>OpenAI Forum Paris Leader</strong> — 2025–2026.</li>
+        <li><strong>Board member, Wharton Alumni AI Studio</strong> — designing AI tools for mental health.</li>
+        <li><strong>Business intelligence consultant — Scalefree.</strong> <span class="t-detail">Data modeling by day, agentic AI systems by night.</span></li>
+        <li><strong>Built:</strong> Octalysis Explorer · Data Vault Foundations (14 interactive chapters) · Wharton AI Use-Case Repository (77 cases) · Active Listening AI · Easy Local LLM.</li>
+      </ul>
+      <blockquote><p>“Learn to wield AI, not fear it.”</p><cite>Lorenzo Colombani</cite></blockquote>
+      <div class="t-links">
+        <a href="https://lorenzocolombani.github.io/octalysis-explorer" target="_blank" rel="noopener">Octalysis Explorer ↗</a>
+        <a href="https://datavault-foundations.netlify.app" target="_blank" rel="noopener">Data Vault Foundations ↗</a>
+        <a href="https://wharton-ai-use-cases.netlify.app" target="_blank" rel="noopener">Wharton AI Use-Cases ↗</a>
+        <a href="https://lorenzocolombani.github.io/tone-illusion" target="_blank" rel="noopener">Can You Understand an Email? ↗</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="t5">
+      <h2 id="t5"><span class="t-num">V</span>THE GAME MASTER — Serious things, the fun way</h2>
+      <p class="t-loc">Paris — Make Working Fun SAS</p>
+      <ul>
+        <li><strong>Founded Make Working Fun SAS</strong>, 2022–2026. <span class="t-detail">“Learn serious things the fun way.” Gamified training, AI tools, mental-health tools, audio stories.</span></li>
+        <li><strong>LifeQuest</strong> — a Skyrim-style quest journal for real life. <span class="t-detail">Quests, XP, and all — plus quest-shortcuts and a Skyrim quest journal for the terminally organized.</span></li>
+        <li><strong>“What It Feels Like”</strong> — an idle game that teaches empathy for depression.</li>
+        <li><strong>Professor — ESCP Business School</strong>, 2022–2023. <span class="t-detail">Teaching law and international law.</span></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="t6">
+      <h2 id="t6"><span class="t-num">VI</span>THE STORYTELLER — In his own words</h2>
+      <p class="t-loc">Medium · Dalloz · SoundCloud</p>
+      <ul>
+        <li><a href="https://medium.com/@lorenzocolombani/aristotle-was-a-data-engineer-68937ee300b4" target="_blank" rel="noopener">Aristotle Was a Data Engineer</a></li>
+        <li><a href="https://medium.com/@lorenzocolombani/ai-detection-tools-are-astrology-for-academics-and-i-can-prove-it-c5c527c729d9" target="_blank" rel="noopener">AI Detection Tools Are Astrology for Academics</a></li>
+        <li><a href="https://medium.com/@lorenzocolombani/is-ai-intelligent-ren%C3%A9-descartes-answered-the-question-4-centuries-ago-03f2623cd6f1" target="_blank" rel="noopener">Is AI Intelligent? Descartes Answered, 4 Centuries Ago</a></li>
+        <li><a href="https://medium.com/@lorenzocolombani/the-sound-of-a-dead-language-d3f1fd327408" target="_blank" rel="noopener">The Sound of a Dead Language</a></li>
+        <li><a href="https://medium.com/@lorenzocolombani/when-ai-assistants-play-dirty-the-dark-side-of-helpful-design-eb5932f98afb" target="_blank" rel="noopener">When AI Assistants Play Dirty</a></li>
+        <li><a href="https://www.makeworkingfun.com/_files/ugd/c5bf90_6a80ee7dec5d4b97b408e7e57663ffab.pdf" target="_blank" rel="noopener">“Responsabilité sociale des entreprises”</a> — Revue Française de Gestion, 2017</li>
+        <li><a href="https://www.researchgate.net/publication/395718406_Why_is_France_So_Conflictive_2025_Revised_Version" target="_blank" rel="noopener">“Why Is France So Conflictive?”</a> — Penn independent study, supervised by Stuart Diamond</li>
+        <li>Audio stories: <a href="https://soundcloud.com/lorenzo-274791895/what-is-it-like-to-be-french-a-socratic-dialogue" target="_blank" rel="noopener">“What Is It Like to Be French?”</a> (Socrates in Paris) · <a href="https://soundcloud.com/lorenzo-274791895/howards-interview-on-ai" target="_blank" rel="noopener">“Mr. Howard C. on AI &amp; Descartes”</a></li>
+      </ul>
+      <div class="t-links">
+        <a href="https://medium.com/@lorenzocolombani" target="_blank" rel="noopener">Read on Medium ↗</a>
+        <a href="https://paris-sorbonne.academia.edu/LorenzoColombani" target="_blank" rel="noopener">Philosophy papers ↗</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="t7">
+      <h2 id="t7"><span class="t-num">VII</span>ASSEMBLY — Seven trades. One person.</h2>
+      <p class="t-loc">Paris — now</p>
+      <p style="margin-top:18px">Certified Lawyer · Mediator · Negotiator · AI Builder · Business Intelligence Consultant · Writer · Teacher — all practiced at once.
+      A dispute to defuse, a deal to close, a system to ship: the interesting work starts with a conversation.</p>
+      <blockquote>
+        <p>“People do not expect you to be like them — they expect you to be yourself, and be authentic.”</p>
+        <cite>Lorenzo Colombani · Mediators Beyond Borders interview</cite>
+      </blockquote>
+      <div class="t-links" style="margin-top:30px">
+        <a href="mailto:lorenzo.colombani@me.com">Start the conversation →</a>
+        <a href="https://github.com/LorenzoColombani" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="https://medium.com/@lorenzocolombani" target="_blank" rel="noopener">Medium ↗</a>
+        <a href="https://www.linkedin.com/in/locolombani/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        <a href="https://www.makeworkingfun.com" target="_blank" rel="noopener">makeworkingfun.com ↗</a>
+      </div>
+    </section>
+
+    <div class="t-fine">
+      <span>PARIS · 07.2026</span>
+      <span>HTML/CSS/JS/GLSL · GSAP · THREE.JS · SFX: MIXKIT · <span id="tr-score">SCORE: MICHAEL GIACCHINO ("THE MASTER OF THE MYSTIC END CREDITS")</span></span>
+      <span>ALL FACTS: PUBLIC RECORD</span>
+    </div>
+  </div>
+</main>
+
+
+
+<script src="assets/vendor/SplitText.min.js"></script>
+<script src="assets/vendor/three.bundle.min.js"></script>
+<script src="assets/js/stage.js"></script>
+<script src="assets/js/realms.js"></script>
+<script src="assets/js/portal.js"></script>
+<script src="assets/js/film.js?v=single-score-1"></script>
+
+</body>
+</html>

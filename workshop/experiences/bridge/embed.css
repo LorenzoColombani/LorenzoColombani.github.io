@@ -1,0 +1,18 @@
+#bridge-return{min-height:44px;position:fixed;top:max(14px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));z-index:100;border:1px solid rgba(255,200,130,.3);border-radius:999px;background:rgba(4,6,12,.76);color:#f6e5cd;padding:10px 16px;font:12px/1.2 system-ui,sans-serif;cursor:pointer;backdrop-filter:blur(12px)}
+#bridge-return:hover,#bridge-return:focus-visible{border-color:#ffc882;background:#17120e;outline:2px solid transparent}
+#btn-fs,#swipeup,#fshint{display:none!important}
+#bridge-prompt{position:fixed;inset:0;z-index:80;display:grid;place-items:center;text-align:center;background:rgba(1,2,4,.9);padding:24px;color:#f6e5cd;font-family:var(--body)}
+#bridge-prompt[hidden]{display:none}
+#bridge-prompt p{max-width:34ch;margin:0 auto 24px;font-size:clamp(1.1rem,3vw,1.5rem)}
+#bridge-prompt button{margin:6px}
+@media(pointer:coarse){html.js.can-play body:not(.reading){overflow:hidden;min-height:100%}}
+@media(orientation:portrait) and (pointer:coarse), (orientation:portrait) and (max-width:700px){
+  #bridge-prompt{z-index:65}
+  html.can-play body:not(.reading) #rotate{display:grid}
+  html.can-play body:not(.reading) #gate,html.can-play body:not(.reading) #player{visibility:hidden}
+}
+/* Preview playback keeps the doorway clear; present() reveals controls at crossing. */
+html.portal-preview :is(#bridge-return,#player,#rotate,#bridge-prompt,.skip){visibility:hidden!important;pointer-events:none!important}
+
+/* The host supplies full-sized touch controls around the fitted film. */
+html.workshop-host-controls :is(#bridge-return,#player){display:none!important}

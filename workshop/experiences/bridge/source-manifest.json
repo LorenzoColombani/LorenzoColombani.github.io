@@ -1,0 +1,381 @@
+{
+  "source": "Local The Bridge film (root project, not loki)",
+  "sourceRuntimeBytes": 15207711,
+  "files": [
+    {
+      "path": "index.html",
+      "sourceBytes": 22726,
+      "sourceSha256": "06d1d5ac6d2db51ceebf81a05ccd61b9b314bfce8609daf37686e16031ceab08",
+      "vendoredBytes": 22955,
+      "vendoredSha256": "dbe62e5f3d0e5f4defe6294f25316ff85810b2e63fc41710ec352639e8dd35b2",
+      "modifiedForEmbedding": true
+    },
+    {
+      "path": "assets/css/film.css",
+      "sourceBytes": 205760,
+      "sourceSha256": "be97c592c84d94c22094d9e69f96e2ad085378b4e60d84220320f69185df7aea",
+      "vendoredBytes": 205760,
+      "vendoredSha256": "be97c592c84d94c22094d9e69f96e2ad085378b4e60d84220320f69185df7aea",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/vendor/gsap.min.js",
+      "sourceBytes": 72435,
+      "sourceSha256": "96c01b81f44a3290e2b4532f55e2c9534b2adc43273a19f3756b2cb41f0fd0b6",
+      "vendoredBytes": 72435,
+      "vendoredSha256": "96c01b81f44a3290e2b4532f55e2c9534b2adc43273a19f3756b2cb41f0fd0b6",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/vendor/SplitText.min.js",
+      "sourceBytes": 7247,
+      "sourceSha256": "5e519ea2470faa15ca4d4f27e9263e5906c07c034a9b4771164dee108136563a",
+      "vendoredBytes": 7247,
+      "vendoredSha256": "5e519ea2470faa15ca4d4f27e9263e5906c07c034a9b4771164dee108136563a",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/vendor/three.bundle.min.js",
+      "sourceBytes": 752127,
+      "sourceSha256": "0459dfdf44f86057a1c6588e0b3c147685f3d61081c3e28a5257845e25e51cb9",
+      "vendoredBytes": 752127,
+      "vendoredSha256": "0459dfdf44f86057a1c6588e0b3c147685f3d61081c3e28a5257845e25e51cb9",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/js/audio.js",
+      "sourceBytes": 25195,
+      "sourceSha256": "a6553c5e541211cd0148ed00385a0fd69a78ea43a44fad5b9ef2d962b0f6fd6d",
+      "vendoredBytes": 29328,
+      "vendoredSha256": "1fc9bb0b1a67b3598b99be2b779180ee27a1ef44a7823806a2155a62848fd158",
+      "modifiedForEmbedding": true
+    },
+    {
+      "path": "assets/js/stage.js",
+      "sourceBytes": 7255,
+      "sourceSha256": "b30d74cbedb3b72bb4f2dc6b4ee38d49550c52827c6cf81f9bb9cbb630eba93f",
+      "vendoredBytes": 7255,
+      "vendoredSha256": "b30d74cbedb3b72bb4f2dc6b4ee38d49550c52827c6cf81f9bb9cbb630eba93f",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/js/realms.js",
+      "sourceBytes": 29546,
+      "sourceSha256": "da8124bed6f184a3e850585b2a5841629e64e09950cc3144ed4a9444a96bc75b",
+      "vendoredBytes": 29546,
+      "vendoredSha256": "da8124bed6f184a3e850585b2a5841629e64e09950cc3144ed4a9444a96bc75b",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/js/portal.js",
+      "sourceBytes": 17049,
+      "sourceSha256": "21e42052b316116d5a8e6c4f8797459447ee46c3b568c30ca048f900e55c91cc",
+      "vendoredBytes": 17049,
+      "vendoredSha256": "21e42052b316116d5a8e6c4f8797459447ee46c3b568c30ca048f900e55c91cc",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/js/film.js",
+      "sourceBytes": 55566,
+      "sourceSha256": "07812a980d734713093ff01ccefeb3394328c5c68a4e973e467675a6fa0c5b23",
+      "vendoredBytes": 65219,
+      "vendoredSha256": "962452b64936a4acfc652553cebcc967f1fc4c4743835f58c745c8876e1df6a4",
+      "modifiedForEmbedding": true
+    },
+    {
+      "path": "assets/audio/sfx-portal-crackle.mp3",
+      "sourceBytes": 288236,
+      "sourceSha256": "74d39f511f0d155e692061c7468f0335e9ed226516fc542fa7c544d30c6e379c",
+      "vendoredBytes": 288236,
+      "vendoredSha256": "74d39f511f0d155e692061c7468f0335e9ed226516fc542fa7c544d30c6e379c",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-portal-burst.mp3",
+      "sourceBytes": 86329,
+      "sourceSha256": "5656cef722505f95cd8713fdf7d2a81f09f414dcee3f6d955d2e955d81bb6d7c",
+      "vendoredBytes": 86329,
+      "vendoredSha256": "5656cef722505f95cd8713fdf7d2a81f09f414dcee3f6d955d2e955d81bb6d7c",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-portal-open.mp3",
+      "sourceBytes": 64878,
+      "sourceSha256": "ccc2fec52c432239ff0c32e0a1960fbf6bbd2958ad3d33565ef06024b940ced1",
+      "vendoredBytes": 64878,
+      "vendoredSha256": "ccc2fec52c432239ff0c32e0a1960fbf6bbd2958ad3d33565ef06024b940ced1",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-riser.mp3",
+      "sourceBytes": 82884,
+      "sourceSha256": "22158444a8bab90fdf014c305d37e21f74882e7e6b1df186bc5c9886b48d0ca3",
+      "vendoredBytes": 82884,
+      "vendoredSha256": "22158444a8bab90fdf014c305d37e21f74882e7e6b1df186bc5c9886b48d0ca3",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-portal-through.mp3",
+      "sourceBytes": 201481,
+      "sourceSha256": "b08198fe3a699296aca18c5911fd140dded026639be294036151dbc47a317f02",
+      "vendoredBytes": 201481,
+      "vendoredSha256": "b08198fe3a699296aca18c5911fd140dded026639be294036151dbc47a317f02",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-boom-big.mp3",
+      "sourceBytes": 225505,
+      "sourceSha256": "1d4fbce38a2a680eabc21a889d79afe87ac90be9274001c2b7c27c6ad327a680",
+      "vendoredBytes": 225505,
+      "vendoredSha256": "1d4fbce38a2a680eabc21a889d79afe87ac90be9274001c2b7c27c6ad327a680",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-card-hit.mp3",
+      "sourceBytes": 115904,
+      "sourceSha256": "9854bff8a78fcebef95350ff0ec72a41ba449ab372bbd601b55d84de13bd626d",
+      "vendoredBytes": 115904,
+      "vendoredSha256": "9854bff8a78fcebef95350ff0ec72a41ba449ab372bbd601b55d84de13bd626d",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-logo-hit.mp3",
+      "sourceBytes": 281323,
+      "sourceSha256": "be27c4dd33431325ced6544bbb27ae7ce7eadbede50fd3d33dac54b15e1f7733",
+      "vendoredBytes": 281323,
+      "vendoredSha256": "be27c4dd33431325ced6544bbb27ae7ce7eadbede50fd3d33dac54b15e1f7733",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-title-hit.mp3",
+      "sourceBytes": 301179,
+      "sourceSha256": "3e05ab571fddce4cfee59737cde942ccf25794cf5486fde9f8a6ba18bc617eaa",
+      "vendoredBytes": 301179,
+      "vendoredSha256": "3e05ab571fddce4cfee59737cde942ccf25794cf5486fde9f8a6ba18bc617eaa",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-return-hit.mp3",
+      "sourceBytes": 279188,
+      "sourceSha256": "a09783cdebbb8bc10b20c1ecdd757238e4136fb1d063af084a032351b8255bfa",
+      "vendoredBytes": 279188,
+      "vendoredSha256": "a09783cdebbb8bc10b20c1ecdd757238e4136fb1d063af084a032351b8255bfa",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-type-click.mp3",
+      "sourceBytes": 3441,
+      "sourceSha256": "f4f432c63e8cd5972af0832389b7ff6150175c1b1139b700c51dc9f6fac5312d",
+      "vendoredBytes": 3441,
+      "vendoredSha256": "f4f432c63e8cd5972af0832389b7ff6150175c1b1139b700c51dc9f6fac5312d",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-type-bell.mp3",
+      "sourceBytes": 55174,
+      "sourceSha256": "a92bdf8f278430d36e7a82073ec3dc354bda2e4d0fdf8ca832eaa03052062bcd",
+      "vendoredBytes": 55174,
+      "vendoredSha256": "a92bdf8f278430d36e7a82073ec3dc354bda2e4d0fdf8ca832eaa03052062bcd",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-loc-swish.mp3",
+      "sourceBytes": 57624,
+      "sourceSha256": "b88fd5d484251930efd6eca78c4340339908ea29d1e69bd24fb5191a10da4f78",
+      "vendoredBytes": 57624,
+      "vendoredSha256": "b88fd5d484251930efd6eca78c4340339908ea29d1e69bd24fb5191a10da4f78",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-hud-on.mp3",
+      "sourceBytes": 19049,
+      "sourceSha256": "e0fd31d5c8c1c0bcae7d12da16f810d4affc39ab4c15fd4b2a4784f8bcd02b24",
+      "vendoredBytes": 19049,
+      "vendoredSha256": "e0fd31d5c8c1c0bcae7d12da16f810d4affc39ab4c15fd4b2a4784f8bcd02b24",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-hud-blip.mp3",
+      "sourceBytes": 49848,
+      "sourceSha256": "80a9cfe1c672ef7164f28b207807003e8babc8b2741c5556d399b9322ba53b9b",
+      "vendoredBytes": 49848,
+      "vendoredSha256": "80a9cfe1c672ef7164f28b207807003e8babc8b2741c5556d399b9322ba53b9b",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-builder-hum.mp3",
+      "sourceBytes": 726615,
+      "sourceSha256": "1386ae61ead8e39629730c26db309a2c33ff415a0797c5993def43c13ad5e1c3",
+      "vendoredBytes": 726615,
+      "vendoredSha256": "1386ae61ead8e39629730c26db309a2c33ff415a0797c5993def43c13ad5e1c3",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-pages-loop.mp3",
+      "sourceBytes": 163483,
+      "sourceSha256": "2b91c800a37bb8281a35827eca40e7210ed4f4b10199283621549bf76f2a4788",
+      "vendoredBytes": 163483,
+      "vendoredSha256": "2b91c800a37bb8281a35827eca40e7210ed4f4b10199283621549bf76f2a4788",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-astral-sweep.mp3",
+      "sourceBytes": 127043,
+      "sourceSha256": "1da7ce08770ebe511f7057eabc672462769c2b71e9aaa27c60a730df933d242a",
+      "vendoredBytes": 127043,
+      "vendoredSha256": "1da7ce08770ebe511f7057eabc672462769c2b71e9aaa27c60a730df933d242a",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-harp-sweep.mp3",
+      "sourceBytes": 200084,
+      "sourceSha256": "1a842b49e90e2c3b964c28a614612bb60098b67950082d00ede8f32e2e319b85",
+      "vendoredBytes": 200084,
+      "vendoredSha256": "1a842b49e90e2c3b964c28a614612bb60098b67950082d00ede8f32e2e319b85",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-energy-flow.mp3",
+      "sourceBytes": 227673,
+      "sourceSha256": "8a631bca7df8371fa0f4eebecfb706066b78a906c9bfad83b767f2e19c996039",
+      "vendoredBytes": 227673,
+      "vendoredSha256": "8a631bca7df8371fa0f4eebecfb706066b78a906c9bfad83b767f2e19c996039",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-dust-whoosh.mp3",
+      "sourceBytes": 126516,
+      "sourceSha256": "931f0ee80af13263f43dad486b5610b3da24f8d9568b88410b7e4255b557d17a",
+      "vendoredBytes": 126516,
+      "vendoredSha256": "931f0ee80af13263f43dad486b5610b3da24f8d9568b88410b7e4255b557d17a",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-embers-loop.mp3",
+      "sourceBytes": 926321,
+      "sourceSha256": "47dee6aa6ee5ec0d3136aee0255789833dcaaff27c1334e82ffaa016efb1d7c4",
+      "vendoredBytes": 926321,
+      "vendoredSha256": "47dee6aa6ee5ec0d3136aee0255789833dcaaff27c1334e82ffaa016efb1d7c4",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-mini-crackle.mp3",
+      "sourceBytes": 70939,
+      "sourceSha256": "0e997a2a0dce967a3353981e45546807d6d31adbadd235468af05ee2b21707c2",
+      "vendoredBytes": 70939,
+      "vendoredSha256": "0e997a2a0dce967a3353981e45546807d6d31adbadd235468af05ee2b21707c2",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-thunder-rumble.mp3",
+      "sourceBytes": 396200,
+      "sourceSha256": "025036e74693cf39c64877429f0c2f7aa77ba12a2bb809aa60152e5514971285",
+      "vendoredBytes": 396200,
+      "vendoredSha256": "025036e74693cf39c64877429f0c2f7aa77ba12a2bb809aa60152e5514971285",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-fireworks.mp3",
+      "sourceBytes": 104703,
+      "sourceSha256": "1fe7779ec14057f891c0e1baed483fe09cb6f916ea78c9ad5e8936700b3df705",
+      "vendoredBytes": 104703,
+      "vendoredSha256": "1fe7779ec14057f891c0e1baed483fe09cb6f916ea78c9ad5e8936700b3df705",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-page-shuffle.mp3",
+      "sourceBytes": 61696,
+      "sourceSha256": "ce6375f29e5a37f233e0a408a6fb9c2df0c0d9d4b9a79ee21fe544a1749de394",
+      "vendoredBytes": 61696,
+      "vendoredSha256": "ce6375f29e5a37f233e0a408a6fb9c2df0c0d9d4b9a79ee21fe544a1749de394",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-star-ping.mp3",
+      "sourceBytes": 77103,
+      "sourceSha256": "1a534fecd427acf927a2dd796bc400578fd1a406053ff89a76a9305882bc4f46",
+      "vendoredBytes": 77103,
+      "vendoredSha256": "1a534fecd427acf927a2dd796bc400578fd1a406053ff89a76a9305882bc4f46",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-glitter-burst.mp3",
+      "sourceBytes": 114135,
+      "sourceSha256": "75519aa16ba7195c0420d939e626ed30425f5c09539c7957135b8835f8cbb948",
+      "vendoredBytes": 114135,
+      "vendoredSha256": "75519aa16ba7195c0420d939e626ed30425f5c09539c7957135b8835f8cbb948",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/sfx-reverse-suck.mp3",
+      "sourceBytes": 311698,
+      "sourceSha256": "e4b63ea18a82a888f3570e8dd59e5d2aef6bcb77128c243641a9bd238def53ce",
+      "vendoredBytes": 311698,
+      "vendoredSha256": "e4b63ea18a82a888f3570e8dd59e5d2aef6bcb77128c243641a9bd238def53ce",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/score-local.opus",
+      "sourceBytes": 5091155,
+      "sourceSha256": "b6e9bd5baf0e15e67b9cdd821fd0a7bb7f805649548ccf70f9ea7aec0e7b7244",
+      "vendoredBytes": 5091155,
+      "vendoredSha256": "b6e9bd5baf0e15e67b9cdd821fd0a7bb7f805649548ccf70f9ea7aec0e7b7244",
+      "modifiedForEmbedding": false
+    },
+    {
+      "path": "assets/audio/CREDITS.md",
+      "sourceBytes": 4631,
+      "sourceSha256": "37b2a8bf50234bdf024203066da80dbacba8b7f8e645dcb693dfcc0f75df55ec",
+      "vendoredBytes": 4007,
+      "vendoredSha256": "292e6b9e3d64066edb2346da970109c49c965b377e3be665a1e886897d0b63c4",
+      "modifiedForEmbedding": true
+    },
+    {
+      "path": "assets/icon-180.png",
+      "sourceBytes": 19588,
+      "sourceSha256": "7cb82ee3d441c35b6e7e66934fc79574bd686dde9eb42c08cd81a55f020979be",
+      "vendoredBytes": 19588,
+      "vendoredSha256": "7cb82ee3d441c35b6e7e66934fc79574bd686dde9eb42c08cd81a55f020979be",
+      "modifiedForEmbedding": false
+    }
+  ],
+  "addedFiles": [
+    {
+      "path": "README.md",
+      "bytes": 5167
+    },
+    {
+      "path": "embed-boot.js",
+      "bytes": 3589
+    },
+    {
+      "path": "embed.css",
+      "bytes": 1442
+    },
+    {
+      "path": "layout.test.cjs",
+      "bytes": 3515
+    },
+    {
+      "path": "preview.test.cjs",
+      "bytes": 3921
+    },
+    {
+      "path": "transport.test.cjs",
+      "bytes": 2819
+    },
+    {
+      "path": "media-authorization.test.cjs",
+      "bytes": 8440
+    }
+  ],
+  "vendoredRuntimeBytes": 12069923,
+  "removedFiles": [
+    {
+      "path": "assets/audio/music-feast.m4a",
+      "sourceBytes": 3151179,
+      "sourceSha256": "4ae4aa90c6fdcb613b61ff01556879c204d67e797e5b54134460d425cb02b853",
+      "reason": "Backup soundtrack removed at user request; use only the supplied score."
+    }
+  ]
+}

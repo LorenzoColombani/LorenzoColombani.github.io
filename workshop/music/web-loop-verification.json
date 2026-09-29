@@ -1,0 +1,15 @@
+{
+  "source": "Workshop - Live Room - master.wav",
+  "bars": 32,
+  "bpm": 114,
+  "sample_rate": 44100,
+  "duration_seconds": 67.3684126984127,
+  "expected_samples": 2970947,
+  "decoded_samples": 2970947,
+  "bytes": 1618308,
+  "peak_dbfs": -3.18,
+  "boundary_sample_delta": 0.006859662942588329,
+  "finite": true,
+  "source_sha256": "0b58f1b61667a1c2ca59439b3a03291a6885f300be31d45ca94e4294bd240a7f",
+  "output_sha256": "14db0e1767cc14f99b16b4b6fc2f6ca7cff52d0a46c6f34f30869679f114b28c"
+}

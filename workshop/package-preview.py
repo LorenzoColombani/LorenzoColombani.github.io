@@ -28,12 +28,13 @@ CANONICAL = 'https://lorenzocolombani.com/'
 ROBOTS_META = '<meta name="robots" content="noindex,nofollow,nosnippet">'
 DORMANT = {'native-story.js', 'golden-threads.js', 'story-timeline.js', 'stage-space.js'}
 CORE = {
-    'index.html', 'style.css', 'bootstrap.js', 'main.js', 'audio.js',
+    'index.html', 'style.css', 'bootstrap.js', 'main.js', 'audio.js', 'recorded-score.js', 'calm-score.js', 'product-elements.js', 'product-catalog.js', 'product-gestures.js', 'viewport-layout.js',
     'coastal-world.js', 'pavilion-finish.js', 'illustrated-materials.js',
-    'world-interface.js', 'sky-stage.js', 'projector.js', 'droid-work.js',
+    'world-interface.js', 'sky-stage.js', 'projector.js', 'holographic-table.js', 'physical-occlusion.js', 'stark-workshop.js', 'garage-ramp.js', 'navigation-desk.js', 'droid-work.js',
+    'bridge-experience.js', 'bridge-portal.js', 'portal-audio.js', 'website-experience.js', 'website-projection-audio.js', 'services-experience.js',
 }
 ROOT_ASSETS = {
-    'favicon.svg', 'assets/previews/tva.webp', 'assets/previews/openbots-still.png',
+    'favicon.svg', 'assets/previews/wharton.webp', 'assets/previews/tva.webp', 'assets/previews/openbots-still.png', 'assets/previews/bridge.webp',
     'assets/fonts/dm-sans-v17-latin-regular.woff2',
     'assets/fonts/dm-sans-v17-latin-500.woff2',
     'assets/fonts/dm-sans-v17-latin-700.woff2',
@@ -45,7 +46,7 @@ MODULE_RE = re.compile(
     r'''(?:^|[;\n])\s*(?:import|export)\s*(?:[\w\s{},*$]+?\bfrom\s*)?['"]([^'"\n]+)['"]|\bimport\s*\(\s*['"]([^'"\n]+)['"]'''
 )
 ASSET_RE = re.compile(
-    r'''(['"])([^'"\n]+\.(?:glb|mp4|webm|m4a|woff2?|ttf|webp|png|jpe?g|svg|json)(?:\?[^'"\n]*)?)\1'''
+    r'''(['"])([^'"\n]+\.(?:glb|mp4|webm|m4a|mp3|opus|woff2?|ttf|webp|png|jpe?g|svg|json)(?:\?[^'"\n]*)?)\1'''
 )
 PORTFOLIO_RE = re.compile(r'''(['"])(\.\./(?:work(?:/[^'"\s]*)?)?)\1''')
 
@@ -80,6 +81,9 @@ def local_path(reference: str, base: str) -> str | None:
 def allowed(path: str) -> bool:
     if path in ROOT_ASSETS:
         return True
+    if path.startswith('workshop/experiences/bridge/'):
+        relative = path.removeprefix('workshop/experiences/bridge/')
+        return relative in {'index.html', 'embed.css', 'embed-boot.js', 'assets/icon-180.png'} or (relative.startswith('assets/') and relative.endswith(('.js', '.css', '.mp3', '.opus', '.m4a')))
     if path.startswith('workshop/vendor/'):
         return path.endswith('.js')
     if path.startswith('workshop/experiences/tva/'):
@@ -96,7 +100,7 @@ def allowed(path: str) -> bool:
         )
     return path in {f'workshop/{name}' for name in CORE} or path in {
         'workshop/assets/robot.glb', 'workshop/assets/sofa.glb',
-        'workshop/assets/plant.glb', 'workshop/media/openbots.mp4', 'workshop/assets/social-preview.png',
+        'workshop/assets/plant.glb', 'workshop/media/workshop-garage-rock-v1.mp3', 'workshop/media/openbots.mp4', 'workshop/assets/social-preview.png',
     }
 
 
@@ -175,7 +179,7 @@ def dependencies(path: str, text: str) -> set[str]:
             else:
                 fail(f'Unresolved bare module {reference!r} in {path}')
         if '/vendor/' not in path:
-            document_base = 'workshop/experiences/tva' if '/experiences/tva/' in path else 'workshop'
+            document_base = 'workshop/experiences/' + path.split('/experiences/', 1)[1].split('/')[0] if '/experiences/' in path else 'workshop'
             references += [(match[2], document_base) for match in ASSET_RE.finditer(clean) if '/' in match[2]]
             references += [(match[2], document_base) for match in re.finditer(r'''\.src\s*=\s*(['"])(\.[^'"]*/(?:\?[^'"]*)?)\1''', clean)]
     result = set()
@@ -201,6 +205,9 @@ def check_glb(path: str, data: bytes) -> None:
 
 def build() -> tuple[dict[str, bytes], dict[str, str], int]:
     queue = ['workshop/index.html', 'workshop/experiences/tva/index.html', 'workshop/assets/social-preview.png']
+    # The authored Bridge audio bank composes URLs from a directory and cue names.
+    # Seed its curated copy because those dynamic references cannot be inferred.
+    queue.extend(str(path.relative_to(ROOT)) for path in (ROOT / 'workshop/experiences/bridge').rglob('*') if path.is_file() and allowed(str(path.relative_to(ROOT))))
     files: dict[str, bytes] = {}
     sources: dict[str, str] = {}
     edges = 0
@@ -237,7 +244,7 @@ def build() -> tuple[dict[str, bytes], dict[str, str], int]:
 
 def verify(files: dict[str, bytes]) -> int:
     required = ROOT_ASSETS | {'workshop/assets/robot.glb', 'workshop/assets/sofa.glb',
-                             'workshop/assets/plant.glb', 'workshop/media/openbots.mp4', 'workshop/assets/social-preview.png'}
+                             'workshop/assets/plant.glb', 'workshop/media/workshop-garage-rock-v1.mp3', 'workshop/media/openbots.mp4', 'workshop/assets/social-preview.png'}
     if required - files.keys():
         fail(f'Required assets missing: {sorted(required - files.keys())}')
     node = shutil.which('node')

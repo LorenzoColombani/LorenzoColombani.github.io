@@ -1,20 +1,22 @@
-/** Original, opt-in procedural score. No samples, network requests, or autoplay. */
+import { createRecordedScore } from './recorded-score.js?v=garage-rock-1';
+import { createCalmScore } from './calm-score.js?v=music-choice-1';
+import { scheduleWebsiteProjection } from './website-projection-audio.js?v=table-projection-1';
+
+/** Opt-in GarageBand score and independent procedural hologram effects. */
 export function createWorkshopAudio() {
-  let context, master, effects, compressor, delay, feedback, wet, noise;
+  let context, master, effects, compressor, noise, score;
+  let scores = null, scoreMode = 'rock';
   let requested = false;
+  let effectsArmed = false;
+  let effectsUnlock = null;
   let destroyed = false;
   let intensity = 0.45;
   let ducked = false;
-  let timer = null;
   let generation = 0;
-  let step = 0;
-  let nextTime = 0;
+  let stopWebsiteProjection = null;
   const voices = new Set();
   const lastCue = new Map();
-  const beat = 60 / 104;
-  const chords = [[38, 45, 50, 57, 64], [34, 41, 46, 53, 60], [41, 48, 53, 60, 67], [36, 43, 48, 55, 62]];
-  const motif = [2, null, 4, 3, null, 2, 1, null, 3, null, 4, 2, 1, null, 3, null];
-  const frequency = note => 440 * Math.pow(2, (note - 69) / 12);
+  const musicLevel = () => scoreMode === 'calm' ? 0.34 : 0.42 + intensity * 0.12;
 
   function initialize() {
     const AudioContext = globalThis.AudioContext || globalThis.webkitAudioContext;
@@ -33,14 +35,9 @@ export function createWorkshopAudio() {
     effects = context.createGain();
     effects.gain.value = 0;
     effects.connect(compressor);
-    delay = context.createDelay(1);
-    delay.delayTime.value = beat * 0.75;
-    feedback = context.createGain();
-    feedback.gain.value = 0.24;
-    wet = context.createGain();
-    wet.gain.value = 0.16;
-    delay.connect(feedback).connect(delay);
-    delay.connect(wet).connect(master);
+    scores = { rock: createRecordedScore(context, master), calm: createCalmScore(context, master) };
+    score = scores[scoreMode];
+    scores.calm.setIntensity(intensity);
     noise = context.createBuffer(1, context.sampleRate * 0.25, context.sampleRate);
     const data = noise.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
@@ -54,27 +51,6 @@ export function createWorkshopAudio() {
       nodes.forEach(node => node.disconnect());
       voices.delete(voice);
     };
-  }
-
-  function tone(note, time, duration, level, type = 'triangle', pan = 0, attack = 0.01, cutoff = 2300, echo = false, output = master) {
-    const oscillator = context.createOscillator();
-    const filter = context.createBiquadFilter();
-    const envelope = context.createGain();
-    const stereo = context.createStereoPanner();
-    oscillator.type = type;
-    oscillator.frequency.value = frequency(note);
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(cutoff, time);
-    filter.frequency.exponentialRampToValueAtTime(Math.max(160, cutoff * 0.35), time + duration);
-    stereo.pan.value = pan;
-    envelope.gain.setValueAtTime(0, time);
-    envelope.gain.linearRampToValueAtTime(level, time + attack);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-    oscillator.connect(filter).connect(envelope).connect(stereo).connect(output);
-    if (echo) stereo.connect(delay);
-    track(oscillator, [filter, envelope, stereo]);
-    oscillator.start(time);
-    oscillator.stop(time + duration + 0.02);
   }
 
   function air(time, strength, direction, grip = false) {
@@ -144,60 +120,16 @@ export function createWorkshopAudio() {
     carrier.stop(time + duration + 0.12);
   }
 
-  function percussion(time, kick) {
-    const envelope = context.createGain();
-    const source = kick ? context.createOscillator() : context.createBufferSource();
-    const filter = context.createBiquadFilter();
-    if (kick) {
-      source.frequency.setValueAtTime(110, time);
-      source.frequency.exponentialRampToValueAtTime(43, time + 0.13);
-      filter.type = 'lowpass';
-      filter.frequency.value = 220;
-    } else {
-      source.buffer = noise;
-      filter.type = 'highpass';
-      filter.frequency.value = 6200;
-    }
-    const duration = kick ? 0.22 : 0.045;
-    envelope.gain.setValueAtTime(0, time);
-    envelope.gain.linearRampToValueAtTime(kick ? 0.24 : 0.025 + intensity * 0.018, time + 0.003);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-    source.connect(filter).connect(envelope).connect(master);
-    track(source, [filter, envelope]);
-    source.start(time);
-    source.stop(time + duration + 0.01);
-  }
-
-  function schedule() {
-    if (!requested || destroyed || document.hidden || context.state !== 'running') return;
-    while (nextTime < context.currentTime + 0.16) {
-      const position = step % 16;
-      const chord = chords[Math.floor(step / 16) % chords.length];
-      if (position === 0) {
-        chord.slice(1, 4).forEach((note, index) => {
-          tone(note + 12, nextTime, beat * 7.5, 0.04, 'sine', (index - 1) * 0.55, 0.4, 1400);
-        });
-      }
-      if ([0, 6, 8, 14].includes(position)) {
-        tone(chord[0] + (position === 14 ? 12 : 0), nextTime, beat * 0.8, 0.23, 'triangle', 0, 0.008, 650);
-      }
-      if (motif[position] !== null) {
-        tone(chord[motif[position]] + 12, nextTime, beat * 0.85, 0.09 + intensity * 0.025,
-          'triangle', position % 3 === 0 ? -0.3 : 0.3, 0.008, 2400 + intensity * 1700, true);
-      }
-      if (position % 4 === 0 || (intensity > 0.7 && position === 11)) percussion(nextTime, true);
-      if (position % 2 === 0 || intensity > 0.65) percussion(nextTime, false);
-      nextTime += beat / 2;
-      step++;
-    }
-  }
-
-  function stopSound() {
-    clearInterval(timer);
-    timer = null;
+  function stopMusic() {
+    if (scores) Object.values(scores).forEach(player => player.pause());
     if (!context) return;
     master.gain.cancelScheduledValues(context.currentTime);
     master.gain.setValueAtTime(0, context.currentTime);
+  }
+
+  function stopSound() {
+    stopMusic();
+    if (!context) return;
     effects.gain.cancelScheduledValues(context.currentTime);
     effects.gain.setValueAtTime(0, context.currentTime);
     lastCue.clear();
@@ -207,61 +139,75 @@ export function createWorkshopAudio() {
       voice.nodes.forEach(node => node.disconnect());
     }
     voices.clear();
-    // Clear the echo loop so old notes cannot return after resuming.
-    delay.disconnect();
-    feedback.disconnect();
-    delay = context.createDelay(1);
-    delay.delayTime.value = beat * 0.75;
+    stopWebsiteProjection = null;
+
+  }
+
+  // Called from entry or another trusted gesture. Turning background music off
+  // never disables these physical interaction signifiers.
+  async function unlockEffects() {
+    if (destroyed) return false;
+    if (effectsUnlock) return effectsUnlock;
+    if (effectsArmed && context?.state === 'running') return true;
+    effectsArmed = true;
+    try {
+      if (!context) initialize();
+      effectsUnlock = Promise.resolve(context.resume()).then(() => {
+        if (destroyed) return false;
+        effects.gain.cancelScheduledValues(context.currentTime);
+        effects.gain.setValueAtTime(0.3, context.currentTime);
+        return true;
+      }).catch(error => {
+        effectsArmed = false;
+        throw error;
+      }).finally(() => { effectsUnlock = null; });
+      return effectsUnlock;
+    } catch (error) {
+      effectsArmed = false;
+      throw error;
+    }
   }
 
   async function startSound(token) {
-    if (!context || document.hidden || !requested || destroyed) return;
+    if (!requested || destroyed) return;
     try {
-      await context.resume();
-      if (token !== generation || !requested || destroyed || document.hidden) return;
-      delay.disconnect();
-      feedback.disconnect();
-      delay.connect(feedback).connect(delay);
-      delay.connect(wet);
+      await unlockEffects();
+      if (token !== generation || !requested || destroyed) return;
       master.gain.cancelScheduledValues(context.currentTime);
       master.gain.setValueAtTime(0, context.currentTime);
-      master.gain.linearRampToValueAtTime(ducked ? 0 : 0.34, context.currentTime + 0.25);
-      effects.gain.cancelScheduledValues(context.currentTime);
-      effects.gain.setValueAtTime(0.3, context.currentTime);
-      step = 0;
-      nextTime = context.currentTime + 0.035;
-      clearInterval(timer);
-      schedule();
-      timer = setInterval(schedule, 75);
+      master.gain.linearRampToValueAtTime(ducked ? 0 : musicLevel(), context.currentTime + 0.25);
+      await score.start();
+      if (token !== generation || !requested || destroyed) return;
     } catch (error) {
       if (token === generation) {
         requested = false;
-        stopSound();
+        stopMusic();
       }
       throw error;
     }
   }
 
+  // Music keeps playing while the page is in the background. On return, only
+  // restart it if the browser itself suspended the context meanwhile.
   async function visibilityChanged() {
+    if (document.hidden || (!requested && !effectsArmed) || destroyed || context?.state === 'running') return;
     const token = ++generation;
-    if (document.hidden) {
-      stopSound();
-      if (context && context.state !== 'closed') await context.suspend().catch(() => {});
-    } else if (requested && !destroyed) {
-      await startSound(token).catch(() => {});
-    }
+    stopMusic();
+    if (requested) await startSound(token).catch(() => {});
+    else await unlockEffects().catch(() => {});
   }
   document.addEventListener('visibilitychange', visibilityChanged);
 
   return {
+    unlockEffects,
     async setEnabled(value) {
       if (destroyed) return false;
-      if (Boolean(value) && requested && timer !== null && context?.state === 'running') return true;
+      if (Boolean(value) && requested && context?.state === 'running') return true;
       const token = ++generation;
       requested = Boolean(value);
       if (!requested) {
-        stopSound();
-        if (context && context.state !== 'closed') await context.suspend().catch(() => {});
+        stopMusic();
+        if (!effectsArmed && context && context.state !== 'closed') await context.suspend().catch(() => {});
         return false;
       }
       try {
@@ -273,13 +219,34 @@ export function createWorkshopAudio() {
         throw error;
       }
     },
+    async setScoreMode(value) {
+      if (!['rock', 'calm'].includes(value)) throw new RangeError('Unknown Workshop soundtrack.');
+      if (destroyed || value === scoreMode) return scoreMode;
+      const token = ++generation;
+      scoreMode = value;
+      // Pause both players immediately, including a recording still loading.
+      // Only the current generation may start again after asynchronous work.
+      if (scores) {
+        Object.values(scores).forEach(player => player.pause());
+        score = scores[scoreMode];
+        if (requested) await startSound(token);
+      }
+      return scoreMode;
+    },
+    get scoreMode() { return scoreMode; },
     cue(kind, options = {}) {
-      if (!requested || destroyed || document.hidden || context?.state !== 'running') return;
+      if (!effectsArmed || destroyed || document.hidden || context?.state !== 'running') return;
       const time = context.currentTime + 0.005;
       if (time - (lastCue.get(kind) ?? -Infinity) < (kind === 'move' ? 0.18 : 0.06)) return;
       const strength = Number.isFinite(options?.strength) ? Math.max(0, Math.min(1, options.strength)) : 0.7;
       const direction = Number.isFinite(options?.direction) ? Math.max(-1, Math.min(1, options.direction)) : 0;
       if (strength === 0) return;
+      if (kind === 'website-project' || kind === 'website-fold') {
+        lastCue.set(kind, time);
+        stopWebsiteProjection?.();
+        stopWebsiteProjection = scheduleWebsiteProjection({ context, destination: effects, noise, track, time, strength, direction, fold: kind === 'website-fold' });
+        return;
+      }
       if (kind === 'move') {
         lastCue.set(kind, time);
         air(time, strength, direction);
@@ -309,18 +276,25 @@ export function createWorkshopAudio() {
     },
     setDucked(value) {
       ducked = Boolean(value);
-      if (context && master && requested && context.state === 'running') { master.gain.cancelScheduledValues(context.currentTime); master.gain.setTargetAtTime(ducked ? 0 : 0.34, context.currentTime, 0.12); }
+      if (context && master && requested && context.state === 'running') { master.gain.cancelScheduledValues(context.currentTime); master.gain.setTargetAtTime(ducked ? 0 : musicLevel(), context.currentTime, 0.12); }
     },
     setIntensity(value) {
-      if (Number.isFinite(value)) intensity = Math.max(0, Math.min(1, value));
+      if (!Number.isFinite(value)) return;
+      intensity = Math.max(0, Math.min(1, value));
+      scores?.calm.setIntensity(intensity);
+      if (requested && !ducked && context?.state === 'running') {
+        master.gain.setTargetAtTime(musicLevel(), context.currentTime, 0.6);
+      }
     },
     destroy() {
       if (destroyed) return;
       destroyed = true;
       requested = false;
+      effectsArmed = false;
       generation++;
       document.removeEventListener('visibilitychange', visibilityChanged);
       stopSound();
+      if (scores) Object.values(scores).forEach(player => player.destroy());
       if (context && context.state !== 'closed') context.close().catch(() => {});
     },
     get enabled() { return requested && !destroyed; },
