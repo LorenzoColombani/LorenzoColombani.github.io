@@ -273,7 +273,7 @@ section{
   display:block;margin-top:clamp(16px,2.4vw,26px);
   font-family:var(--serif);font-weight:600;font-style:italic;
   font-size:clamp(1.15rem,2.35vw,2rem);line-height:1.28;letter-spacing:-.01em;
-  color:var(--gold);max-width:22ch;
+  color:var(--gold);max-width:28ch;
 }
 .hero-kicker{
   margin-top:clamp(22px,3vw,34px);
@@ -1081,3 +1081,22 @@ body{font-size:clamp(16px,1.1vw,18px)}
 }
 /* tap target: Hire me measured 41px tall on a phone — 44 minimum */
 .btn-hire{min-height:44px}
+
+/* 2026-09-30 — the kicker is now the sentence a stranger has to read.
+   Tracked uppercase was a short occupation label; that treatment turns this
+   copy into a wall of caps. Body voice, still the same element. */
+.hero-kicker{
+  margin-top:clamp(16px,2.2vw,26px);
+  font-family:var(--sans);
+  font-weight:400;
+  font-size:clamp(16px,1.15vw,18px);
+  line-height:1.55;
+  letter-spacing:0;
+  text-transform:none;
+  color:var(--dim);
+  max-width:46ch;
+  text-wrap:pretty;
+}
+@media (max-height:450px){
+  .hero-kicker{margin-top:clamp(10px,1.8vh,18px);font-size:14px;line-height:1.45}
+}
