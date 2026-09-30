@@ -273,7 +273,7 @@ section{
   display:block;margin-top:clamp(16px,2.4vw,26px);
   font-family:var(--serif);font-weight:600;font-style:italic;
   font-size:clamp(1.15rem,2.35vw,2rem);line-height:1.28;letter-spacing:-.01em;
-  color:var(--gold);max-width:28ch;
+  color:var(--gold);max-width:20ch;
 }
 .hero-kicker{
   margin-top:clamp(22px,3vw,34px);
@@ -1094,9 +1094,18 @@ body{font-size:clamp(16px,1.1vw,18px)}
   letter-spacing:0;
   text-transform:none;
   color:var(--dim);
-  max-width:46ch;
+  max-width:46em;
   text-wrap:pretty;
 }
+/* 20ch wins over the small-screen max-width:none and the short-viewport 30ch,
+   so the claim breaks as "Tools for the boring work / your team keeps repeating"
+   at every size. Measured: 19–20ch. 21ch pulls "your" up; 24ch orphans "keeps repeating". */
+.hero-claim{max-width:20ch}
 @media (max-height:450px){
-  .hero-kicker{margin-top:clamp(10px,1.8vh,18px);font-size:14px;line-height:1.45}
+  /* keep the existing nav clearance. Only the gaps shrink, so the Workshop
+     link still fits a 390px-tall landscape screen. */
+  .hero-kicker{margin-top:6px;font-size:13px;line-height:1.35}
+  .hero-basis{margin-top:4px}
+  .hero-cta{margin-top:8px}
+  .hero-door{margin-top:4px}
 }
