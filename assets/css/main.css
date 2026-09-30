@@ -1081,3 +1081,27 @@ body{font-size:clamp(16px,1.1vw,18px)}
 }
 /* tap target: Hire me measured 41px tall on a phone — 44 minimum */
 .btn-hire{min-height:44px}
+
+/* 2026-09-30 — the kicker is now the sentence a stranger has to read.
+   Tracked uppercase was a short occupation label; that treatment turns this
+   copy into a wall of caps. Body voice, still the same element. */
+.hero-kicker{
+  margin-top:clamp(16px,2.2vw,26px);
+  font-family:var(--sans);
+  font-weight:400;
+  font-size:clamp(16px,1.15vw,18px);
+  line-height:1.55;
+  letter-spacing:0;
+  text-transform:none;
+  color:var(--dim);
+  max-width:46em;
+  text-wrap:pretty;
+}
+@media (max-height:450px){
+  /* keep the existing nav clearance. Only the gaps shrink, so the Workshop
+     link still fits a 390px-tall landscape screen. */
+  .hero-kicker{margin-top:6px;font-size:13px;line-height:1.35}
+  .hero-basis{margin-top:4px}
+  .hero-cta{margin-top:8px}
+  .hero-door{margin-top:4px}
+}
