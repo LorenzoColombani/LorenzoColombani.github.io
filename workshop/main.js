@@ -66,7 +66,7 @@ try {
  renderer.shadowMap.enabled = true;renderer.localClippingEnabled=true;
  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 } catch (error) {
- $('#loader').classList.add('done'); $('#fallback').hidden=false;
+ $('#fallback').hidden=false;
  throw error;
 }
 scene.fog = new THREE.FogExp2(0x92b6bf,.006);
@@ -477,6 +477,6 @@ function frame(now){const dt=Math.min((now-lastFrame)/1000,.05);lastFrame=now;if
  requestAnimationFrame(frame);
 }
 resize();renderer.compile(scene,camera);requestAnimationFrame(frame);
-modelsReady.then(()=>{if(new URLSearchParams(location.search).get('view')==='services'){enter();servicesExperience.open();}const website=PRODUCTS.find(item=>item.id===new URLSearchParams(location.search).get('view')&&websiteExperience.canOpen(item));if(website){enter();returnToProducts=true;productElements.focusCard(website.id);websiteExperience.open(website);}if(new URLSearchParams(location.search).get('view')==='bridge'){enter();bridgeExperience.open({fromHistory:true});}if(new URLSearchParams(location.search).get('view')==='robot'){enter();openCompanion({fromHistory:true});}renderer.compile(scene,camera);}).finally(()=>$('#loader').classList.add('done'));
+modelsReady.then(()=>{if(new URLSearchParams(location.search).get('view')==='services'){enter();servicesExperience.open();}const website=PRODUCTS.find(item=>item.id===new URLSearchParams(location.search).get('view')&&websiteExperience.canOpen(item));if(website){enter();returnToProducts=true;productElements.focusCard(website.id);websiteExperience.open(website);}if(new URLSearchParams(location.search).get('view')==='bridge'){enter();bridgeExperience.open({fromHistory:true});}if(new URLSearchParams(location.search).get('view')==='robot'){enter();openCompanion({fromHistory:true});}renderer.compile(scene,camera);}).finally(()=>dispatchEvent(new Event('workshop-ready')));
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();announce('The graphics context was interrupted. Reload to return to the scene.');$('#fallback').hidden=false;$('#fallback h1').textContent='The scene needs a fresh start.';$('#fallback p').textContent='Reload this page to restore the graphics, or explore the work directly.'});
 addEventListener('pagehide',()=>{document.removeEventListener('pointerdown',unlockInteractionEffects,true);document.removeEventListener('keydown',unlockInteractionEffects,true);servicesExperience?.dispose();websiteExperience?.dispose();productElements?.dispose();clearTimeout(entryTimer);clearTimeout(deployTimer);bridgeExperience.dispose();worldInterface.dispose();workshopInterior.dispose();droidWork.dispose();holographicVolume.dispose();opticalTable.dispose();projector.dispose();pavilionFinish.dispose();coastalWorld.dispose();palette.dispose();audio.destroy()},{once:true});

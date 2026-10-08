@@ -23,13 +23,65 @@
 <meta name="twitter:image:alt" content="The Workshop sharing artwork with Lorenzo’s droid, a teal orb, an ivory optical table, and a blue-hour ocean.">
 <!-- share-preview:end -->
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css?v=site-preview-restored-23">
+<link rel="stylesheet" href="style.css?v=reactor-vault-24">
+<link rel="stylesheet" href="vault-loader.css?v=reactor-vault-24">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
 </head>
 <body class="blue-hour">
 <canvas id="world" aria-label="An interactive three-dimensional invention workshop"></canvas>
 <div class="screen-shade" aria-hidden="true"></div>
-<div class="load-screen" id="loader"><span class="load-mark" aria-hidden="true">✳</span><p>Establishing a little perspective.</p><span class="load-line"></span></div>
+<div class="load-screen vault-loader" id="loader" aria-label="Opening the Workshop" aria-busy="true">
+  <div class="vault-architecture" aria-hidden="true">
+    <div class="vault-jamb vault-jamb-left"></div><div class="vault-jamb vault-jamb-right"></div>
+    <div class="vault-door vault-door-left"><div class="vault-door-inset"></div><div class="vault-door-track"></div><div class="vault-door-ribs"></div></div>
+    <div class="vault-door vault-door-right"><div class="vault-door-inset"></div><div class="vault-door-track"></div><div class="vault-door-ribs"></div></div>
+    <div class="vault-seam"></div>
+    <div class="vault-sill"></div>
+  </div>
+  <header class="vault-heading"><span class="vault-eyebrow">Lorenzo Colombani</span><p>The Workshop</p></header>
+  <div class="vault-mechanism" aria-hidden="true">
+    <svg class="vault-reactor" viewBox="0 0 600 600" fill="none">
+      <defs>
+        <radialGradient id="vault-housing"><stop stop-color="#101d23"/><stop offset=".62" stop-color="#16242b"/><stop offset=".78" stop-color="#0a1218"/><stop offset=".9" stop-color="#53616a"/><stop offset=".94" stop-color="#17222a"/><stop offset="1" stop-color="#080f14"/></radialGradient>
+        <linearGradient id="vault-steel" x1="100" y1="70" x2="470" y2="500" gradientUnits="userSpaceOnUse"><stop stop-color="#a4adb1"/><stop offset=".22" stop-color="#364852"/><stop offset=".48" stop-color="#101d25"/><stop offset=".72" stop-color="#667781"/><stop offset="1" stop-color="#16252e"/></linearGradient>
+        <linearGradient id="vault-copper" x1="-17" y1="-185" x2="17" y2="-126" gradientUnits="userSpaceOnUse"><stop stop-color="#dbc69d"/><stop offset=".45" stop-color="#8d7454"/><stop offset="1" stop-color="#403c36"/></linearGradient>
+        <radialGradient id="vault-light"><stop stop-color="#ffffff"/><stop offset=".32" stop-color="#e2fff9"/><stop offset=".7" stop-color="#86dfdc"/><stop offset="1" stop-color="#385964"/></radialGradient>
+        <radialGradient id="vault-aura"><stop stop-color="#a6f9ed" stop-opacity=".16"/><stop offset=".57" stop-color="#8ae7e1" stop-opacity=".09"/><stop offset="1" stop-color="#85dfdf" stop-opacity="0"/></radialGradient>
+        <linearGradient id="vault-glass" x1="200" y1="180" x2="400" y2="450" gradientUnits="userSpaceOnUse"><stop stop-color="#e0fff3" stop-opacity=".25"/><stop offset=".45" stop-color="#75d2d3" stop-opacity=".02"/><stop offset="1" stop-color="#afffee" stop-opacity=".12"/></linearGradient>
+        <g id="vault-coil"><path d="M-19-190H19L15-139H-15Z" fill="url(#vault-copper)" stroke="#c6bca8" stroke-width="1"/><path d="M-16-182H16M-16-177H16M-16-172H16M-15-167H15M-15-162H15M-15-157H15M-14-152H14M-14-147H14" stroke="#302e2b" stroke-width="2"/><path d="M-7-186V-143M7-186V-143" stroke="#e7d8b8" stroke-width="1" opacity=".5"/><path d="M-10-136H10" stroke="#c6fff5" stroke-width="3"/></g>
+        <g id="vault-bolt"><circle r="7" fill="#0b151b" stroke="#677a82" stroke-width="2"/><path d="M-3-3 3 3M-3 3 3-3" stroke="#84959b" stroke-width="1.5"/></g>
+        <g id="vault-latch"><path d="M-19-271H19L24-246V-220H-24V-246Z" fill="url(#vault-steel)" stroke="#73868c" stroke-width="1.3"/><path d="M-12-262H12M-15-254H15M-16-246H16" stroke="#111e27" stroke-width="3"/><path class="vault-latch-light" d="M-13-230H13" stroke="#e1c89c" stroke-width="2.5"/></g>
+      </defs>
+      <circle cx="300" cy="300" r="298" fill="url(#vault-aura)"/>
+      <g class="vault-reactor-body">
+        <circle cx="300" cy="300" r="268" fill="#080f14" stroke="#52646e" stroke-width="2"/>
+        <circle cx="300" cy="300" r="260" fill="url(#vault-housing)" stroke="url(#vault-steel)" stroke-width="11"/>
+        <circle cx="300" cy="300" r="247" stroke="#8d9da3" stroke-width="1" opacity=".65"/>
+        <circle cx="300" cy="300" r="240" stroke="#101920" stroke-width="12"/>
+        <circle cx="300" cy="300" r="233" stroke="#647881" stroke-width="1.5"/>
+        <g transform="translate(300 300)" stroke="#96a8ad" stroke-width="2" opacity=".72"><circle r="244" stroke-dasharray="1 10"/><circle r="221" stroke-dasharray="28 145.6" stroke-width="3"/></g>
+        <g transform="translate(300 300)"><use href="#vault-bolt" y="-253"/><use href="#vault-bolt" transform="rotate(45) translate(0 -253)"/><use href="#vault-bolt" transform="rotate(90) translate(0 -253)"/><use href="#vault-bolt" transform="rotate(135) translate(0 -253)"/><use href="#vault-bolt" y="253"/><use href="#vault-bolt" transform="rotate(225) translate(0 -253)"/><use href="#vault-bolt" transform="rotate(270) translate(0 -253)"/><use href="#vault-bolt" transform="rotate(315) translate(0 -253)"/></g>
+        <g class="vault-alignment"><g class="vault-turntable"><circle cx="300" cy="300" r="214" stroke="#304752" stroke-width="7"/><circle cx="300" cy="300" r="212" stroke="#b0e9e7" stroke-width="2" stroke-dasharray="82 28 2 28"/><path d="M300 79 294 91H306Z M521 300 509 294V306Z M300 521 306 509H294Z M79 300 91 306V294Z" fill="#b9eae4"/></g></g>
+        <circle cx="300" cy="300" r="201" fill="#0c1921" stroke="#708992" stroke-width="3"/>
+        <g class="vault-coils"><g transform="translate(300 300)"><use href="#vault-coil"/><use href="#vault-coil" transform="rotate(30)"/><use href="#vault-coil" transform="rotate(60)"/><use href="#vault-coil" transform="rotate(90)"/><use href="#vault-coil" transform="rotate(120)"/><use href="#vault-coil" transform="rotate(150)"/><use href="#vault-coil" transform="rotate(180)"/><use href="#vault-coil" transform="rotate(210)"/><use href="#vault-coil" transform="rotate(240)"/><use href="#vault-coil" transform="rotate(270)"/><use href="#vault-coil" transform="rotate(300)"/><use href="#vault-coil" transform="rotate(330)"/></g></g>
+        <circle cx="300" cy="300" r="126" stroke="#a9e4e1" stroke-width="2"/>
+        <circle cx="300" cy="300" r="120" fill="#101d23" stroke="url(#vault-steel)" stroke-width="10"/>
+        <g class="vault-iris"><path d="M300 187 398 244 398 356 300 413 202 356 202 244Z" fill="#152832" stroke="#86b9bf" stroke-width="2"/><path d="M300 187 326 254 398 244 353 311 398 356 325 352 300 413 274 347 202 356 248 289 202 244 275 249Z" fill="#243c46" stroke="#516971" stroke-width="1.5"/><circle cx="300" cy="300" r="70" stroke="#d0fef2" stroke-width="2"/></g>
+        <circle class="vault-core" cx="300" cy="300" r="62" fill="url(#vault-light)"/>
+        <circle cx="300" cy="300" r="55" stroke="#f1fffc" stroke-width=".8" opacity=".7"/>
+        <path d="m300 250 43 75h-86Z" stroke="#ffffff" stroke-width="2" opacity=".7"/><path d="m300 267 28 48h-56Z" fill="#fff" opacity=".68"/>
+        <circle cx="300" cy="300" r="110" fill="url(#vault-glass)"/>
+        <path d="M222 254A89 89 0 0 1 328 215" stroke="#dbfffa" stroke-width="2" opacity=".35"/>
+        <g transform="translate(300 300)"><g class="vault-latch vault-latch-n"><use href="#vault-latch"/></g><g class="vault-latch vault-latch-e"><use href="#vault-latch" transform="rotate(90)"/></g><g class="vault-latch vault-latch-s"><use href="#vault-latch" transform="rotate(180)"/></g><g class="vault-latch vault-latch-w"><use href="#vault-latch" transform="rotate(270)"/></g></g>
+      </g>
+    </svg>
+  </div>
+  <div class="vault-copy"><span class="vault-progress-light" aria-hidden="true"></span><p data-vault-status role="status" aria-live="polite">Preparing the Workshop</p><span class="vault-caption">A little space for possibility.</span></div>
+  <div class="vault-controls">
+    <button class="vault-sound" data-vault-sound type="button" aria-pressed="false" aria-label="Opening sound"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path class="vault-sound-on" d="M17 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="vault-sound-off" d="m17 9 5 6m0-6-5 6"/></svg><span>Opening sound</span><span class="vault-sound-state" data-vault-sound-state>Off</span></button>
+    <button class="vault-skip" data-vault-skip type="button">Skip opening <span aria-hidden="true">↗</span></button>
+  </div>
+</div>
 <div id="fallback" hidden><h1>A little more space is needed.</h1><p>This scene needs WebGL. You can still explore the work.</p><a href="../work/">Explore Lorenzo’s work ↗</a></div>
 <header class="top-bar">
 <a class="identity" id="workshop-home" href="./" aria-label="The Workshop home — return to the general workshop view"><span class="identity-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3v34M3 20h34M8 8l24 24M8 32 32 8"/></svg></span><span>Lorenzo<br>Colombani</span></a>
@@ -69,6 +121,6 @@
 <dialog class="experience-dialog" id="experience-dialog" aria-labelledby="experience-title"><header><div><span class="eyebrow">PROJECTED / FROM THE WORKBENCH</span><h2 id="experience-title">TVA Case File</h2></div><div class="experience-actions"><a id="experience-external" href="https://tva-case-file-l1607.netlify.app" target="_blank" rel="noopener">Open in a new tab ↗</a><button id="experience-close" type="button">Return to the workshop <span aria-hidden="true">×</span></button></div></header><div id="experience-content"></div><p class="experience-help">Open the case-file source in a new tab.</p></dialog>
 <dialog id="about-dialog" class="about-dialog" aria-labelledby="about-title"><button class="about-close" type="button" aria-label="Close information">×</button><span class="eyebrow">AN INDEPENDENT EXPERIMENT</span><h2 id="about-title">A little space<br>for <em>possibility.</em></h2><p>An original interactive environment for Lorenzo Colombani. A place to make things, play with ideas, and see the work.</p><p>Choose a display on the curved desk. Drag empty space to explore the workshop. The labels travel with their objects and work with a keyboard. Optional text controls are available below.</p><button class="text-controls-toggle" id="text-controls-toggle" type="button" aria-pressed="false">Show text controls</button><div class="about-links"><a href="../work/">Explore all work ↗</a><a href="mailto:lorenzo.colombani@live.fr">Get in touch ↗</a></div><p class="about-credit">Original synthesized soundtrack. Three.js, MIT. Local visual experiment.</p></dialog>
 <noscript><div class="noscript">This interactive scene needs JavaScript. <a href="../work/">Explore the work instead ↗</a></div></noscript>
-<script type="module" src="bootstrap.js?v=site-preview-restored-23"></script>
+<script type="module" src="bootstrap.js?v=reactor-vault-24"></script>
 </body>
 </html>

@@ -1,0 +1,141 @@
+/* A physical threshold into the Garage. All moving light is contained in the
+   reactor; the full-screen doors use compositor transforms, never blur. */
+#loader.vault-loader {
+  --vault-ink: #0a1219;
+  --vault-text: #eef5f2;
+  --vault-muted: #b6c5ca;
+  --vault-light: #b6fff1;
+  --vault-opening: 1.35s;
+  --vault-unlock: .68s;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: block;
+  isolation: isolate;
+  overflow: hidden;
+  background: transparent;
+  opacity: 1;
+  visibility: visible;
+  color: var(--vault-text);
+  font-family: DM, Arial, sans-serif;
+  transition: opacity .2s ease, visibility .2s;
+}
+#loader.vault-loader *, #loader.vault-loader *::before, #loader.vault-loader *::after { box-sizing: border-box; }
+#loader.vault-loader .vault-architecture { position: absolute; inset: 0; pointer-events: none; }
+#loader.vault-loader .vault-door {
+  position: absolute;
+  top: -2%;
+  bottom: -2%;
+  width: calc(50% + 1px);
+  background: linear-gradient(105deg, #27343e 0%, #15232c 14%, #1a2a34 43%, #101c25 77%, #263640 100%);
+  border: 1px solid #6d858f45;
+  box-shadow: inset 0 0 0 9px #08121a, inset 0 0 0 11px #53656d65, inset 0 0 80px #0008, 0 0 30px #0009;
+  transition: transform var(--vault-opening) cubic-bezier(.66, 0, .2, 1) var(--vault-unlock);
+}
+#loader.vault-loader .vault-door::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, #d7e7e803 3px 4px), linear-gradient(125deg, #e1eee50a, transparent 38%, #0003 64%, #d0e6e505);
+  border: 1px solid #72899130;
+}
+#loader.vault-loader .vault-door-left { left: 0; transform-origin: left center; border-right: 5px solid #050e15; }
+#loader.vault-loader .vault-door-right { right: 0; transform-origin: right center; border-left: 5px solid #3b505a; background-position: right; }
+#loader.vault-loader .vault-door-inset {
+  position: absolute;
+  inset: 11% 13% 13%;
+  background: linear-gradient(135deg, #07101830, #41515a18 52%, #030b1055);
+  border: 1px solid #71848b34;
+  clip-path: polygon(0 8%, 10% 0, 90% 0, 100% 8%, 100% 92%, 90% 100%, 10% 100%, 0 92%);
+  box-shadow: inset 0 0 0 7px #070f1533, inset 0 0 35px #0004;
+}
+#loader.vault-loader .vault-door-track { position: absolute; top: 43%; width: min(82vw, 70svh, 570px); aspect-ratio: 1; border: 2px solid #8b9da226; border-radius: 50%; box-shadow: 0 0 0 12px #050c122b, 0 0 0 14px #72888f15, inset 0 0 0 18px #050c122b; transform: translateY(-50%); }
+#loader.vault-loader .vault-door-left .vault-door-track { right: 0; transform: translate(50%, -50%); }
+#loader.vault-loader .vault-door-right .vault-door-track { left: 0; transform: translate(-50%, -50%); }
+#loader.vault-loader .vault-door { overflow: hidden; }
+#loader.vault-loader .vault-door-ribs { position: absolute; left: 9%; right: 9%; bottom: 20%; height: 32px; opacity: .45; background: repeating-linear-gradient(90deg, #020a10 0 3px, #53677166 3px 4px, transparent 4px 13px); }
+#loader.vault-loader .vault-door-right .vault-door-ribs { top: 20%; bottom: auto; }
+#loader.vault-loader .vault-jamb { position: absolute; top: 0; bottom: 0; width: clamp(14px, 2.4vw, 40px); z-index: 3; border: 1px solid #67798266; background: linear-gradient(90deg, #030b12, #263a45 35%, #485c644d 60%, #030b12); transition: opacity .35s 1.65s; }
+#loader.vault-loader .vault-jamb-left { left: 0; }
+#loader.vault-loader .vault-jamb-right { right: 0; transform: scaleX(-1); }
+#loader.vault-loader .vault-jamb::after { content: ''; position: absolute; top: 24%; bottom: 24%; right: 5px; width: 1px; background: #b6fff188; box-shadow: 0 0 6px #b6fff140; }
+#loader.vault-loader .vault-seam { position: absolute; left: calc(50% - 1px); top: 0; bottom: 0; width: 2px; background: #aeddd64a; box-shadow: 0 0 8px #b6fff120; transition: opacity .12s .58s; }
+#loader.vault-loader .vault-sill { position: absolute; bottom: 0; left: 0; right: 0; height: 15px; border-top: 1px solid #afc0bb40; background: repeating-linear-gradient(90deg, #08121a 0 28px, #41525c 28px 29px); transition: opacity .35s 1.65s; }
+#loader.vault-loader .vault-heading { position: absolute; z-index: 4; top: max(28px, calc(env(safe-area-inset-top) + 20px)); left: 24px; right: 24px; text-align: center; transition: opacity .28s, transform .4s; }
+#loader.vault-loader .vault-eyebrow { display: block; color: var(--vault-muted); font: 10px/1.6 Mono, monospace; letter-spacing: .19em; text-transform: uppercase; }
+#loader.vault-loader .vault-heading p { margin: 6px 0 0; font: 400 clamp(21px, 2.2vw, 30px)/1.2 DM, Arial, sans-serif; letter-spacing: -.035em; }
+#loader.vault-loader .vault-mechanism { position: absolute; z-index: 5; left: 50%; top: 44%; width: min(82vw, 70svh, 570px); aspect-ratio: 1; transform: translate(-50%, -50%); transition: translate var(--vault-opening) cubic-bezier(.66, 0, .2, 1) var(--vault-unlock); pointer-events: none; }
+#loader.vault-loader .vault-reactor { display: block; width: 100%; height: 100%; overflow: visible; }
+#loader.vault-loader .vault-alignment, #loader.vault-loader .vault-turntable, #loader.vault-loader .vault-coils, #loader.vault-loader .vault-iris { transform-origin: 300px 300px; }
+#loader.vault-loader .vault-turntable { animation: vault-ring-turn 22s linear infinite; }
+#loader.vault-loader .vault-coils { animation: vault-ring-return 68s linear infinite; }
+#loader.vault-loader .vault-iris { animation: vault-ring-turn 90s linear infinite; }
+#loader.vault-loader .vault-core { filter: drop-shadow(0 0 12px #89f6ed77); }
+#loader.vault-loader .vault-latch { transition: transform .38s cubic-bezier(.3, 0, .25, 1) .18s; }
+#loader.vault-loader .vault-copy { position: absolute; z-index: 6; top: calc(44% + min(41vw, 35svh, 285px) + 13px); left: 24px; right: 24px; display: grid; grid-template-columns: 6px auto; justify-content: center; gap: 6px 10px; transition: opacity .25s .7s; }
+#loader.vault-loader .vault-copy p { margin: 0; color: var(--vault-text); font: 400 13px/1.5 DM, Arial, sans-serif; letter-spacing: .015em; }
+#loader.vault-loader .vault-progress-light { width: 5px; height: 5px; margin-top: 7px; border-radius: 50%; background: var(--vault-light); box-shadow: 0 0 8px #b6fff155; }
+#loader.vault-loader .vault-caption { grid-column: 1 / -1; text-align: center; color: var(--vault-muted); font: 11px/1.6 DM, Arial, sans-serif; }
+#loader.vault-loader .vault-controls { position: absolute; z-index: 7; bottom: max(22px, calc(env(safe-area-inset-bottom) + 12px)); left: max(26px, calc(env(safe-area-inset-left) + 18px)); right: max(26px, calc(env(safe-area-inset-right) + 18px)); display: flex; justify-content: space-between; gap: 12px; }
+#loader.vault-loader .vault-controls button { min-height: 48px; padding: 10px 14px; border: 1px solid #8da8ac50; border-radius: 3px; background: #101d25; color: var(--vault-text); font: 12px/1.25 DM, Arial, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 9px; cursor: pointer; touch-action: manipulation; transition: background .2s, border-color .2s; }
+#loader.vault-loader .vault-controls button:hover { background: #203640; border-color: #b6fff1a8; }
+#loader.vault-loader .vault-controls button:focus-visible { outline: 2px solid var(--vault-light); outline-offset: 4px; }
+#loader.vault-loader .vault-controls button:active { background: #2b4851; }
+#loader.vault-loader .vault-controls button:disabled { opacity: .5; cursor: wait; }
+#loader.vault-loader .vault-controls svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+#loader.vault-loader .vault-sound-state { color: var(--vault-muted); font: 10px/1.2 Mono, monospace; padding-left: 4px; }
+#loader.vault-loader .vault-sound-on { display: none; }
+#loader.vault-loader .vault-sound[aria-pressed="true"] { border-color: #b6fff18a; }
+#loader.vault-loader .vault-sound[aria-pressed="true"] .vault-sound-on { display: initial; }
+#loader.vault-loader .vault-sound[aria-pressed="true"] .vault-sound-off { display: none; }
+#loader.vault-loader .vault-controls .vault-skip { visibility: hidden; pointer-events: none; margin-left: auto; }
+#loader.vault-loader.is-ready .vault-core { filter: drop-shadow(0 0 18px #a3fff199); }
+#loader.vault-loader.is-unlocking .vault-heading { opacity: 0; transform: translateY(-8px); }
+#loader.vault-loader.is-unlocking .vault-alignment { animation: vault-ring-unlock .64s cubic-bezier(.5, 0, .15, 1) both; }
+#loader.vault-loader.is-unlocking .vault-turntable, #loader.vault-loader.is-unlocking .vault-coils, #loader.vault-loader.is-unlocking .vault-iris { animation-play-state: paused; }
+#loader.vault-loader.is-unlocking .vault-latch-n { transform: translateY(-24px); }
+#loader.vault-loader.is-unlocking .vault-latch-e { transform: translateX(24px); }
+#loader.vault-loader.is-unlocking .vault-latch-s { transform: translateY(24px); }
+#loader.vault-loader.is-unlocking .vault-latch-w { transform: translateX(-24px); }
+#loader.vault-loader.is-unlocking .vault-latch-light { stroke: var(--vault-light); }
+#loader.vault-loader.is-unlocking .vault-door-left { transform: translateX(-102%); }
+#loader.vault-loader.is-unlocking .vault-door-right { transform: translateX(102%); }
+#loader.vault-loader.is-unlocking .vault-mechanism { translate: -78vw 0; }
+#loader.vault-loader.is-unlocking .vault-seam, #loader.vault-loader.is-unlocking .vault-copy, #loader.vault-loader.is-unlocking .vault-jamb, #loader.vault-loader.is-unlocking .vault-sill { opacity: 0; }
+#loader.vault-loader.is-unlocking .vault-controls .vault-skip { visibility: visible; pointer-events: auto; }
+#loader.vault-loader.is-open { opacity: 0; pointer-events: none; }
+#loader.vault-loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+@keyframes vault-ring-turn { to { transform: rotate(360deg); } }
+@keyframes vault-ring-return { to { transform: rotate(-360deg); } }
+@keyframes vault-ring-unlock { from { transform: rotate(0deg); } to { transform: rotate(60deg); } }
+@media (max-width: 520px) {
+  #loader.vault-loader .vault-heading { top: max(25px, calc(env(safe-area-inset-top) + 18px)); }
+  #loader.vault-loader .vault-eyebrow { font-size: 9px; letter-spacing: .14em; }
+  #loader.vault-loader .vault-mechanism { width: min(92vw, 58svh); top: 43%; }
+  #loader.vault-loader .vault-door-track { width: min(92vw, 58svh); top: 43%; }
+  #loader.vault-loader .vault-copy { top: calc(43% + min(46vw, 29svh) + 18px); }
+  #loader.vault-loader .vault-door-inset { inset: 12% 12% 16%; }
+  #loader.vault-loader .vault-controls { left: max(17px, env(safe-area-inset-left)); right: max(17px, env(safe-area-inset-right)); bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px)); gap: 8px; }
+  #loader.vault-loader .vault-controls button { font-size: 11px; padding: 9px 10px; gap: 6px; }
+  #loader.vault-loader .vault-sound-state { padding-left: 0; }
+  #loader.vault-loader .vault-core { filter: none; }
+  #loader.vault-loader.is-unlocking .vault-mechanism { translate: -105vw 0; }
+}
+@media (max-height: 500px) and (min-width: 521px) {
+  #loader.vault-loader .vault-heading { top: max(18px, env(safe-area-inset-top)); left: max(40px, env(safe-area-inset-left)); right: auto; text-align: left; }
+  #loader.vault-loader .vault-heading p { font-size: 23px; }
+  #loader.vault-loader .vault-mechanism, #loader.vault-loader .vault-door-track { width: min(73svh, 380px); top: 45%; }
+  #loader.vault-loader .vault-core { filter: none; }
+  #loader.vault-loader .vault-copy { top: auto; bottom: 22px; left: 32%; right: 32%; }
+  #loader.vault-loader .vault-caption { display: none; }
+  #loader.vault-loader .vault-copy p { font-size: 11px; }
+  #loader.vault-loader .vault-controls { bottom: max(14px, env(safe-area-inset-bottom)); }
+  #loader.vault-loader .vault-controls button { padding: 9px 10px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #loader.vault-loader { --vault-opening: .15s; --vault-unlock: 0s; }
+  #loader.vault-loader .vault-turntable, #loader.vault-loader .vault-coils, #loader.vault-loader .vault-iris { animation: none; }
+  #loader.vault-loader .vault-heading, #loader.vault-loader .vault-copy, #loader.vault-loader .vault-latch, #loader.vault-loader .vault-seam, #loader.vault-loader .vault-jamb, #loader.vault-loader .vault-sill { transition-duration: .1s; transition-delay: 0s; }
+  #loader.vault-loader.is-unlocking .vault-alignment { animation: none; }
+  #loader.vault-loader.is-unlocking .vault-mechanism { translate: 0 0; opacity: 0; transition: opacity .1s; }
+}

@@ -32,6 +32,7 @@ CORE = {
     'coastal-world.js', 'pavilion-finish.js', 'illustrated-materials.js',
     'world-interface.js', 'sky-stage.js', 'projector.js', 'holographic-table.js', 'physical-occlusion.js', 'stark-workshop.js', 'garage-ramp.js', 'navigation-desk.js', 'droid-work.js',
     'bridge-experience.js', 'bridge-portal.js', 'portal-audio.js', 'website-experience.js', 'website-projection-audio.js', 'services-experience.js',
+    'vault-loader.js', 'vault-loader.css', 'vault-audio.js',
 }
 ROOT_ASSETS = {
     'favicon.svg', 'assets/previews/wharton.webp', 'assets/previews/tva.webp', 'assets/previews/openbots-still.png', 'assets/previews/bridge.webp',
