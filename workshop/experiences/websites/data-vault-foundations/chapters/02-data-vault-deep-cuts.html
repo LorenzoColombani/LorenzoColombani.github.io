@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 2: Data Vault Deep Cuts — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===================================================
+   LCARS-INSPIRED DESIGN SYSTEM
+   Star Trek Discovery aesthetic: dark panels, glowing
+   borders, color-coded by DV component, spatial layout
+   =================================================== */
+
+:root {
+  /* Deep space background */
+  --bg-deep: #060a13;
+  --bg-panel: #0d1321;
+  --bg-panel-hover: #111827;
+  --bg-surface: #151d2e;
+
+  /* DV Component Colors — consistent across all tutorials */
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+
+  /* Interface colors */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+
+  --accent: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.2);
+
+  --accent-color: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.12);
+  --accent-bg: rgba(251, 191, 36, 0.06);
+
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+
+  --border-subtle: rgba(148, 163, 184, 0.1);
+  --border-medium: rgba(148, 163, 184, 0.15);
+
+  /* LCARS bar colors */
+  --lcars-1: #f59e0b;
+  --lcars-2: #06b6d4;
+  --lcars-3: #a855f7;
+  --lcars-4: #3b82f6;
+  --lcars-5: #ec4899;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-size: 16px;
+  min-height: 100vh;
+}
+
+/* ===================================================
+   PARTICLE FIELD + SCANLINE OVERLAY
+   =================================================== */
+#particle-field {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1; pointer-events: none;
+}
+
+.scanline-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 238, 255, 0.007) 2px, rgba(0, 238, 255, 0.007) 4px
+  );
+  pointer-events: none; z-index: 9998;
+}
+
+.scan-bar {
+  position: fixed; left: 0; right: 0; height: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 238, 255, 0.08), transparent);
+  animation: scan-sweep 12s linear infinite;
+  pointer-events: none; z-index: 9997;
+}
+
+@keyframes scan-sweep { from { top: -3px; } to { top: 100vh; } }
+
+/* ===================================================
+   HOLO-NAV + LCARS SEGMENTED PROGRESS BAR
+   =================================================== */
+.holo-nav {
+  position: sticky; top: 48px; z-index: 100;
+  background: rgba(3, 8, 16, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px 0 0;
+}
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.nav-nodes {
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; padding: 6px 0;
+}
+.nav-node {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+  color: var(--text-dim); background: rgba(0,180,255,0.04);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer; transition: all 0.3s ease;
+}
+.nav-node:hover { border-color: var(--accent); color: var(--text-secondary); }
+.nav-node.active {
+  background: rgba(0,180,255,0.12); border-color: var(--accent);
+  color: var(--text-bright); box-shadow: 0 0 12px var(--accent-glow);
+}
+.nav-node.completed {
+  background: rgba(0,180,255,0.06); border-color: rgba(0,180,255,0.3);
+  color: var(--text-secondary);
+}
+.nav-connector {
+  width: 16px; height: 2px; background: var(--border-subtle);
+  transition: background 0.3s ease;
+}
+.nav-connector.active { background: var(--accent); }
+.nav-label {
+  text-align: center; font-family: 'Orbitron', monospace;
+  font-size: 9px; color: var(--text-dim); letter-spacing: 0.15em;
+  text-transform: uppercase; padding: 4px 0;
+}
+.lcars-bar {
+  display: flex; align-items: stretch; padding: 6px 24px 4px; gap: 0;
+}
+.lcars-elbow {
+  width: 18px; flex-shrink: 0; background: var(--accent);
+  border-radius: 0 0 0 14px; opacity: 0.35; position: relative;
+  transition: opacity 0.6s ease;
+}
+.lcars-elbow::after {
+  content: ''; position: absolute; bottom: -12px; left: 0;
+  width: 100%; height: 12px; background: var(--accent);
+  border-radius: 0 0 0 8px; opacity: inherit;
+}
+.lcars-segments {
+  display: flex; gap: 3px; flex: 1; height: 32px; padding-left: 4px;
+}
+.lcars-seg {
+  flex: 1; border-radius: 3px;
+  background: linear-gradient(90deg,
+    var(--seg-color) 0%, var(--seg-color) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) 100%
+  );
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0; animation: seg-appear 0.4s ease both;
+}
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; }
+.lcars-seg:nth-child(2) { animation-delay: 0.1s; }
+.lcars-seg:nth-child(3) { animation-delay: 0.15s; }
+.lcars-seg:nth-child(4) { animation-delay: 0.2s; }
+.lcars-seg:nth-child(5) { animation-delay: 0.25s; }
+.lcars-seg:nth-child(6) { animation-delay: 0.3s; }
+@keyframes seg-appear {
+  from { opacity: 0; transform: scaleX(0.3); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+.lcars-seg.active {
+  box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent),
+              inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent);
+  color: var(--bg-deep);
+}
+.lcars-seg.completed {
+  --seg-fill: 100%; filter: brightness(0.7); color: var(--bg-deep);
+}
+.lcars-seg:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent);
+}
+.lcars-flow { height: 3px; margin: 0 24px; background: rgba(0,180,255,0.06); }
+.lcars-flow-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--hub-color), var(--accent), var(--sat-color));
+  box-shadow: 0 0 8px rgba(6,182,212,0.4);
+  width: 0%; transition: width 0.5s ease;
+}
+
+/* ===================================================
+   LAYOUT
+   =================================================== */
+.page-content {
+  position: relative;
+  z-index: 2;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 120px;
+}
+
+/* ===================================================
+   TITLE SECTION
+   =================================================== */
+.title-section {
+  margin-bottom: 56px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hub-color);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-label::before {
+  content: '';
+  width: 24px;
+  height: 2px;
+  background: var(--hub-color);
+}
+
+.title-section h1 {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text-bright);
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+.title-section .subtitle {
+  font-size: 17px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.meta-chips {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.meta-chip {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--bg-surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ===================================================
+   SECTION STRUCTURE
+   =================================================== */
+.section {
+  margin-bottom: 64px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.section-number {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bg-deep);
+  background: var(--text-dim);
+  padding: 3px 10px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.section-number.hub-accent { background: var(--hub-color); }
+.section-number.link-accent { background: var(--link-color); }
+.section-number.sat-accent { background: var(--sat-color); }
+.section-number.accent { background: var(--accent); }
+.section-number.mixed { background: linear-gradient(135deg, var(--hub-color), var(--sat-color)); }
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-bright);
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin: 32px 0 12px;
+}
+
+p {
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+strong {
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+em { font-style: italic; }
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  background: var(--bg-surface);
+  color: var(--hub-text);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+/* ===================================================
+   THE HOOK — opening surprise for each section
+   =================================================== */
+.hook {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  padding: 24px 28px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hook::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+}
+
+.hook .hook-text {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-bright);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.hook .hook-text em {
+  color: var(--hub-text);
+  font-style: normal;
+}
+
+/* ===================================================
+   LANGUAGE BRIDGE — everyday word → technical meaning
+   =================================================== */
+.language-bridge {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+
+.language-bridge .bridge-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--link-text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.language-bridge .bridge-label::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  background: var(--link-color);
+}
+
+.language-bridge p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.language-bridge p:last-child { margin-bottom: 0; }
+
+.language-bridge .bridge-word {
+  color: var(--link-text);
+  font-weight: 600;
+}
+
+/* ===================================================
+   4-LAYER EXPLANATION (Star Trek complexity layers)
+   Each layer is a complete, true explanation.
+   Progressive disclosure via click-to-expand.
+   =================================================== */
+.four-layers {
+  margin: 28px 0;
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+
+.four-layers-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 14px 24px 0;
+  margin-bottom: 0;
+}
+
+.layer {
+  border-top: 1px solid var(--border-subtle);
+  overflow: hidden;
+  transition: background 0.3s;
+}
+
+.layer:first-of-type {
+  border-top: none;
+}
+
+.layer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.layer-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.layer-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.layer-1 .layer-badge { background: var(--success-color); color: var(--bg-deep); }
+.layer-2 .layer-badge { background: var(--hub-color); color: var(--bg-deep); }
+.layer-3 .layer-badge { background: var(--link-color); color: var(--bg-deep); }
+.layer-4 .layer-badge { background: var(--sat-color); color: var(--bg-deep); }
+
+.layer-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.layer-toggle {
+  font-size: 13px;
+  color: var(--text-dim);
+  transition: transform 0.3s;
+}
+
+.layer.open .layer-toggle {
+  transform: rotate(180deg);
+}
+
+.layer-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+}
+
+.layer.open .layer-content {
+  max-height: 600px;
+}
+
+.layer-content-inner {
+  padding: 0 24px 18px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.layer-content-inner p {
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.layer-content-inner p:last-child { margin-bottom: 0; }
+
+/* Layer 1 always open by default */
+.layer-1 .layer-content {
+  max-height: 600px;
+}
+
+/* ===================================================
+   DATA PANELS — LCARS-style data displays
+   =================================================== */
+.data-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  margin: 24px 0;
+  overflow: hidden;
+}
+
+.data-panel-header {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-panel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.data-panel-dot.hub { background: var(--hub-color); box-shadow: 0 0 6px var(--hub-color); }
+.data-panel-dot.link { background: var(--link-color); box-shadow: 0 0 6px var(--link-color); }
+.data-panel-dot.sat { background: var(--sat-color); box-shadow: 0 0 6px var(--sat-color); }
+
+.data-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.data-panel-body {
+  padding: 16px 20px;
+}
+
+.data-panel-body p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.data-panel-body p:last-child { margin-bottom: 0; }
+
+/* ===================================================
+   HUB TABLE — animated data display
+   =================================================== */
+.hub-table-container {
+  margin: 24px 0;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+th {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 10px 14px;
+  color: var(--text-dim);
+  border-bottom: 2px solid var(--border-medium);
+  white-space: nowrap;
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+tr:last-child td { border-bottom: none; }
+
+tr.hub-row td:first-child { color: var(--hub-text); }
+tr.hub-row td:nth-child(2) { color: var(--text-bright); }
+
+/* Animated row appearance */
+.table-animated tr {
+  opacity: 0;
+  transform: translateX(-10px);
+  animation: row-appear 0.4s ease forwards;
+}
+
+.table-animated tr:nth-child(1) { animation-delay: 0.6s; }
+.table-animated tr:nth-child(2) { animation-delay: 0.9s; }
+.table-animated tr:nth-child(3) { animation-delay: 1.2s; }
+
+@keyframes row-appear {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ===================================================
+   CONCEPT CALLOUT — Von Restorff: visually distinct
+   =================================================== */
+.concept-callout {
+  background: var(--accent-bg);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 28px 0;
+  position: relative;
+}
+
+.concept-callout::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent-color);
+  border-radius: 3px 0 0 3px;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+}
+
+.concept-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.concept-callout p {
+  font-size: 15px;
+  color: var(--text-bright);
+  font-weight: 500;
+  margin-bottom: 0;
+  line-height: 1.65;
+  font-style: italic;
+}
+
+/* ===================================================
+   WARNING / GOTCHA PANEL
+   =================================================== */
+.warning-panel {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 8px;
+  padding: 18px 22px;
+  margin: 24px 0;
+}
+
+.warning-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--warning-color);
+  margin-bottom: 8px;
+}
+
+.warning-panel p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 0;
+}
+
+/* ===================================================
+   COMPARISON CARDS — Three Architectures
+   =================================================== */
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin: 28px 0;
+}
+
+.arch-card {
+  border-radius: 10px;
+  padding: 22px 24px;
+  border: 1px solid var(--border-medium);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.arch-card:hover {
+  transform: translateY(-2px);
+}
+
+.arch-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+}
+
+.arch-card.card-3nf {
+  background: rgba(239, 68, 68, 0.04);
+}
+.arch-card.card-3nf::before { background: #ef4444; }
+
+.arch-card.card-star {
+  background: rgba(59, 130, 246, 0.04);
+}
+.arch-card.card-star::before { background: #3b82f6; }
+
+.arch-card.card-dv {
+  background: var(--hub-dim);
+}
+.arch-card.card-dv::before {
+  background: var(--hub-color);
+  box-shadow: 0 0 8px var(--hub-color);
+}
+
+.arch-card h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 2px;
+}
+
+.arch-card .architect {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.arch-card .analogy {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.arch-card .pros-cons {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.arch-card .pro { color: var(--success-color); font-weight: 600; }
+.arch-card .con { color: var(--warning-color); font-weight: 600; }
+
+/* Comparison table */
+.compare-table {
+  margin: 24px 0;
+  overflow-x: auto;
+}
+
+.compare-table table {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.compare-table td {
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+}
+
+.compare-table td:first-child {
+  font-weight: 600;
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.compare-table td.highlight {
+  color: var(--hub-text);
+  font-weight: 500;
+}
+
+/* ===================================================
+   TIMELINE — DV 1.0 → 2.0
+   =================================================== */
+.timeline {
+  border-left: 2px solid var(--border-medium);
+  margin: 24px 0 24px 16px;
+  padding-left: 28px;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 28px;
+}
+
+.timeline-item:last-child { margin-bottom: 0; }
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -36px;
+  top: 5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bg-deep);
+  border: 2px solid var(--text-dim);
+}
+
+.timeline-item.active::before {
+  background: var(--hub-color);
+  border-color: var(--hub-color);
+  box-shadow: 0 0 8px var(--hub-color);
+}
+
+.timeline-year {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hub-text);
+  margin-bottom: 6px;
+}
+
+.timeline-item p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.timeline-item p:last-child { margin-bottom: 0; }
+
+/* ===================================================
+   SATELLITE SPLIT VISUALIZATION
+   =================================================== */
+.sat-split-viz {
+  margin: 28px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.sat-split-hub {
+  background: var(--hub-dim);
+  border: 2px solid var(--hub-color);
+  border-radius: 10px;
+  padding: 14px 28px;
+  text-align: center;
+  box-shadow: 0 0 12px var(--hub-glow);
+}
+
+.sat-split-hub .hub-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hub-text);
+}
+
+.sat-connector {
+  width: 2px;
+  height: 24px;
+  background: var(--border-medium);
+  position: relative;
+}
+
+.sat-connector::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--border-medium);
+}
+
+.sat-split-row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.sat-card {
+  flex: 1;
+  background: var(--sat-dim);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 8px;
+  padding: 14px 16px;
+  transition: box-shadow 0.3s;
+}
+
+.sat-card:hover {
+  box-shadow: 0 0 12px var(--sat-glow);
+}
+
+.sat-card .sat-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sat-text);
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.sat-card .sat-attrs {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.sat-card .sat-source {
+  font-size: 11px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(168, 85, 247, 0.15);
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* ===================================================
+   EXERCISE — end-of-session
+   =================================================== */
+.exercise {
+  background: var(--bg-panel);
+  border: 2px solid var(--hub-color);
+  border-radius: 12px;
+  padding: 28px;
+  margin: 40px 0;
+  position: relative;
+  box-shadow: 0 0 20px var(--hub-glow);
+}
+
+.exercise-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hub-text);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.exercise h3 {
+  font-size: 18px;
+  margin: 0 0 16px;
+}
+
+.exercise ol {
+  padding-left: 20px;
+  margin-bottom: 16px;
+}
+
+.exercise li {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.exercise .hint {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+/* ===================================================
+   FOOTER
+   =================================================== */
+.tutorial-footer {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.tutorial-footer .next-link {
+  color: var(--hub-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ===================================================
+   RESPONSIVE
+   =================================================== */
+@media (max-width: 600px) {
+  .container { padding: 24px 16px 80px; }
+  .title-section h1 { font-size: 26px; }
+  h2 { font-size: 20px; }
+  .sat-split-row { flex-direction: column; }
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .nav-nodes { gap: 2px; }
+  .nav-node { width: 28px; height: 28px; font-size: 8px; }
+  .arch-grid { gap: 12px; }
+  .four-layers .layer-header { padding: 12px 16px; }
+  .four-layers .layer-content-inner { padding: 0 16px 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lcars-seg { opacity: 1; }
+}
+
+/* ===================================================
+   ANIMATIONS
+   =================================================== */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--hub-glow); }
+  50% { box-shadow: 0 0 16px rgba(6, 182, 212, 0.25); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.title-section {
+  animation: fade-in-up 0.6s ease forwards;
+}
+
+/* ═══════ Game UI: Inventory + Achievements ═══════ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary, rgba(255,255,255,0.5)); }
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim, rgba(255,255,255,0.3)); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.3));
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright, #fff); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright, #fff); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim, rgba(255,255,255,0.3)); font-family: 'Orbitron', sans-serif; }
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+@media (max-width: 600px) {
+  .inventory-toolbar { bottom: 8px; left: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .inventory-panel { width: calc(100vw - 16px); left: 8px; bottom: 60px; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+
+</style>
+</head>
+<body data-chapter="2" style="padding-top: 52px;">
+
+<!-- Particle field canvas -->
+<canvas id="particle-field"></canvas>
+<div class="scanline-overlay"><div class="scan-bar"></div></div>
+
+<div class="page-content">
+
+<nav class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('section-1')">1</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('section-2')">2</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('section-3')">3</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('section-4')">4</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('section-5')">5</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('section-exercise')">6</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">Data Vault Deep Cuts</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: var(--hub-color)" onclick="scrollToSection('section-1')">1</div>
+        <div class="lcars-seg" style="--seg-color: var(--hub-color)" onclick="scrollToSection('section-2')">2</div>
+        <div class="lcars-seg" style="--seg-color: var(--link-color)" onclick="scrollToSection('section-3')">3</div>
+        <div class="lcars-seg" style="--seg-color: var(--accent)" onclick="scrollToSection('section-4')">4</div>
+        <div class="lcars-seg" style="--seg-color: var(--sat-color)" onclick="scrollToSection('section-5')">5</div>
+        <div class="lcars-seg" style="--seg-color: var(--hub-color)" onclick="scrollToSection('section-exercise')">6</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ===================================================
+     TITLE
+     =================================================== -->
+<div class="title-section">
+  <div class="title-label">Data Vault Foundations &middot; Chapter 2</div>
+  <h1>Data Vault Deep Cuts</h1>
+  <p class="subtitle">Hash keys, the three architectures, and when to split a Satellite. Everything that makes Data Vault 2.0 industrial-strength.</p>
+  <div class="meta-chips">
+    <span class="meta-chip">5 sections</span>
+    <span class="meta-chip">4 key concepts</span>
+    <span class="meta-chip">1 exercise</span>
+    <span class="meta-chip">Builds on Chapter 1</span>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 1: HASH KEYS
+     =================================================== -->
+<div class="section" id="section-1">
+  <div class="section-header">
+    <div class="section-number hub-accent">Section 1</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Hash Keys</h2>
+
+  <div class="hook">
+    <p class="hook-text">You don't decrypt a hash key. There's <em>nothing to decrypt</em>. It was never encrypted. So what's the point of it?</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">Hash</span> comes from the French <em>hacher</em> &mdash; to chop up. Same root as <em>hachis parmentier</em>. A hash function chops the input and scrambles it into a fixed-length output. The word was chosen because the process literally chops up information and mixes it together &mdash; like mincing meat into a hash.</p>
+    <p>In Data Vault, <span class="bridge-word">"key"</span> means the same as in everyday life: the thing that uniquely opens one specific door. A hash key is a chopped-up identifier that unlocks one specific row.</p>
+  </div>
+
+  <div class="four-layers">
+    <div class="four-layers-title">4-Layer Explanation</div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Simple</span>
+        <span class="layer-label">For anyone, no background needed</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>A hash key is like a barcode on a product. Scan the same product information twice, you get the same barcode. It's generated from the data, it's faster for computers to work with than reading the full label, and every identical product gets the exact same barcode. But it's not a lock &mdash; anyone who knows the system can reproduce it.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Mechanism</span>
+        <span class="layer-label">Adds why it works this way</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>It's generated by a formula called SHA-256 that always produces the same output for the same input. So two different computers loading the same customer &mdash; say "FR-8834" &mdash; get the exact same key, without ever talking to each other. No central counter needed. No "what number is next?" bottleneck. That's why Data Vault can load data in parallel from multiple sources simultaneously.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Technical</span>
+        <span class="layer-label">Correct terminology, full detail</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>SHA-256 is a cryptographic hash function that maps any input to a 256-bit fixed-length string, deterministically &mdash; same input, same output, always. The three properties that matter: <strong>deterministic</strong> (reproducible on any machine), <strong>collision-resistant</strong> (different inputs produce different outputs), and <strong>fixed-length</strong> (whether you hash "FR-8834" or the entire text of the Lusty Argonian Maid, the output is always 64 hex characters). This enables parallel loading across distributed systems without a central sequence generator.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Expert</span>
+        <span class="layer-label">Edge cases and nuance</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Hash keys in Data Vault are <strong>not</strong> used for security. The business key is stored in plaintext right next to the hash in the Hub, and anyone with the algorithm and input can reproduce it. They exist purely for consistency and join performance, not obfuscation. The Data Vault community emphasizes: do not rely on hash keys for security. Also notable: the choice of SHA-256 specifically is a convention, not a requirement &mdash; MD5 was common in DV 1.0, but SHA-256 is preferred in 2.0 for its lower collision probability at scale.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Why not just count 1, 2, 3?</h3>
+
+  <p>Three problems that sequence numbers create &mdash; and hash keys solve:</p>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot hub"></div>
+      <div class="data-panel-title">Problem 1: Load Order Dependency</div>
+    </div>
+    <div class="data-panel-body">
+      <p>The Companions guild hall in Whiterun. You're loading warrior data from two sources. With sequence numbers, whoever loads first gets ID 1. Load the game DB first? Vilkas is #1. Load the wiki first? Farkas is #1. <strong>Identity changes based on something completely irrelevant</strong> &mdash; the order you pressed the button.</p>
+      <p>A hash of "COMPANION_VILKAS" is <em>always</em> the same hash. Load order doesn't matter. Identity is stable.</p>
+    </div>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot hub"></div>
+      <div class="data-panel-title">Problem 2: Cross-Source Collisions</div>
+    </div>
+    <div class="data-panel-body">
+      <p>Your French CRM has a customer #1. Your German ERP also has a customer #1. Different people, same number. Sequence numbers from different systems crash into each other.</p>
+      <p>But <code>HASH("FR-CRM-0001")</code> and <code>HASH("DE-ERP-0001")</code> produce completely different keys. Collision solved.</p>
+    </div>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot hub"></div>
+      <div class="data-panel-title">Problem 3: The Bottleneck</div>
+    </div>
+    <div class="data-panel-body">
+      <p>Sequence numbers need a central counter &mdash; one system asking "what's next?" before every insert. That's a queue. One thing at a time.</p>
+      <p>A hash is calculated independently, on any machine, with zero coordination. Ten machines hash ten business keys simultaneously. <strong>This is what makes Data Vault scalable.</strong></p>
+    </div>
+  </div>
+
+  <div class="warning-panel">
+    <div class="warning-label">Common Misconception</div>
+    <p>Hash keys are <strong>not</strong> a security mechanism. In Data Vault, you know the algorithm (SHA-256), you know the input (the business key), and you store both right next to each other in the Hub. There's nothing to "decrypt" &mdash; it was never encrypted. Hash keys are a <strong>consistency and performance</strong> mechanism.</p>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <p>"A hash key gives you the same identifier regardless of when or where you load the data. That's what makes parallel loading and multi-source integration possible &mdash; no central counter, no collisions, no load-order dependency."</p>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 2: BUSINESS KEYS
+     =================================================== -->
+<div class="section" id="section-2">
+  <div class="section-header">
+    <div class="section-number hub-accent">Section 2</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Business Keys</h2>
+
+  <div class="hook">
+    <p class="hook-text">The hash key is the barcode. The business key is <em>what's actually printed on the label</em>. One is for machines. The other is for humans. The Hub keeps both.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p>Straightforward for once. A <span class="bridge-word">business key</span> is the key that the <em>business</em> uses &mdash; the real-world identifier that exists before any database gets involved. Customer number, product SKU, employee badge ID. If a customer calls the helpline and says "my account number is FR-8834," that's the business key. They'll never say "my hash key is a3f8b72e."</p>
+  </div>
+
+  <div class="four-layers">
+    <div class="four-layers-title">4-Layer Explanation</div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Simple</span>
+        <span class="layer-label">For anyone, no background needed</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>A business key is the real name that the real world uses for something. A customer number. An invoice number. A product code. It's what people actually say and use, not what a computer generated.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Mechanism</span>
+        <span class="layer-label">Adds why it works this way</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>The business key is the source of truth for identity. The hash key is just a technical optimization built <em>on top of</em> the business key. The Hub stores both side by side: the hash key for fast computer operations (joins, lookups), and the business key so humans can still read and trace what's in the vault.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Technical</span>
+        <span class="layer-label">Correct terminology, full detail</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Business keys originate from source systems, not from the data warehouse. They're the anchor of identity in Data Vault. A Hub row is defined by its business key &mdash; the hash key is deterministically derived from it. A Hub has exactly four column types: Hash Key (PK), Business Key (unique, not null), Load Date (first appearance), and Record Source (which system sent it). No descriptive attributes. Ever.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Expert</span>
+        <span class="layer-label">Edge cases and nuance</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Composite business keys handle the case where different sources use the same identifier for different entities. If French CRM and German ERP both have customer "0001" (different people), the composite business key becomes <code>source_system + customer_id</code>. The hash is computed on the composite. This is also why Record Source matters: it disambiguates origin. In practice, defining the correct business key is one of the hardest design decisions in Data Vault modeling &mdash; get it wrong, and entities merge or split incorrectly.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>The Complete Hub: Four Columns, Nothing More</h3>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot hub"></div>
+      <div class="data-panel-title">Hub_Character &mdash; Skyrim Example</div>
+    </div>
+    <div class="data-panel-body">
+      <div class="hub-table-container">
+        <table class="table-animated">
+          <thead>
+            <tr><th>Hash Key (PK)</th><th>Business Key</th><th>Load Date</th><th>Record Source</th></tr>
+          </thead>
+          <tbody>
+            <tr class="hub-row"><td>a3f8b7...</td><td>CHAR_ULFRIC</td><td>2026-02-19</td><td>skyrim_npc_db</td></tr>
+            <tr class="hub-row"><td>c91e2d...</td><td>CHAR_LYDIA</td><td>2026-02-19</td><td>skyrim_npc_db</td></tr>
+            <tr class="hub-row"><td>f4a0bc...</td><td>CHAR_NAZEEM</td><td>2026-02-19</td><td>skyrim_npc_db</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top: 12px;">Hash key for fast joins. Business key for human readability. Load Date for when this entity first entered the vault. Record Source for where it came from. That's it &mdash; no name, no race, no city. Those live in Satellites.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 3: THREE ARCHITECTURES
+     =================================================== -->
+<div class="section" id="section-3">
+  <div class="section-header">
+    <div class="section-number link-accent">Section 3</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Three Schools of Thought</h2>
+
+  <div class="hook">
+    <p class="hook-text">Data Vault isn't the only way to build a data warehouse. There are three major approaches &mdash; and the surprising thing is, <em>they're not rivals. They're layers.</em></p>
+  </div>
+
+  <div class="four-layers">
+    <div class="four-layers-title">4-Layer Explanation</div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Simple</span>
+        <span class="layer-label">For anyone, no background needed</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Think of three ways to organize a massive collection of documents. The <strong>library</strong> (3NF) files everything in exactly one place, cross-referenced by catalog cards &mdash; no duplicates, but finding stuff requires following lots of references. The <strong>shopping mall directory</strong> (Star Schema) organizes everything by what you want to <em>do</em> &mdash; fast to navigate, but information is duplicated across directories. The <strong>legal archive</strong> (Data Vault) files by entity, cross-references every relationship, and dates every change &mdash; nothing is ever erased.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Mechanism</span>
+        <span class="layer-label">What each optimizes for</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p><strong>3NF</strong> (Bill Inmon): Maximum normalization. Every fact stored once. Lots of tables, lots of joins. Optimizes for data integrity. <strong>Star Schema</strong> (Ralph Kimball): Denormalized for speed. One big fact table surrounded by dimension tables. Optimizes for query performance. <strong>Data Vault</strong> (Dan Linstedt): Separates identity, relationships, and context. Optimizes for flexibility, auditability, and handling change over time.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Technical</span>
+        <span class="layer-label">Full comparison with trade-offs</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>3NF excels at integrity but struggles with adding new sources (schema changes ripple). Star Schema excels at query speed but struggles with history (slowly changing dimensions are complex) and new sources (fact table redesign). Data Vault excels at absorbing new sources (just add Hubs/Links/Sats) and tracking history (new Satellite rows, timestamped) but requires a star schema reporting layer on top because raw vault queries involve many joins.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Expert</span>
+        <span class="layer-label">How they stack in practice</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>In a modern enterprise, you often use <strong>all three</strong>: 3NF in the source systems (OLTP), Data Vault as the resilient middle layer (absorbs everything, tracks everything), and star schemas as the Information Marts on top (fast dashboards). Data Vault doesn't replace star schema &mdash; it <em>feeds</em> it. ScaleFree builds that middle layer. That's the entire business model.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arch-grid">
+    <div class="arch-card card-3nf">
+      <h4>3NF &mdash; Third Normal Form</h4>
+      <div class="architect">Bill Inmon &middot; "The Father of Data Warehousing"</div>
+      <p class="analogy"><strong>The librarian.</strong> Every fact stored exactly once. Maximum normalization. Many tables, many joins.</p>
+      <p class="pros-cons"><span class="pro">Pro:</span> No redundancy, strong integrity. <span class="con">Con:</span> Slow queries (many JOINs), painful to add new sources.</p>
+    </div>
+
+    <div class="arch-card card-star">
+      <h4>Star Schema</h4>
+      <div class="architect">Ralph Kimball &middot; "The Dimensional Modeler"</div>
+      <p class="analogy"><strong>The shopping mall directory.</strong> One big fact table in the center, dimension tables around it. Pre-joined, denormalized for speed.</p>
+      <p class="pros-cons"><span class="pro">Pro:</span> Fast queries, easy for dashboards. <span class="con">Con:</span> Redundant data, hard to restructure, doesn't handle history well.</p>
+    </div>
+
+    <div class="arch-card card-dv">
+      <h4>Data Vault 2.0</h4>
+      <div class="architect">Dan Linstedt &middot; Extended by Michael Olschimke</div>
+      <p class="analogy"><strong>The legal archive.</strong> Separates identity (Hubs), relationships (Links), and context (Satellites). Everything timestamped. Nothing overwritten.</p>
+      <p class="pros-cons"><span class="pro">Pro:</span> Absorbs any source, tracks any change, full auditability, parallel loading. <span class="con">Con:</span> More tables, needs star schema marts on top.</p>
+    </div>
+  </div>
+
+  <div class="compare-table">
+    <table>
+      <thead>
+        <tr><th></th><th>3NF (Inmon)</th><th>Star (Kimball)</th><th>Data Vault 2.0</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>New sources?</td><td>Painful</td><td>Painful</td><td class="highlight">Easy (add H/L/S)</td></tr>
+        <tr><td>History?</td><td>Overwrites</td><td>SCD (complex)</td><td class="highlight">Natural (new rows)</td></tr>
+        <tr><td>Query speed?</td><td>Slow</td><td class="highlight">Fast (pre-joined)</td><td>Needs marts on top</td></tr>
+        <tr><td>Auditability?</td><td>Limited</td><td>Limited</td><td class="highlight">Complete</td></tr>
+        <tr><td>Parallel load?</td><td>Difficult</td><td>Difficult</td><td class="highlight">Built for it</td></tr>
+        <tr><td>Typical layer</td><td>EDW / sources</td><td>Marts / reporting</td><td class="highlight">Core warehouse</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot hub"></div>
+      <div class="data-panel-title">The Enterprise Analogy &mdash; Data Vault &rarr; Star Schema &rarr; Dashboard</div>
+    </div>
+    <div class="data-panel-body">
+      <p>The Enterprise's computer core stores everything &mdash; every sensor reading, every crew log, every system status. Nothing deleted. Full history. <strong>That's Data Vault.</strong></p>
+      <p>When Picard needs a tactical decision, he doesn't query the raw core. He says: <em>"Computer, display all Borg incursion events in Sector 001, organized by stardate and ship class."</em> The display appears instantly &mdash; because the computer has a pre-built structure for common tactical queries. Not searching the entire core each time. Pre-organized for the most common questions.</p>
+      <p>That pre-built structure = <strong>Star Schema.</strong> The LCARS screen Picard looks at = <strong>Dashboard.</strong></p>
+      <p style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+        <span style="color: var(--hub-text); font-weight: 600;">Data Vault</span> = raw computer core (complete, nothing lost) &nbsp;&bull;&nbsp;
+        <span style="color: #3b82f6; font-weight: 600;">Star Schema</span> = pre-built tactical query structure (organized for speed on common questions) &nbsp;&bull;&nbsp;
+        <span style="color: var(--sat-text); font-weight: 600;">Dashboard</span> = the LCARS display on the bridge
+      </p>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <p>"Data Vault isn't a replacement for star schema &mdash; it's the resilient middle layer. You still build star schemas on top for reporting. But the vault underneath means you can absorb any source, track any change, and audit anything."</p>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 4: DV 2.0 vs 1.0
+     =================================================== -->
+<div class="section" id="section-4">
+  <div class="section-header">
+    <div class="section-number accent">Section 4</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>What 2.0 Added</h2>
+
+  <div class="hook">
+    <p class="hook-text">Data Vault 1.0 was the blueprint. Data Vault 2.0 made it <em>industrial</em>. The difference? Automation, speed, and a way to detect change with a single comparison.</p>
+  </div>
+
+  <div class="four-layers">
+    <div class="four-layers-title">4-Layer Explanation</div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Simple</span>
+        <span class="layer-label">For anyone, no background needed</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Version 1.0 invented the filing system (Hubs, Links, Satellites). Version 2.0 added better labels (hash keys so any office can file independently), a quick change-detector (hash diffs so you can tell if anything changed without reading every field), and a set of standard procedures so machines can do most of the filing automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Mechanism</span>
+        <span class="layer-label">What each addition solves</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p><strong>Hash keys</strong> replaced sequence numbers &mdash; enabling parallel loading from multiple sources (Section 1 of this tutorial). <strong>Hash diffs</strong> on Satellites let you detect changes in one comparison instead of checking every column individually. <strong>Standardized loading patterns</strong> turned hand-crafted ETL into repeatable recipes that tools can automate. That's where ScaleFree's <code>datavault4dbt</code> comes in.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Technical</span>
+        <span class="layer-label">The five additions, formally</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>1. <strong>Hash keys</strong> &mdash; deterministic, parallel-safe primary keys. 2. <strong>Hash diffs on Satellites</strong> &mdash; a single hash of all attribute values for fast change detection. 3. <strong>Standardized loading patterns</strong> &mdash; formal, repeatable ETL recipes (the foundation of automation). 4. <strong>Big Data / NoSQL support</strong> &mdash; the methodology extended beyond relational databases. 5. <strong>Automation-first design</strong> &mdash; DV 2.0 is designed to be generated by tools, not hand-coded.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Expert</span>
+        <span class="layer-label">ScaleFree's role in 2.0</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>DV 2.0 was co-formalized by Dan Linstedt and Michael Olschimke (ScaleFree's CEO). The Data Vault 2.0 book and the ScaleFree training program are the canonical sources. ScaleFree's toolchain &mdash; <code>datavault4dbt</code> (macro library), <code>TurboVault4dbt</code> (model generator), and <code>datavault4coalesce</code> (visual interface) &mdash; is the direct implementation of DV 2.0's automation-first principle. When they say "automation," they mean their own tools.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Hash Diffs: Change Detection in One Step</h3>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">Diff</span> from "difference." A hash diff is a hash of <em>all</em> attribute values in a Satellite row. It's a fingerprint of "everything in this row." When new data arrives, you compare one hash instead of checking every column individually. Same hash = nothing changed. Different hash = something changed, insert a new row.</p>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot sat"></div>
+      <div class="data-panel-title">Hash Diff in Action &mdash; Ulfric's Satellite</div>
+    </div>
+    <div class="data-panel-body">
+      <p><strong>Initial load:</strong> Sat_Character_Details has: <code>name=Ulfric, race=Nord, faction=Stormcloaks, city=Windhelm</code></p>
+      <p>Hash diff = <code>HASH("Ulfric|Nord|Stormcloaks|Windhelm")</code> &rarr; <code>e7c3a1...</code></p>
+      <p style="margin-top: 14px;"><strong>Next data load:</strong> Same values arrive. Hash diff = <code>e7c3a1...</code>. Matches. <strong>Skip</strong> &mdash; nothing to do.</p>
+      <p style="margin-top: 14px;"><strong>Civil war ends:</strong> New data: <code>name=Ulfric, race=Nord, faction=None, city=Sovngarde</code></p>
+      <p>New hash diff = <code>HASH("Ulfric|Nord|None|Sovngarde")</code> &rarr; <code>9b2f7d...</code>. <strong>Different. Insert new row.</strong></p>
+      <p style="margin-top: 14px;">Both rows preserved. Full history. One hash comparison instead of four column comparisons.</p>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-year">DV 1.0 &mdash; Early 2000s</div>
+      <p>Core architecture. Hubs, Links, Satellites. Business keys. Load dates. Sequence-based keys. Manual loading.</p>
+    </div>
+    <div class="timeline-item active">
+      <div class="timeline-year">DV 2.0 &mdash; ~2013</div>
+      <p>Hash keys. Hash diffs. Standardized patterns. NoSQL support. Automation-first. Co-formalized by Linstedt &amp; Olschimke. This is what ScaleFree teaches and builds.</p>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <p>"DV 2.0 made the methodology industrial-strength &mdash; hash keys for parallel loading, hash diffs for change detection, and standardized patterns that tools like datavault4dbt can automate."</p>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 5: MULTIPLE SATELLITES
+     =================================================== -->
+<div class="section" id="section-5">
+  <div class="section-header">
+    <div class="section-number sat-accent">Section 5</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Splitting Satellites</h2>
+
+  <div class="hook">
+    <p class="hook-text">One Hub, multiple filing cabinets. Why would you keep <em>separate files</em> about the same person?</p>
+  </div>
+
+  <div class="four-layers">
+    <div class="four-layers-title">4-Layer Explanation</div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Simple</span>
+        <span class="layer-label">For anyone, no background needed</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Sometimes you need separate filing cabinets for the same person. One cabinet for info from the hospital, another for info from the insurance company &mdash; because they have different levels of trust. Or one cabinet for things that rarely change (your name, date of birth) and another for things that change all the time (your address, your phone number) &mdash; so you don't have to refile everything just because you moved.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Mechanism</span>
+        <span class="layer-label">The two reasons to split</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p><strong>Reason 1: Different sources.</strong> Each source has its own reliability, update frequency, and data quality. Mixing them in one table means you can't tell where a fact came from. <strong>Reason 2: Different rates of change.</strong> If location changes daily but race never changes, a single Satellite rewrites the entire row (including unchanged race) every time location updates. Splitting means you only write what actually changed.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Technical</span>
+        <span class="layer-label">The splitting rule</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Group attributes that share the same source <strong>and</strong> the same rate of change. Each resulting Satellite has its own hash diff, its own load frequency, and its own record source tracking. The foreign key to the Hub (the Hub's hash key) is what connects all Satellites back to the same entity. Multiple Satellites, one identity.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Expert</span>
+        <span class="layer-label">The balancing act</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Over-splitting creates join complexity &mdash; if you need to reconstruct a full picture, you're joining many Satellites. Under-splitting creates write amplification &mdash; rewriting unchanged data wastes storage and processing. The balance is pragmatic: split when there's a clear difference in source or volatility, not for every individual attribute. In practice, 2&ndash;4 Satellites per Hub is common. 10 would be a red flag.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Reason 1: Different Sources</h3>
+
+  <div class="sat-split-viz">
+    <div class="sat-split-hub">
+      <div class="hub-name">Hub_Character</div>
+    </div>
+    <div class="sat-connector"></div>
+    <div class="sat-split-row">
+      <div class="sat-card">
+        <div class="sat-name">Sat_Character_Details_GameDB</div>
+        <div class="sat-attrs">name, race, class, base_health</div>
+        <div class="sat-source">Source: Skyrim NPC database</div>
+      </div>
+      <div class="sat-card">
+        <div class="sat-name">Sat_Character_Details_Wiki</div>
+        <div class="sat-attrs">lore_description, first_appearance, voice_actor</div>
+        <div class="sat-source">Source: Fan wiki</div>
+      </div>
+    </div>
+  </div>
+
+  <p>Both Satellites attach to the same Hub. Both keyed by the same hash key. But they're separate tables because they come from different sources with different trust levels and update frequencies.</p>
+
+  <h3>Reason 2: Different Rates of Change</h3>
+
+  <div class="sat-split-viz">
+    <div class="sat-split-hub">
+      <div class="hub-name">Hub_Character</div>
+    </div>
+    <div class="sat-connector"></div>
+    <div class="sat-split-row">
+      <div class="sat-card">
+        <div class="sat-name">Sat_Character_Identity</div>
+        <div class="sat-attrs">name, race, gender</div>
+        <div class="sat-source">Changes: Almost never</div>
+      </div>
+      <div class="sat-card">
+        <div class="sat-name">Sat_Character_Location</div>
+        <div class="sat-attrs">current_city, current_hold, current_building</div>
+        <div class="sat-source">Changes: Constantly</div>
+      </div>
+    </div>
+  </div>
+
+  <p>If Lydia moves from Whiterun to Solitude, you only insert a new row in Sat_Character_Location. Sat_Character_Identity is untouched. No redundant rewrites.</p>
+
+  <p>This connects back to Chapter 1's Aristotelian framework. Satellites hold <em>accidents</em> &mdash; properties that describe but aren't essential to identity. Some accidents are nearly permanent (race). Others are fleeting (location). Splitting Satellites is Data Vault's way of saying: not all accidents are equal.</p>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <p>"You split Satellites when the source or rate of change differs &mdash; it's about isolating what changes from what doesn't, so you only write what's actually new."</p>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     EXERCISE
+     =================================================== -->
+<div class="section" id="section-exercise">
+  <div class="exercise">
+    <div class="exercise-label">Exercise &mdash; Upgrade Your Skyrim Model</div>
+    <h3>Take your model from Chapter 1 and level it up</h3>
+    <ol>
+      <li><strong>Add the four metadata columns</strong> to Hub_Character: Hash Key, Business Key, Load Date, Record Source. What would you use as the business key for a Skyrim character?</li>
+      <li><strong>Split one Satellite into two</strong> and explain <em>why</em> &mdash; is it different sources, or different rates of change?</li>
+      <li><strong>In one sentence:</strong> why does Data Vault use hash keys instead of sequence numbers?</li>
+    </ol>
+    <p class="hint">You already know the answers &mdash; this is just about saying them out loud. We'll check them together.</p>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     FOOTER
+     =================================================== -->
+<div class="tutorial-footer">
+  <span>Chapter 2 &middot; Data Vault Foundations</span>
+  <span>Next &rarr; SQL: Speaking to the Database</span>
+</div>
+
+</div><!-- end container -->
+</div><!-- /page-content -->
+
+
+<!-- ===================================================
+     JAVASCRIPT
+     - Scroll-triggered section fade-in
+     - 4-layer toggle
+     - Progress bar
+     - LCARS nav highlighting
+     =================================================== -->
+<script>
+// === 4-Layer Toggle ===
+function toggleLayer(header) {
+  const layer = header.parentElement;
+  layer.classList.toggle('open');
+}
+
+// === Scroll-triggered fade-in (Intersection Observer) ===
+var sectionEls = document.querySelectorAll('.section');
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08 });
+
+sectionEls.forEach(function(s) { observer.observe(s); });
+
+// === Holo-nav + LCARS segmented progress tracking ===
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+var sections = document.querySelectorAll('.section');
+var navNodes = document.querySelectorAll('.nav-node');
+var navConnectors = document.querySelectorAll('.nav-connector');
+var progressFill = document.getElementById('progress-fill');
+var navLabel = document.getElementById('nav-current-label');
+var lcarsSegs = document.querySelectorAll('.lcars-seg');
+
+var sectionLabels = ['Hash Keys', 'Hub / Link / Sat', 'Raw / Business / Mart', 'When to Split', 'Elevator Pitch', 'Exercise'];
+var lastActiveIndex = -1;
+
+function updateNav() {
+  var activeIdx = 0;
+  var scrollY = window.scrollY + window.innerHeight * 0.35;
+  sections.forEach(function(s, i) {
+    if (s.offsetTop <= scrollY) activeIdx = i;
+  });
+
+  if (activeIdx !== lastActiveIndex) {
+    lastActiveIndex = activeIdx;
+    navNodes.forEach(function(n, i) {
+      n.classList.remove('active', 'completed');
+      if (i === activeIdx) n.classList.add('active');
+      else if (i < activeIdx) n.classList.add('completed');
+    });
+    navConnectors.forEach(function(c, i) {
+      if (i < activeIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+    if (navLabel) navLabel.textContent = sectionLabels[activeIdx] || '';
+    lcarsSegs.forEach(function(seg, i) {
+      seg.classList.remove('active', 'completed');
+      if (i === activeIdx) seg.classList.add('active');
+      else if (i < activeIdx) seg.classList.add('completed');
+    });
+  }
+
+  var activeSection = sections[lastActiveIndex];
+  var nextSection = sections[lastActiveIndex + 1];
+  if (activeSection) {
+    var secTop = activeSection.offsetTop;
+    var secBottom = nextSection ? nextSection.offsetTop : document.documentElement.scrollHeight;
+    var secHeight = secBottom - secTop;
+    var currentY = window.scrollY + window.innerHeight * 0.35;
+    var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+    fill = Math.max(0, Math.min(100, fill));
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+    lcarsSegs.forEach(function(seg, i) {
+      if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+      else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+      else seg.style.removeProperty('--seg-fill');
+    });
+  }
+
+  var docH = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = docH > 0 ? (window.scrollY / docH) * 100 : 0;
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) pct = 100;
+  if (progressFill) progressFill.style.width = Math.min(pct, 100) + '%';
+}
+
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+</script>
+
+<!-- DV-themed star constellation field (shared) -->
+<script src="../systems/particles.js"></script>
+<script src="../nav-inject.js"></script>
+
+
+<!-- ═══════ Game UI Elements ═══════ -->
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar -->
+<div id="inventory-toolbar" class="inventory-toolbar">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel -->
+<div id="inventory-panel" class="inventory-panel hidden">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script>
+/* ═══════ Game system init + scroll-based item discovery ═══════ */
+document.addEventListener('DOMContentLoaded', function() {
+  /* Initialize game systems */
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+    if (SV.achievements) SV.achievements.init();
+  }
+
+  var items = ['hub-blueprint', 'satellite-blueprint', 'link-blueprint', 'vault-architecture', 'dv-elevator-pitch'];
+  var granted = {};
+
+  /* Restore already-granted items from persistence */
+  if (typeof SV !== 'undefined' && SV.persistence) {
+    var inv = SV.persistence.get('inventory', []);
+    for (var i = 0; i < inv.length; i++) { granted[inv[i].id] = true; }
+  }
+
+  function getScrollPct() {
+    var h = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    return window.scrollY / h;
+  }
+
+  function checkScroll() {
+    var pct = getScrollPct();
+    for (var i = 0; i < items.length; i++) {
+      var threshold = (i + 0.5) / items.length;
+      if (pct >= threshold && !granted[items[i]]) {
+        granted[items[i]] = true;
+        if (typeof SV !== 'undefined' && SV.inventory && SV.inventory.addItem) {
+          SV.inventory.addItem(items[i]);
+        }
+      }
+    }
+  }
+
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  setTimeout(checkScroll, 1500);
+});
+</script>
+
+</body>
+</html>

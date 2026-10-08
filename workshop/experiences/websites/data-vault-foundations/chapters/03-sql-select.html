@@ -1,0 +1,3141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 3: SQL SELECT — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===================================================
+   HOLOGRAPHIC DESIGN SYSTEM — 31st Century Starfleet
+   Star Trek Discovery / Starfleet Academy aesthetic
+   =================================================== */
+
+:root {
+  --bg-deep: #030810;
+  --bg-panel: rgba(8, 18, 38, 0.85);
+  --bg-panel-solid: #081226;
+  --bg-surface: rgba(15, 28, 50, 0.9);
+
+  /* DV Component Colors — consistent across tutorials */
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+
+  /* SQL Keyword Colors */
+  --sql-select: #22c55e;
+  --sql-select-dim: rgba(34, 197, 94, 0.08);
+  --sql-select-glow: rgba(34, 197, 94, 0.25);
+
+  --sql-from: #3b82f6;
+  --sql-from-dim: rgba(59, 130, 246, 0.08);
+  --sql-from-glow: rgba(59, 130, 246, 0.25);
+
+  --sql-where: #f97316;
+  --sql-where-dim: rgba(249, 115, 22, 0.08);
+  --sql-where-glow: rgba(249, 115, 22, 0.25);
+
+  --sql-keyword: #ec4899;
+  --sql-string: #fbbf24;
+  --sql-number: #a78bfa;
+  --sql-comment: #64748b;
+
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+
+  --accent: #06b6d4;
+  --accent-glow: rgba(6, 182, 212, 0.3);
+
+  --accent-color: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --accent-bg: rgba(251, 191, 36, 0.04);
+
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.3);
+
+  --border-subtle: rgba(6, 182, 212, 0.1);
+  --border-medium: rgba(6, 182, 212, 0.2);
+  --border-glow: rgba(6, 182, 212, 0.35);
+
+  --holo-cyan: #0ff;
+  --holo-cyan-dim: rgba(0, 255, 255, 0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===================================================
+   ANIMATED BACKGROUND — starfield + grid
+   =================================================== */
+#bg-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.page-content {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Holographic grid overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    linear-gradient(rgba(0,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,255,0.015) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+  animation: grid-drift 20s linear infinite;
+}
+
+@keyframes grid-drift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(60px, 60px); }
+}
+
+/* Scan line overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 255, 255, 0.008) 2px, rgba(0, 255, 255, 0.008) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* ===================================================
+   HOLOGRAPHIC NAV BAR
+   =================================================== */
+.holo-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(3, 8, 16, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nav-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.nav-nodes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0 8px;
+}
+
+.nav-node {
+  position: relative;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: rgba(6, 182, 212, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.4s ease;
+  flex-shrink: 0;
+}
+
+.nav-node:hover {
+  border-color: var(--accent);
+  color: var(--hub-text);
+  background: rgba(6, 182, 212, 0.08);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+}
+
+.nav-node.active {
+  border-color: var(--accent);
+  color: var(--bg-deep);
+  background: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(6, 182, 212, 0.1);
+  animation: node-pulse 2s ease-in-out infinite;
+}
+
+.nav-node.completed {
+  border-color: var(--sql-select);
+  color: var(--sql-select);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.nav-connector {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+  position: relative;
+  min-width: 8px;
+}
+
+.nav-connector.active {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+@keyframes node-pulse {
+  0%, 100% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(6, 182, 212, 0.1); }
+  50% { box-shadow: 0 0 25px rgba(6, 182, 212, 0.5), 0 0 50px rgba(6, 182, 212, 0.2); }
+}
+
+.nav-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 2px 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Progress bar */
+.holo-progress {
+  height: 2px;
+  background: rgba(6, 182, 212, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--sql-select), var(--accent), var(--sql-where));
+  transition: width 0.6s ease;
+  box-shadow: 0 0 10px var(--accent-glow);
+  position: relative;
+}
+
+.holo-progress-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: -2px; bottom: -2px;
+  width: 20px;
+  background: linear-gradient(90deg, transparent, white);
+  opacity: 0.6;
+  animation: progress-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes progress-shimmer {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* ===================================================
+   CONTAINER
+   =================================================== */
+.container {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 90px 28px 120px;
+}
+
+/* ===================================================
+   TITLE SECTION
+   =================================================== */
+.title-section {
+  margin-bottom: 64px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--border-subtle);
+  animation: holo-materialize 1s ease forwards;
+  opacity: 0;
+}
+
+@keyframes holo-materialize {
+  0% { opacity: 0; transform: translateY(30px) scale(0.98); filter: blur(4px); }
+  60% { filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.title-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-label::before {
+  content: '';
+  width: 30px; height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.title-section h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-bright);
+  margin-bottom: 16px;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 30px rgba(6, 182, 212, 0.15);
+}
+
+.title-section .subtitle {
+  font-size: 17px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.meta-chips {
+  display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;
+}
+
+.meta-chip {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: var(--holo-cyan-dim);
+  color: var(--text-dim);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ===================================================
+   SECTION STRUCTURE
+   =================================================== */
+.section {
+  margin-bottom: 80px;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.section-tag {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bg-deep);
+  padding: 4px 14px;
+  border-radius: 4px;
+  white-space: nowrap;
+  position: relative;
+}
+
+.section-tag.select-t { background: var(--sql-select); box-shadow: 0 0 12px var(--sql-select-glow); }
+.section-tag.from-t { background: var(--sql-from); box-shadow: 0 0 12px var(--sql-from-glow); }
+.section-tag.where-t { background: var(--sql-where); box-shadow: 0 0 12px var(--sql-where-glow); }
+.section-tag.hub-t { background: var(--hub-color); box-shadow: 0 0 12px var(--hub-glow); }
+.section-tag.sat-t { background: var(--sat-color); box-shadow: 0 0 12px var(--sat-glow); }
+.section-tag.accent-t { background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.section-tag.null-t { background: var(--sql-keyword); box-shadow: 0 0 12px rgba(236,72,153,0.25); }
+.section-tag.exercise-t { background: linear-gradient(135deg, var(--sql-select), var(--accent)); box-shadow: 0 0 15px var(--success-glow); }
+.section-tag.dv-t { background: linear-gradient(135deg, var(--hub-color), var(--sat-color)); box-shadow: 0 0 12px var(--accent-glow); }
+
+.section-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border-medium), transparent);
+}
+
+h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-bright);
+  margin-bottom: 22px;
+  letter-spacing: 0.01em;
+}
+
+h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin: 36px 0 14px;
+  letter-spacing: 0.02em;
+}
+
+p { margin-bottom: 16px; }
+
+strong { font-weight: 600; color: var(--text-bright); }
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  background: rgba(6, 182, 212, 0.06);
+  color: var(--hub-text);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+/* ===================================================
+   HOLOGRAPHIC PANELS
+   =================================================== */
+.holo-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin: 24px 0;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.4s, box-shadow 0.4s;
+}
+
+.holo-panel:hover {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.08), inset 0 0 30px rgba(6, 182, 212, 0.02);
+}
+
+.holo-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.4;
+}
+
+/* Hook panels */
+.hook {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  padding: 26px 30px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.hook::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+
+.hook::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 40px;
+  pointer-events: none;
+}
+
+.hook-select::before { background: var(--sql-select); box-shadow: 0 0 10px var(--sql-select-glow); }
+.hook-select::after { background: linear-gradient(90deg, rgba(34,197,94,0.06), transparent); }
+.hook-from::before { background: var(--sql-from); box-shadow: 0 0 10px var(--sql-from-glow); }
+.hook-from::after { background: linear-gradient(90deg, rgba(59,130,246,0.06), transparent); }
+.hook-where::before { background: var(--sql-where); box-shadow: 0 0 10px var(--sql-where-glow); }
+.hook-where::after { background: linear-gradient(90deg, rgba(249,115,22,0.06), transparent); }
+.hook-default::before { background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.hook-default::after { background: linear-gradient(90deg, rgba(6,182,212,0.06), transparent); }
+.hook-null::before { background: var(--sql-keyword); box-shadow: 0 0 10px rgba(236,72,153,0.25); }
+.hook-null::after { background: linear-gradient(90deg, rgba(236,72,153,0.06), transparent); }
+
+.hook .hook-text {
+  font-size: 17.5px;
+  font-weight: 400;
+  color: var(--text-bright);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.hook .hook-text em { font-style: normal; }
+.hook-select .hook-text em { color: var(--sql-select); text-shadow: 0 0 12px var(--sql-select-glow); }
+.hook-from .hook-text em { color: var(--sql-from); text-shadow: 0 0 12px var(--sql-from-glow); }
+.hook-where .hook-text em { color: var(--sql-where); text-shadow: 0 0 12px var(--sql-where-glow); }
+.hook-default .hook-text em { color: var(--hub-text); text-shadow: 0 0 12px var(--hub-glow); }
+.hook-null .hook-text em { color: var(--sql-keyword); }
+
+/* ===================================================
+   LANGUAGE BRIDGE
+   =================================================== */
+.language-bridge {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  backdrop-filter: blur(8px);
+}
+
+.bridge-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--link-text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bridge-label::before {
+  content: '';
+  width: 14px; height: 2px;
+  background: var(--link-color);
+  box-shadow: 0 0 6px var(--link-glow);
+}
+
+.language-bridge p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.language-bridge p:last-child { margin-bottom: 0; }
+.bridge-word { color: var(--link-text); font-weight: 600; }
+
+/* ===================================================
+   4-LAYER EXPLANATION — holographic depth
+   =================================================== */
+.four-layers {
+  margin: 28px 0;
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-panel);
+  backdrop-filter: blur(10px);
+}
+
+.four-layers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 26px 12px;
+}
+
+.four-layers-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.layer-dots {
+  display: flex; gap: 8px;
+}
+
+.layer-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  transition: all 0.4s;
+  cursor: pointer;
+}
+
+.layer-dot.l1 { border-color: var(--success-color); }
+.layer-dot.l2 { border-color: var(--hub-color); }
+.layer-dot.l3 { border-color: var(--link-color); }
+.layer-dot.l4 { border-color: var(--sat-color); }
+
+.layer-dot.active {
+  transform: scale(1.3);
+}
+.layer-dot.l1.active { background: var(--success-color); box-shadow: 0 0 8px var(--success-glow); }
+.layer-dot.l2.active { background: var(--hub-color); box-shadow: 0 0 8px var(--hub-glow); }
+.layer-dot.l3.active { background: var(--link-color); box-shadow: 0 0 8px var(--link-glow); }
+.layer-dot.l4.active { background: var(--sat-color); box-shadow: 0 0 8px var(--sat-glow); }
+
+.layer {
+  border-top: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.layer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 26px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.3s;
+}
+
+.layer-header:hover { background: rgba(6, 182, 212, 0.03); }
+
+.layer-badge {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.layer-1 .layer-badge { background: var(--success-color); color: var(--bg-deep); }
+.layer-2 .layer-badge { background: var(--hub-color); color: var(--bg-deep); }
+.layer-3 .layer-badge { background: var(--link-color); color: var(--bg-deep); }
+.layer-4 .layer-badge { background: var(--sat-color); color: var(--bg-deep); }
+
+.layer-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.layer-toggle {
+  font-size: 12px;
+  color: var(--text-dim);
+  transition: transform 0.4s ease;
+}
+
+.layer.open .layer-toggle { transform: rotate(180deg); }
+
+.layer-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.layer.open .layer-content { max-height: 500px; }
+.layer-1.open .layer-content { max-height: 500px; }
+
+.layer-content-inner {
+  padding: 0 26px 20px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  animation: layer-fade 0.4s ease;
+}
+
+@keyframes layer-fade {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.layer-content-inner p { margin-bottom: 10px; font-size: 15px; }
+.layer-content-inner p:last-child { margin-bottom: 0; }
+
+/* ===================================================
+   SQL CODE BLOCKS — holographic terminal
+   =================================================== */
+.sql-block {
+  background: rgba(4, 10, 20, 0.95);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  margin: 22px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.sql-block::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+.sql-block-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(6, 182, 212, 0.02);
+}
+
+.sql-block-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+}
+.sql-block-dot:nth-child(1) { background: #ef4444; box-shadow: 0 0 4px rgba(239,68,68,0.4); }
+.sql-block-dot:nth-child(2) { background: #f59e0b; box-shadow: 0 0 4px rgba(245,158,11,0.4); }
+.sql-block-dot:nth-child(3) { background: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.4); }
+
+.sql-block-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  color: var(--text-dim);
+  margin-left: auto;
+  letter-spacing: 0.1em;
+}
+
+.sql-block pre {
+  padding: 20px 22px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.sql-block pre .kw { color: var(--sql-keyword); font-weight: 600; }
+.sql-block pre .select { color: var(--sql-select); font-weight: 600; text-shadow: 0 0 8px var(--sql-select-glow); }
+.sql-block pre .from { color: var(--sql-from); font-weight: 600; text-shadow: 0 0 8px var(--sql-from-glow); }
+.sql-block pre .where { color: var(--sql-where); font-weight: 600; text-shadow: 0 0 8px var(--sql-where-glow); }
+.sql-block pre .str { color: var(--sql-string); }
+.sql-block pre .num { color: var(--sql-number); }
+.sql-block pre .comment { color: var(--sql-comment); font-style: italic; }
+.sql-block pre .col { color: var(--text-primary); }
+.sql-block pre .tbl { color: var(--hub-text); text-shadow: 0 0 6px var(--hub-glow); }
+.sql-block pre .op { color: var(--sql-where); }
+
+/* ===================================================
+   DATA TABLES — holographic projections
+   =================================================== */
+.data-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.data-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+.data-panel-header {
+  padding: 12px 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-panel-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: dot-glow 3s ease-in-out infinite;
+}
+
+@keyframes dot-glow {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.data-panel-dot.hub { background: var(--hub-color); box-shadow: 0 0 8px var(--hub-color); }
+.data-panel-dot.sat { background: var(--sat-color); box-shadow: 0 0 8px var(--sat-color); }
+
+.data-panel-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.data-panel-body { padding: 0; }
+
+.result-table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+
+th {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 10px 16px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-medium);
+  background: rgba(6, 182, 212, 0.02);
+  white-space: nowrap;
+}
+
+td {
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: all 0.4s;
+}
+
+tr:last-child td { border-bottom: none; }
+
+td.col-hub { color: var(--hub-text); }
+td.col-bright { color: var(--text-bright); font-weight: 500; }
+
+tr.highlight-row td {
+  background: rgba(34, 197, 94, 0.06);
+  color: var(--text-bright);
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.15);
+}
+
+tr.dim-row td {
+  opacity: 0.2;
+  filter: blur(0.5px);
+}
+
+/* Animated row entrance */
+.table-animated tbody tr {
+  opacity: 0;
+  transform: translateX(-10px);
+  animation: row-materialize 0.5s ease forwards;
+}
+.table-animated tbody tr:nth-child(1) { animation-delay: 0.15s; }
+.table-animated tbody tr:nth-child(2) { animation-delay: 0.25s; }
+.table-animated tbody tr:nth-child(3) { animation-delay: 0.35s; }
+.table-animated tbody tr:nth-child(4) { animation-delay: 0.45s; }
+.table-animated tbody tr:nth-child(5) { animation-delay: 0.55s; }
+
+@keyframes row-materialize {
+  0% { opacity: 0; transform: translateX(-10px); filter: blur(2px); }
+  70% { filter: blur(0); }
+  100% { opacity: 1; transform: translateX(0); filter: blur(0); }
+}
+
+/* ===================================================
+   QUERY PATTERN — English > SQL > Result
+   =================================================== */
+.query-pattern {
+  margin: 28px 0;
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-panel);
+  backdrop-filter: blur(10px);
+}
+
+.query-step {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.query-step:last-child { border-bottom: none; }
+
+.query-step-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.query-step-label::before {
+  content: '';
+  width: 12px; height: 2px;
+}
+
+.step-english .query-step-label { color: var(--text-dim); }
+.step-english .query-step-label::before { background: var(--text-dim); }
+.step-sql .query-step-label { color: var(--sql-select); }
+.step-sql .query-step-label::before { background: var(--sql-select); box-shadow: 0 0 4px var(--sql-select-glow); }
+.step-result .query-step-label { color: var(--hub-text); }
+.step-result .query-step-label::before { background: var(--hub-color); box-shadow: 0 0 4px var(--hub-glow); }
+
+.english-text {
+  font-size: 16px;
+  color: var(--text-bright);
+  font-style: italic;
+  margin: 0;
+}
+
+.query-step pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Result materializer — click to run query */
+.result-materializer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.result-materializer:hover { background: rgba(6, 182, 212, 0.03); }
+
+.run-query-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sql-select);
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 8px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.run-query-btn:hover {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.15);
+}
+
+.run-query-btn .arrow { font-size: 14px; }
+
+.result-area {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.result-area.open { max-height: 500px; }
+
+.result-area-inner {
+  padding: 4px 0 8px;
+}
+
+/* ===================================================
+   THREE-PART PATTERN VISUAL
+   =================================================== */
+.pattern-visual {
+  display: flex;
+  gap: 0;
+  margin: 30px 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-medium);
+  position: relative;
+}
+
+.pattern-part {
+  flex: 1;
+  padding: 22px 18px;
+  text-align: center;
+  border-right: 1px solid var(--border-subtle);
+  transition: transform 0.3s, box-shadow 0.3s;
+  position: relative;
+}
+.pattern-part:last-child { border-right: none; }
+.pattern-part:hover {
+  transform: translateY(-3px);
+  z-index: 1;
+}
+
+.pattern-keyword {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.pattern-english {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pattern-example {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  opacity: 0.8;
+}
+
+.pattern-select { background: var(--sql-select-dim); }
+.pattern-select .pattern-keyword { color: var(--sql-select); text-shadow: 0 0 12px var(--sql-select-glow); }
+.pattern-select:hover { box-shadow: inset 0 0 20px rgba(34,197,94,0.08); }
+
+.pattern-from { background: var(--sql-from-dim); }
+.pattern-from .pattern-keyword { color: var(--sql-from); text-shadow: 0 0 12px var(--sql-from-glow); }
+.pattern-from:hover { box-shadow: inset 0 0 20px rgba(59,130,246,0.08); }
+
+.pattern-where { background: var(--sql-where-dim); }
+.pattern-where .pattern-keyword { color: var(--sql-where); text-shadow: 0 0 12px var(--sql-where-glow); }
+.pattern-where:hover { box-shadow: inset 0 0 20px rgba(249,115,22,0.08); }
+
+/* ===================================================
+   KEY CONCEPT emphasis
+   =================================================== */
+.key-concept {
+  background: linear-gradient(135deg, rgba(6,182,212,0.05), rgba(34,197,94,0.04));
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  position: relative;
+}
+
+.key-concept::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+.key-concept p {
+  font-size: 15.5px;
+  color: var(--text-bright);
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.75;
+}
+
+/* ===================================================
+   CONCEPT CALLOUT — golden hologram
+   =================================================== */
+.concept-callout {
+  background: var(--accent-bg);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 28px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-callout::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent-color);
+  box-shadow: 0 0 12px var(--accent-glow);
+  border-radius: 3px 0 0 3px;
+}
+
+.concept-callout::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 40px;
+  background: linear-gradient(90deg, rgba(251,191,36,0.04), transparent);
+  pointer-events: none;
+}
+
+.concept-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.concept-callout blockquote {
+  font-size: 15px;
+  color: var(--text-bright);
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.75;
+  font-style: italic;
+  border: none;
+  padding: 0;
+}
+
+/* ===================================================
+   OPERATOR GRID
+   =================================================== */
+.op-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.op-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 14px 18px;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  backdrop-filter: blur(6px);
+}
+
+.op-card:hover {
+  border-color: var(--border-medium);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3), 0 0 10px rgba(6,182,212,0.05);
+  transform: translateY(-2px);
+}
+
+.op-symbol {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--sql-where);
+  margin-bottom: 4px;
+  text-shadow: 0 0 8px var(--sql-where-glow);
+}
+
+.op-meaning {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.op-example {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.op-card.full-width { grid-column: 1 / -1; }
+
+/* Logic label */
+.logic-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sql-where);
+  margin: 30px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logic-label::before {
+  content: '';
+  width: 14px; height: 2px;
+  background: var(--sql-where);
+  box-shadow: 0 0 6px var(--sql-where-glow);
+}
+
+/* ===================================================
+   STRING LITERAL VISUAL
+   =================================================== */
+.string-rule {
+  display: flex;
+  gap: 16px;
+  margin: 22px 0;
+}
+
+.string-rule-item {
+  flex: 1;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+  transition: transform 0.3s;
+}
+.string-rule-item:hover { transform: translateY(-2px); }
+
+.string-rule-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.string-rule-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.string-yes .string-rule-code { color: var(--sql-string); text-shadow: 0 0 8px rgba(251,191,36,0.3); }
+.string-yes { border-color: rgba(251,191,36,0.2); }
+.string-no .string-rule-code { color: var(--text-primary); }
+
+/* ===================================================
+   WARNING PANEL
+   =================================================== */
+.warning-panel {
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  position: relative;
+}
+
+.warning-panel::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--warning-color);
+  box-shadow: 0 0 8px rgba(239,68,68,0.3);
+  border-radius: 3px 0 0 3px;
+}
+
+.warning-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--warning-color);
+  margin-bottom: 8px;
+}
+
+.warning-panel p { font-size: 14.5px; color: var(--text-secondary); margin-bottom: 0; }
+
+/* ===================================================
+   CLAUSE ORDER
+   =================================================== */
+.clause-order {
+  margin: 24px 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.clause-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 22px;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.3s;
+}
+.clause-item:last-child { border-bottom: none; }
+.clause-item:hover { background: rgba(6,182,212,0.02); }
+
+.clause-keyword {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.clause-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.clause-badge {
+  font-family: 'Orbitron', monospace;
+  font-size: 8px; font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.clause-badge.required { background: rgba(34,197,94,0.1); color: var(--sql-select); }
+.clause-badge.optional { background: rgba(148,163,184,0.08); color: var(--text-dim); }
+
+/* ===================================================
+   DV MAPPING TABLE
+   =================================================== */
+.dv-map-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+.dv-map-table th {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  background: rgba(6,182,212,0.04);
+}
+
+.dv-map-table td {
+  padding: 12px 16px;
+  font-size: 13.5px;
+}
+
+.dv-map-table td:first-child {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--hub-text);
+  font-weight: 500;
+}
+
+/* ===================================================
+   EXERCISES — interactive holographic
+   =================================================== */
+.exercise-section {
+  background: var(--bg-panel);
+  border: 2px solid var(--sql-select);
+  border-radius: 16px;
+  padding: 32px;
+  margin: 48px 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 30px var(--sql-select-glow), 0 0 60px rgba(34,197,94,0.05);
+}
+
+.exercise-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sql-select), transparent);
+  animation: exercise-glow 3s ease-in-out infinite;
+}
+
+@keyframes exercise-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.exercise-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sql-select);
+  margin-bottom: 16px;
+  text-shadow: 0 0 10px var(--sql-select-glow);
+}
+
+.exercise-section h2 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.exercise-task {
+  background: rgba(4,10,20,0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin: 20px 0;
+  transition: border-color 0.3s;
+}
+
+.exercise-task:hover { border-color: var(--border-medium); }
+
+.exercise-task-number {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sql-select);
+  margin-bottom: 10px;
+}
+
+.exercise-task p { font-size: 15px; color: var(--text-secondary); margin-bottom: 10px; }
+.exercise-task p:last-child { margin-bottom: 0; }
+
+/* Exercise input area */
+.exercise-input {
+  width: 100%;
+  background: rgba(4, 10, 20, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--text-bright);
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.exercise-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(6,182,212,0.15);
+}
+
+.exercise-input::placeholder {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* Check answer button */
+.check-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sql-select);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 8px;
+  padding: 10px 22px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: all 0.3s;
+}
+
+.check-btn:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 0 18px rgba(34,197,94,0.2);
+}
+
+/* Feedback */
+.feedback {
+  margin-top: 14px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  display: none;
+  animation: feedback-appear 0.4s ease;
+}
+
+@keyframes feedback-appear {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.feedback.correct {
+  display: block;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: var(--sql-select);
+}
+
+.feedback.incorrect {
+  display: block;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  color: var(--sql-where);
+}
+
+/* Reveal button for answers */
+.reveal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(6, 182, 212, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.3s;
+}
+
+.reveal-btn:hover {
+  color: var(--hub-text);
+  border-color: var(--border-medium);
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.reveal-area {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal-area.open { max-height: 600px; }
+
+.reveal-area-inner {
+  padding-top: 14px;
+  margin-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ===================================================
+   COMPLETION CELEBRATION
+   =================================================== */
+.completion-banner {
+  display: none;
+  background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.08));
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 14px;
+  padding: 28px 32px;
+  margin-top: 28px;
+  text-align: center;
+  animation: celebration-appear 0.8s ease;
+}
+
+@keyframes celebration-appear {
+  0% { opacity: 0; transform: scale(0.95); filter: blur(4px); }
+  50% { filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.completion-banner h3 {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--sql-select);
+  font-size: 18px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 15px var(--sql-select-glow);
+}
+
+.completion-banner p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* ===================================================
+   FOOTER
+   =================================================== */
+.tutorial-footer {
+  margin-top: 64px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+/* ===================================================
+   RESPONSIVE
+   =================================================== */
+@media (max-width: 640px) {
+  .container { padding: 80px 16px 80px; }
+  .title-section h1 { font-size: 24px; }
+  h2 { font-size: 18px; }
+  .pattern-visual { flex-direction: column; }
+  .pattern-part { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+  .pattern-part:last-child { border-bottom: none; }
+  .op-grid { grid-template-columns: 1fr; }
+  .nav-nodes { gap: 2px; }
+  .nav-node { width: 28px; height: 28px; font-size: 8px; }
+  .string-rule { flex-direction: column; }
+  .sql-block pre { font-size: 12px; }
+  .exercise-section { padding: 20px; }
+}
+
+/* ═══════ Game UI: Inventory + Achievements ═══════ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary, rgba(255,255,255,0.5)); }
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim, rgba(255,255,255,0.3)); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.3));
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright, #fff); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright, #fff); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim, rgba(255,255,255,0.3)); font-family: 'Orbitron', sans-serif; }
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+@media (max-width: 600px) {
+  .inventory-toolbar { bottom: 8px; left: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .inventory-panel { width: calc(100vw - 16px); left: 8px; bottom: 60px; }
+}
+
+/* ===================================================
+   LCARS SEGMENTED PROGRESS BAR
+   =================================================== */
+.lcars-bar {
+  display: flex; align-items: stretch; padding: 6px 24px 4px; gap: 0;
+}
+.lcars-elbow {
+  width: 18px; flex-shrink: 0; background: var(--accent);
+  border-radius: 0 0 0 14px; opacity: 0.35; position: relative;
+  transition: opacity 0.6s ease;
+}
+.lcars-elbow::after {
+  content: ''; position: absolute; bottom: -12px; left: 0;
+  width: 100%; height: 12px; background: var(--accent);
+  border-radius: 0 0 0 8px; opacity: inherit;
+}
+.lcars-segments {
+  display: flex; gap: 3px; flex: 1; height: 32px; padding-left: 4px;
+}
+.lcars-seg {
+  flex: 1; border-radius: 3px;
+  background: linear-gradient(90deg,
+    var(--seg-color) 0%, var(--seg-color) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) 100%
+  );
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0; animation: seg-appear 0.4s ease both;
+}
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; }
+.lcars-seg:nth-child(2) { animation-delay: 0.1s; }
+.lcars-seg:nth-child(3) { animation-delay: 0.15s; }
+.lcars-seg:nth-child(4) { animation-delay: 0.2s; }
+.lcars-seg:nth-child(5) { animation-delay: 0.25s; }
+.lcars-seg:nth-child(6) { animation-delay: 0.3s; }
+.lcars-seg:nth-child(7) { animation-delay: 0.35s; }
+.lcars-seg:nth-child(8) { animation-delay: 0.4s; }
+.lcars-seg:nth-child(9) { animation-delay: 0.45s; }
+.lcars-seg:nth-child(10) { animation-delay: 0.5s; }
+@keyframes seg-appear {
+  from { opacity: 0; transform: scaleX(0.3); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+.lcars-seg.active {
+  box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent),
+              inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent);
+  color: var(--bg-deep);
+}
+.lcars-seg.completed {
+  --seg-fill: 100%; filter: brightness(0.7); color: var(--bg-deep);
+}
+.lcars-seg:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent);
+}
+.lcars-flow { height: 3px; margin: 0 24px; background: rgba(0,180,255,0.06); }
+.lcars-flow-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sql-select), var(--accent), var(--sql-where));
+  box-shadow: 0 0 8px rgba(6,182,212,0.4);
+  width: 0%; transition: width 0.5s ease;
+}
+@media (max-width: 600px) {
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lcars-seg { opacity: 1; }
+}
+
+</style>
+</head>
+<body data-chapter="3" style="padding-top: 52px;">
+
+<!-- Background canvas for particles -->
+<canvas id="bg-canvas"></canvas>
+
+<div class="page-content">
+
+<!-- HOLOGRAPHIC NAV BAR -->
+<div class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('s1')" title="What SQL Is">01</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s2')" title="SELECT">02</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s3')" title="FROM">03</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s4')" title="WHERE">04</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s5')" title="Operators">05</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s6')" title="Strings &amp; SELECT *">06</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s7')" title="AS, ORDER BY, LIMIT">07</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s8')" title="NULL">08</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s9')" title="SQL + Data Vault">09</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s10')" title="Exercise">10</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">SQL: The Question Language</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: var(--sql-select)" onclick="scrollToSection('s1')">1</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-select)" onclick="scrollToSection('s2')">2</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-from)" onclick="scrollToSection('s3')">3</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-where)" onclick="scrollToSection('s4')">4</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-keyword)" onclick="scrollToSection('s5')">5</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-string)" onclick="scrollToSection('s6')">6</div>
+        <div class="lcars-seg" style="--seg-color: var(--accent)" onclick="scrollToSection('s7')">7</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-number)" onclick="scrollToSection('s8')">8</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-from)" onclick="scrollToSection('s9')">9</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-select)" onclick="scrollToSection('s10')">10</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- TITLE -->
+<div class="title-section">
+  <div class="title-label">Data Vault Foundations &middot; Chapter 3</div>
+  <h1>SQL: The Question Language</h1>
+  <p class="subtitle">You built the Skyrim Data Vault. Now learn the grammar for asking it questions. SQL isn't code &mdash; it's a way of describing what you want to know.</p>
+  <div class="meta-chips">
+    <span class="meta-chip">10 sections</span>
+    <span class="meta-chip">5 key concepts</span>
+    <span class="meta-chip">3 exercises</span>
+    <span class="meta-chip">Builds on Tutorials 1 &amp; 2</span>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 1: WHAT SQL IS
+     =================================================== -->
+<div class="section" id="s1">
+  <div class="section-header">
+    <div class="section-tag accent-t">Section 01</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>What SQL Actually Is</h2>
+
+  <div class="hook hook-default">
+    <p class="hook-text">SQL isn't code. It's a <em>question language</em>. You describe what you want to know, and the database figures out how to find it. You already know the tables &mdash; Hub_Character, Sat_Character_Details. SQL is just the grammar for asking them questions.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">SQL</span> stands for <strong>Structured Query Language</strong>. Three words, each one important:</p>
+    <p><span class="bridge-word">Structured</span> &mdash; has a fixed grammatical form. Every question follows the same sentence pattern. Not freeform &mdash; more like a legal filing format than a conversation.</p>
+    <p><span class="bridge-word">Query</span> &mdash; from Latin <em>quaerere</em>, to ask, to seek. Same root as "question." A query IS a question asked to the database.</p>
+    <p><span class="bridge-word">Language</span> &mdash; but not a programming language in the usual sense. Programming languages tell the computer <em>how</em> to do something step by step. SQL tells the database <em>what</em> you want and lets the database figure out the how. The distinction: a recipe (procedural) vs. an order at a restaurant (declarative). You say "give me all Stormcloak characters" &mdash; you don't say "open the table, go to row 1, check if faction = Stormcloak..."</p>
+  </div>
+
+  <div class="four-layers" id="layers-sql">
+    <div class="four-layers-header">
+      <div class="four-layers-title">4-Layer Explanation</div>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-sql', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-sql', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-sql', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-sql', 3)"></div>
+      </div>
+    </div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Simple</span>
+        <span class="layer-label">For anyone, no background needed</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>SQL is how you ask a database to show you specific information. You describe what you want, the database finds it.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Mechanism</span>
+        <span class="layer-label">How it works under the hood</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>SQL has a fixed sentence structure &mdash; you say which columns you want (<strong>SELECT</strong>), which table to look in (<strong>FROM</strong>), and optionally a filter condition (<strong>WHERE</strong>). The database engine reads your query, figures out the fastest way to find matching rows, and returns them as a result set.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Technical</span>
+        <span class="layer-label">Correct terminology, full detail</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>SQL is a declarative language for relational database management. It operates on tables (relations) through set-based operations &mdash; a query defines a result set, not a procedural sequence. The query optimizer translates the declarative statement into an execution plan. The standard is defined by ISO/IEC 9075; dialects exist (PostgreSQL, Snowflake, T-SQL) but core SELECT/FROM/WHERE syntax is universal.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Expert</span>
+        <span class="layer-label">Why this matters for Data Vault</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>SQL's declarative nature is why it pairs so well with Data Vault's automation philosophy. <code>datavault4dbt</code> generates SQL &mdash; it writes the SELECT, JOIN, and INSERT statements that load Hubs, Links, and Satellites. When ScaleFree builds a DV implementation, the SQL is largely generated from metadata, not hand-written. Understanding SQL means you can <strong>read and debug</strong> what the automation produces &mdash; not that you hand-write every query.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <blockquote>"SQL is the language you use to ask a database questions. It stands for Structured Query Language &mdash; structured because every query follows a fixed grammatical pattern, and query because it's fundamentally about asking for data back. You describe what you want, and the database figures out how to get it."</blockquote>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 2: SELECT
+     =================================================== -->
+<div class="section" id="s2">
+  <div class="section-header">
+    <div class="section-tag select-t">Section 02</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>SELECT &mdash; What Do You Want to See?</h2>
+
+  <div class="hook hook-select">
+    <p class="hook-text">In a video game: <em>"Select your character."</em> In SQL: <em>"Select which columns you want the database to show you."</em> Same word. Same action. Choose from the available options.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">Select</span> &mdash; everyday meaning: to choose from available options. "Select all that apply" on a form. "Select your starting class" in a character creator.</p>
+    <p><strong>Why this word for this concept:</strong> Because that's literally what it does &mdash; you choose which columns (which pieces of information) you want the database to show you. Out of all the columns in a table, you <em>select</em> the ones relevant to your question.</p>
+  </div>
+
+  <p>Here's the Hub_Character table you built in Chapter 1. All four columns, five characters:</p>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot hub"></div>
+      <div class="data-panel-title">Hub_Character &mdash; Full Table</div>
+    </div>
+    <div class="data-panel-body">
+      <div class="result-table-wrap">
+        <table class="table-animated">
+          <thead>
+            <tr><th>hub_character_hk</th><th>business_key</th><th>load_date</th><th>record_source</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-hub">a3f7...</td><td class="col-bright">Ulfric</td><td>2026-01-01</td><td>skyrim_crm</td></tr>
+            <tr><td class="col-hub">b82c...</td><td class="col-bright">Lydia</td><td>2026-01-01</td><td>skyrim_crm</td></tr>
+            <tr><td class="col-hub">d91e...</td><td class="col-bright">Nazeem</td><td>2026-01-01</td><td>skyrim_crm</td></tr>
+            <tr><td class="col-hub">f4a1...</td><td class="col-bright">Aela</td><td>2026-01-01</td><td>skyrim_crm</td></tr>
+            <tr><td class="col-hub">c7b3...</td><td class="col-bright">Balgruuf</td><td>2026-01-01</td><td>skyrim_crm</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p>What if you only want the character names &mdash; not the hash keys, not the dates? You <strong>select</strong> just that one column:</p>
+
+  <div class="query-pattern" id="qp-select1">
+    <div class="query-step step-english">
+      <div class="query-step-label">The Question</div>
+      <p class="english-text">"Give me just the character names."</p>
+    </div>
+    <div class="query-step step-sql">
+      <div class="query-step-label">In SQL</div>
+      <pre><span class="select">SELECT</span> <span class="col">business_key</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span>;</pre>
+    </div>
+    <div class="result-materializer" onclick="showResult('qp-select1')">
+      <div class="run-query-btn"><span class="arrow">&#9654;</span> Execute Query</div>
+      <div class="result-area" id="qp-select1-result">
+        <div class="result-area-inner">
+          <div class="query-step step-result">
+            <div class="query-step-label">Result &mdash; 1 column, 5 rows</div>
+            <div class="result-table-wrap">
+              <table>
+                <thead><tr><th>business_key</th></tr></thead>
+                <tbody>
+                  <tr><td class="col-bright">Ulfric</td></tr>
+                  <tr><td class="col-bright">Lydia</td></tr>
+                  <tr><td class="col-bright">Nazeem</td></tr>
+                  <tr><td class="col-bright">Aela</td></tr>
+                  <tr><td class="col-bright">Balgruuf</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="font-size:13px;color:var(--text-dim);margin-top:8px;">The other three columns exist in the table but aren't shown &mdash; because they weren't selected.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p>Want two columns? List them with a comma:</p>
+
+  <div class="sql-block">
+    <div class="sql-block-header">
+      <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+      <span class="sql-block-label">SQL</span>
+    </div>
+    <pre><span class="select">SELECT</span> <span class="col">business_key</span>, <span class="col">load_date</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span>;</pre>
+  </div>
+
+  <div class="key-concept">
+    <p>SELECT doesn't <em>change</em> the table. It doesn't delete columns or filter rows. It defines what the <strong>result</strong> looks like. The table underneath stays exactly the same. SELECT is a camera angle, not an edit.</p>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 3: FROM
+     =================================================== -->
+<div class="section" id="s3">
+  <div class="section-header">
+    <div class="section-tag from-t">Section 03</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>FROM &mdash; Where to Look</h2>
+
+  <div class="hook hook-from">
+    <p class="hook-text">"Where are you from?" "From the filing cabinet." FROM is the <em>origin</em>. In a database with dozens of tables &mdash; Hub_Character, Hub_Weapon, Sat_Character_Details, Link_Character_Weapon &mdash; FROM points at the one you're asking about.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">From</span> &mdash; everyday meaning: the origin or source. "Where is this from?" "Which table does the data come from?"</p>
+    <p><strong>Why this word:</strong> Because it specifies which table the data comes from. Every Hub, every Satellite, every Link is its own table. <code>FROM Hub_Character</code> means "look in the Hub for characters." <code>FROM Sat_Character_Details</code> means "look in the Satellite that stores character attributes."</p>
+  </div>
+
+  <div class="key-concept">
+    <p>In your Skyrim Data Vault, you have multiple tables. FROM is how you point at one. Without FROM, SQL doesn't know where to look &mdash; it's like asking "give me the race" without saying which character sheet to check.</p>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot hub"></div>
+      <div class="data-panel-title">Your Skyrim Tables &mdash; Each One Is a FROM Target</div>
+    </div>
+    <div class="data-panel-body" style="padding: 18px 22px;">
+      <p style="margin-bottom:8px;"><code style="color:var(--hub-text);">Hub_Character</code> &mdash; who exists (identity)</p>
+      <p style="margin-bottom:8px;"><code style="color:var(--sat-text);">Sat_Character_Details</code> &mdash; what they're like (attributes)</p>
+      <p style="margin-bottom:8px;"><code style="color:var(--hub-text);">Hub_Weapon</code> &mdash; which weapons exist</p>
+      <p style="margin-bottom:0;"><code style="color:var(--link-text);">Link_Character_Weapon</code> &mdash; who carries what</p>
+      <p style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-subtle);color:var(--text-dim);font-size:13px;margin-bottom:0;">Every one of these is a table. Every one can go after FROM.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 4: WHERE
+     =================================================== -->
+<div class="section" id="s4">
+  <div class="section-header">
+    <div class="section-tag where-t">Section 04</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>WHERE &mdash; The Filter</h2>
+
+  <div class="hook hook-where">
+    <p class="hook-text">WHERE is propositional logic in disguise &mdash; same truth tables, same AND/OR/NOT from symbolic logic. The syntax is new. The <em>machinery is identical</em>.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">Where</span> &mdash; not spatial "where." Conditional "where." Think of it as: "under what circumstances should a row show up?" WHERE sets the condition that rows must satisfy to be included.</p>
+    <p><strong>Technically:</strong> WHERE is a boolean filter. Every row in the table is tested against the condition. True = included. False = excluded. This is exactly propositional logic &mdash; the condition evaluates to true or false for each row, same as truth tables.</p>
+  </div>
+
+  <p>Here's Sat_Character_Details &mdash; the Satellite with all the character attributes:</p>
+
+  <div class="data-panel" id="sat-table-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot sat"></div>
+      <div class="data-panel-title">Sat_Character_Details &mdash; Full Table</div>
+    </div>
+    <div class="data-panel-body">
+      <div class="result-table-wrap">
+        <table class="table-animated" id="sat-full-table">
+          <thead>
+            <tr><th>hub_character_hk</th><th>load_date</th><th>record_source</th><th>race</th><th>level</th><th>faction</th><th>hold</th></tr>
+          </thead>
+          <tbody>
+            <tr id="row-ulfric"><td class="col-hub">a3f7...</td><td>2026-01-01</td><td>skyrim_crm</td><td class="col-bright">Nord</td><td>30</td><td>Stormcloak</td><td>Eastmarch</td></tr>
+            <tr id="row-lydia"><td class="col-hub">b82c...</td><td>2026-01-01</td><td>skyrim_crm</td><td class="col-bright">Nord</td><td>25</td><td>Companions</td><td>Whiterun</td></tr>
+            <tr id="row-nazeem"><td class="col-hub">d91e...</td><td>2026-01-01</td><td>skyrim_crm</td><td class="col-bright">Redguard</td><td>10</td><td>None</td><td>Whiterun</td></tr>
+            <tr id="row-aela"><td class="col-hub">f4a1...</td><td>2026-01-01</td><td>skyrim_crm</td><td class="col-bright">Nord</td><td>28</td><td>Companions</td><td>Whiterun</td></tr>
+            <tr id="row-balgruuf"><td class="col-hub">c7b3...</td><td>2026-01-01</td><td>skyrim_crm</td><td class="col-bright">Nord</td><td>35</td><td>Jarl</td><td>Whiterun</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="query-pattern" id="qp-where1">
+    <div class="query-step step-english">
+      <div class="query-step-label">The Question</div>
+      <p class="english-text">"Show me all the Nords."</p>
+    </div>
+    <div class="query-step step-sql">
+      <div class="query-step-label">In SQL</div>
+      <pre><span class="select">SELECT</span> <span class="col">race</span>, <span class="col">level</span>, <span class="col">faction</span>
+<span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span>
+<span class="where">WHERE</span> <span class="col">race</span> = <span class="str">'Nord'</span>;</pre>
+    </div>
+    <div class="result-materializer" onclick="showResult('qp-where1')">
+      <div class="run-query-btn"><span class="arrow">&#9654;</span> Execute Query</div>
+      <div class="result-area" id="qp-where1-result">
+        <div class="result-area-inner">
+          <div class="query-step step-result">
+            <div class="query-step-label">Result &mdash; 4 rows pass the filter</div>
+            <div class="result-table-wrap">
+              <table>
+                <thead><tr><th>race</th><th>level</th><th>faction</th></tr></thead>
+                <tbody>
+                  <tr class="highlight-row"><td>Nord</td><td>30</td><td>Stormcloak</td></tr>
+                  <tr class="highlight-row"><td>Nord</td><td>25</td><td>Companions</td></tr>
+                  <tr class="highlight-row"><td>Nord</td><td>28</td><td>Companions</td></tr>
+                  <tr class="highlight-row"><td>Nord</td><td>35</td><td>Jarl</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="font-size:13px;color:var(--text-dim);margin-top:8px;">Nazeem (Redguard) excluded &mdash; the WHERE condition evaluated to false for that row.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="query-pattern" id="qp-where2">
+    <div class="query-step step-english">
+      <div class="query-step-label">A Harder Question</div>
+      <p class="english-text">"Show me Nords above level 25."</p>
+    </div>
+    <div class="query-step step-sql">
+      <div class="query-step-label">In SQL &mdash; two conditions joined with AND</div>
+      <pre><span class="select">SELECT</span> <span class="col">race</span>, <span class="col">level</span>, <span class="col">faction</span>
+<span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span>
+<span class="where">WHERE</span> <span class="col">race</span> = <span class="str">'Nord'</span> <span class="where">AND</span> <span class="col">level</span> &gt; <span class="num">25</span>;</pre>
+    </div>
+    <div class="result-materializer" onclick="showResult('qp-where2')">
+      <div class="run-query-btn"><span class="arrow">&#9654;</span> Execute Query</div>
+      <div class="result-area" id="qp-where2-result">
+        <div class="result-area-inner">
+          <div class="query-step step-result">
+            <div class="query-step-label">Result &mdash; 3 rows</div>
+            <div class="result-table-wrap">
+              <table>
+                <thead><tr><th>race</th><th>level</th><th>faction</th></tr></thead>
+                <tbody>
+                  <tr class="highlight-row"><td>Nord</td><td>30</td><td>Stormcloak</td></tr>
+                  <tr class="highlight-row"><td>Nord</td><td>28</td><td>Companions</td></tr>
+                  <tr class="highlight-row"><td>Nord</td><td>35</td><td>Jarl</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="font-size:13px;color:var(--text-dim);margin-top:8px;">Lydia excluded &mdash; she's level 25, not <em>above</em> 25. Nazeem excluded &mdash; not Nord.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>The Three-Part Pattern</h3>
+
+  <p>Every SQL query follows the same sentence:</p>
+
+  <div class="pattern-visual">
+    <div class="pattern-part pattern-select">
+      <div class="pattern-keyword">SELECT</div>
+      <div class="pattern-english">What to show</div>
+      <div class="pattern-example">race, level, faction</div>
+    </div>
+    <div class="pattern-part pattern-from">
+      <div class="pattern-keyword">FROM</div>
+      <div class="pattern-english">Where to look</div>
+      <div class="pattern-example">Sat_Character_Details</div>
+    </div>
+    <div class="pattern-part pattern-where">
+      <div class="pattern-keyword">WHERE</div>
+      <div class="pattern-english">Which rows to include</div>
+      <div class="pattern-example">race = 'Nord'</div>
+    </div>
+  </div>
+
+  <div class="key-concept">
+    <p><strong>"Give me [SELECT] from [FROM] only if [WHERE]."</strong> This is the single most important pattern in SQL Part 1. Every query is a variation on this sentence. WHERE is optional &mdash; without it, you get all rows.</p>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <blockquote>"SELECT defines which columns you want to see &mdash; like choosing which fields on a character sheet to look at. FROM tells the database which table to look in. WHERE is the filter &mdash; it's a boolean condition that each row is tested against. Only rows where the condition is true show up in the result."</blockquote>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 5: OPERATORS
+     =================================================== -->
+<div class="section" id="s5">
+  <div class="section-header">
+    <div class="section-tag where-t">Section 05</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Operators in WHERE</h2>
+
+  <div class="logic-label">Comparison Operators</div>
+
+  <div class="op-grid">
+    <div class="op-card">
+      <div class="op-symbol">=</div>
+      <div class="op-meaning">equals</div>
+      <div class="op-example">WHERE race = 'Nord'</div>
+    </div>
+    <div class="op-card">
+      <div class="op-symbol">!= or &lt;&gt;</div>
+      <div class="op-meaning">not equal to</div>
+      <div class="op-example">WHERE race != 'Redguard'</div>
+    </div>
+    <div class="op-card">
+      <div class="op-symbol">&lt;</div>
+      <div class="op-meaning">less than</div>
+      <div class="op-example">WHERE level &lt; 20</div>
+    </div>
+    <div class="op-card">
+      <div class="op-symbol">&gt;</div>
+      <div class="op-meaning">greater than</div>
+      <div class="op-example">WHERE level &gt; 25</div>
+    </div>
+    <div class="op-card">
+      <div class="op-symbol">&lt;=</div>
+      <div class="op-meaning">less than or equal to</div>
+      <div class="op-example">WHERE level &lt;= 30</div>
+    </div>
+    <div class="op-card">
+      <div class="op-symbol">&gt;=</div>
+      <div class="op-meaning">greater than or equal to</div>
+      <div class="op-example">WHERE level &gt;= 10</div>
+    </div>
+  </div>
+
+  <div class="logic-label">Logical Operators &mdash; Same as Propositional Logic</div>
+
+  <div class="op-grid">
+    <div class="op-card full-width">
+      <div class="op-symbol">AND</div>
+      <div class="op-meaning">both conditions must be true &mdash; conjunction</div>
+      <div class="op-example">WHERE race = 'Nord' AND level &gt; 25</div>
+    </div>
+    <div class="op-card full-width">
+      <div class="op-symbol">OR</div>
+      <div class="op-meaning">at least one condition must be true &mdash; disjunction</div>
+      <div class="op-example">WHERE faction = 'Stormcloak' OR faction = 'Companions'</div>
+    </div>
+    <div class="op-card full-width">
+      <div class="op-symbol">NOT</div>
+      <div class="op-meaning">negation</div>
+      <div class="op-example">WHERE NOT race = 'Nord'</div>
+    </div>
+  </div>
+
+  <div class="key-concept">
+    <p>These are the same connectives from propositional logic. AND = conjunction (both true). OR = disjunction (at least one true). NOT = negation. Same truth table behavior as symbolic logic &mdash; the syntax is new, the machinery is identical.</p>
+  </div>
+
+  <div class="logic-label">Special Operators</div>
+
+  <div class="op-grid">
+    <div class="op-card full-width">
+      <div class="op-symbol">LIKE</div>
+      <div class="op-meaning">pattern matching with wildcards &mdash; <code style="font-size:11px;">%</code> = any characters, <code style="font-size:11px;">_</code> = one character</div>
+      <div class="op-example">WHERE business_key LIKE 'U%' &mdash; starts with U (matches Ulfric)</div>
+    </div>
+    <div class="op-card full-width">
+      <div class="op-symbol">IN</div>
+      <div class="op-meaning">matches any value in a list &mdash; shorthand for multiple ORs</div>
+      <div class="op-example">WHERE faction IN ('Stormcloak', 'Companions')</div>
+    </div>
+    <div class="op-card full-width">
+      <div class="op-symbol">BETWEEN</div>
+      <div class="op-meaning">within a range (inclusive on both ends)</div>
+      <div class="op-example">WHERE level BETWEEN 20 AND 30 &mdash; levels 20 through 30</div>
+    </div>
+    <div class="op-card full-width">
+      <div class="op-symbol">IS NULL</div>
+      <div class="op-meaning">checks for missing/unknown values (more on this in the NULL section)</div>
+      <div class="op-example">WHERE faction IS NULL</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 6: STRING LITERALS + SELECT *
+     =================================================== -->
+<div class="section" id="s6">
+  <div class="section-header">
+    <div class="section-tag accent-t">Section 06</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>String Literals and SELECT *</h2>
+
+  <h3>The Quoting Rule</h3>
+
+  <p>Values (the actual data you're comparing against) go in <strong>single quotes</strong>. Column names and table names do <strong>not</strong> get quotes:</p>
+
+  <div class="string-rule">
+    <div class="string-rule-item string-yes">
+      <div class="string-rule-code">'Nord'</div>
+      <div class="string-rule-label">Value &mdash; single quotes</div>
+    </div>
+    <div class="string-rule-item string-no">
+      <div class="string-rule-code">race</div>
+      <div class="string-rule-label">Column name &mdash; no quotes</div>
+    </div>
+  </div>
+
+  <div class="warning-panel">
+    <div class="warning-label">Why This Matters</div>
+    <p>Without quotes, the database thinks you're referring to a column name. <code>WHERE race = Nord</code> would make the database look for a column called Nord &mdash; which doesn't exist. <code>WHERE race = 'Nord'</code> tells it you're looking for the literal text value "Nord."</p>
+  </div>
+
+  <div class="key-concept">
+    <p>Single quotes = "I mean this actual value." No quotes = "I mean this column or table." That's the whole rule for now.</p>
+  </div>
+
+  <h3>SELECT * &mdash; "Give Me Everything"</h3>
+
+  <p>The asterisk <code>*</code> is a wildcard &mdash; it means "all columns."</p>
+
+  <div class="sql-block">
+    <div class="sql-block-header">
+      <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+      <span class="sql-block-label">SQL</span>
+    </div>
+    <pre><span class="select">SELECT</span> *
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span>;</pre>
+  </div>
+
+  <p>Returns all four columns, all five rows. Useful for exploring &mdash; "what does this table even look like?" But in production, you name the columns you need. It's more readable and performs better.</p>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <blockquote>"SELECT * is fine for exploration, but in production you name the columns you need &mdash; it's more readable and performs better."</blockquote>
+  </div>
+</div>
+
+<!-- ===================================================
+     SECTION 7: AS, ORDER BY, LIMIT
+     =================================================== -->
+<div class="section" id="s7">
+  <div class="section-header">
+    <div class="section-tag select-t">Section 07</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>AS, ORDER BY, LIMIT</h2>
+
+  <h3>Column Aliases (AS)</h3>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">Alias</span> &mdash; from Latin <em>alius</em>, meaning "other." An alternate name for the same thing. A character alias in a spy movie. An alias in a witness protection program.</p>
+    <p><strong>In SQL:</strong> <code>AS</code> gives a column a different name in the result, without changing the actual column name in the table. The alias exists only in this particular query's output.</p>
+  </div>
+
+  <div class="query-pattern" id="qp-alias">
+    <div class="query-step step-english">
+      <div class="query-step-label">The Question</div>
+      <p class="english-text">"Show me character names and when they first appeared, but use human-readable column headers."</p>
+    </div>
+    <div class="query-step step-sql">
+      <div class="query-step-label">In SQL</div>
+      <pre><span class="select">SELECT</span> <span class="col">business_key</span> <span class="kw">AS</span> <span class="col">character_name</span>,
+       <span class="col">load_date</span> <span class="kw">AS</span> <span class="col">first_seen</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span>;</pre>
+    </div>
+    <div class="result-materializer" onclick="showResult('qp-alias')">
+      <div class="run-query-btn"><span class="arrow">&#9654;</span> Execute Query</div>
+      <div class="result-area" id="qp-alias-result">
+        <div class="result-area-inner">
+          <div class="query-step step-result">
+            <div class="query-step-label">Result</div>
+            <div class="result-table-wrap">
+              <table>
+                <thead><tr><th>character_name</th><th>first_seen</th></tr></thead>
+                <tbody>
+                  <tr><td class="col-bright">Ulfric</td><td>2026-01-01</td></tr>
+                  <tr><td class="col-bright">Lydia</td><td>2026-01-01</td></tr>
+                  <tr><td class="col-bright">Nazeem</td><td>2026-01-01</td></tr>
+                  <tr><td class="col-bright">Aela</td><td>2026-01-01</td></tr>
+                  <tr><td class="col-bright">Balgruuf</td><td>2026-01-01</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="font-size:13px;color:var(--text-dim);margin-top:8px;">The column headers say <code>character_name</code> and <code>first_seen</code> instead of <code>business_key</code> and <code>load_date</code>. Same data, better labels. The table itself is unchanged.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>ORDER BY &mdash; Sorting the Result</h3>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">Order by</span> &mdash; "arrange according to some criterion." "Order by date" on a filing system. "Sort by relevance" on a search engine. It sorts the result rows according to a column's values.</p>
+  </div>
+
+  <div class="query-pattern" id="qp-order">
+    <div class="query-step step-sql">
+      <div class="query-step-label">Ascending (default) &mdash; lowest first</div>
+      <pre><span class="select">SELECT</span> <span class="col">race</span>, <span class="col">level</span>, <span class="col">faction</span>
+<span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span>
+<span class="kw">ORDER BY</span> <span class="col">level</span>;</pre>
+    </div>
+    <div class="query-step step-sql">
+      <div class="query-step-label">Descending &mdash; highest first</div>
+      <pre><span class="select">SELECT</span> <span class="col">race</span>, <span class="col">level</span>, <span class="col">faction</span>
+<span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span>
+<span class="kw">ORDER BY</span> <span class="col">level</span> <span class="kw">DESC</span>;</pre>
+    </div>
+  </div>
+
+  <p>You can sort by multiple columns: <code>ORDER BY faction, level DESC</code> sorts by faction first, then by level (highest first) within each faction.</p>
+
+  <div class="key-concept">
+    <p>ORDER BY changes the <em>order</em> of rows in the result. It doesn't filter (that's WHERE) and it doesn't change which columns appear (that's SELECT). Each clause has one job.</p>
+  </div>
+
+  <h3>LIMIT &mdash; "Just the First N"</h3>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">Limit</span> &mdash; a restriction on quantity. "Speed limit." "Limit 2 per customer." It restricts how many rows the result returns.</p>
+  </div>
+
+  <div class="query-pattern" id="qp-limit">
+    <div class="query-step step-english">
+      <div class="query-step-label">The Question</div>
+      <p class="english-text">"Who are the top 3 highest-level characters?"</p>
+    </div>
+    <div class="query-step step-sql">
+      <div class="query-step-label">In SQL</div>
+      <pre><span class="select">SELECT</span> <span class="col">race</span>, <span class="col">level</span>, <span class="col">faction</span>
+<span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span>
+<span class="kw">ORDER BY</span> <span class="col">level</span> <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> <span class="num">3</span>;</pre>
+    </div>
+    <div class="result-materializer" onclick="showResult('qp-limit')">
+      <div class="run-query-btn"><span class="arrow">&#9654;</span> Execute Query</div>
+      <div class="result-area" id="qp-limit-result">
+        <div class="result-area-inner">
+          <div class="query-step step-result">
+            <div class="query-step-label">Result &mdash; top 3</div>
+            <div class="result-table-wrap">
+              <table>
+                <thead><tr><th>race</th><th>level</th><th>faction</th></tr></thead>
+                <tbody>
+                  <tr class="highlight-row"><td>Nord</td><td>35</td><td>Jarl</td></tr>
+                  <tr class="highlight-row"><td>Nord</td><td>30</td><td>Stormcloak</td></tr>
+                  <tr class="highlight-row"><td>Nord</td><td>28</td><td>Companions</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:14px;color:var(--text-dim);"><strong>Dialect note:</strong> <code>LIMIT</code> is PostgreSQL/MySQL/Snowflake syntax. SQL Server uses <code>TOP</code>. The concept is identical. For practical purposes, LIMIT is fine &mdash; ScaleFree and most modern data platforms work primarily with Snowflake, which supports LIMIT.</p>
+
+  <h3>The Full Clause Order</h3>
+
+  <div class="clause-order">
+    <div class="clause-item">
+      <span class="clause-keyword" style="color:var(--sql-select);">SELECT</span>
+      <span class="clause-desc">what columns to show</span>
+      <span class="clause-badge required">Required</span>
+    </div>
+    <div class="clause-item">
+      <span class="clause-keyword" style="color:var(--sql-from);">FROM</span>
+      <span class="clause-desc">which table to look in</span>
+      <span class="clause-badge required">Required</span>
+    </div>
+    <div class="clause-item">
+      <span class="clause-keyword" style="color:var(--sql-where);">WHERE</span>
+      <span class="clause-desc">which rows to include</span>
+      <span class="clause-badge optional">Optional</span>
+    </div>
+    <div class="clause-item">
+      <span class="clause-keyword" style="color:var(--sql-keyword);">ORDER BY</span>
+      <span class="clause-desc">how to sort the result</span>
+      <span class="clause-badge optional">Optional</span>
+    </div>
+    <div class="clause-item">
+      <span class="clause-keyword" style="color:var(--sql-keyword);">LIMIT</span>
+      <span class="clause-desc">how many rows to return</span>
+      <span class="clause-badge optional">Optional</span>
+    </div>
+  </div>
+
+  <p>This order is fixed &mdash; SQL requires these clauses in this sequence. The minimum query is <code>SELECT ... FROM ...;</code></p>
+</div>
+
+
+<!-- ===================================================
+     SECTION 8: NULL
+     =================================================== -->
+<div class="section" id="s8">
+  <div class="section-header">
+    <div class="section-tag null-t">Section 08</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>NULL &mdash; The Unknown</h2>
+
+  <div class="hook hook-null">
+    <p class="hook-text">NULL doesn't mean zero. It doesn't mean blank. NULL means <em>"we don't know."</em> The database is being honest &mdash; this value is missing or unknown, and pretending otherwise would be a lie.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">Null</span> &mdash; from Latin <em>nullus</em>, meaning "none." But in SQL, the everyday meaning is misleading. NULL does NOT mean zero or empty string. It means <strong>unknown</strong> or <strong>missing</strong>. The database doesn't know what the value is.</p>
+    <p>Consider Sat_Character_Details. If a character's faction is NULL, it doesn't mean they have no faction. It means the source system didn't provide that information. Big difference &mdash; especially for auditability, which is the whole point of Data Vault.</p>
+  </div>
+
+  <div class="warning-panel">
+    <div class="warning-label">The IS NULL Rule</div>
+    <p>You CANNOT use <code>= NULL</code>. It doesn't work the way you'd expect. Because NULL means "unknown," the question "does unknown equal unknown?" can't be answered &mdash; it's not true OR false, it's <em>unknown</em>. So <code>= NULL</code> never evaluates to true.</p>
+  </div>
+
+  <div class="sql-block">
+    <div class="sql-block-header">
+      <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+      <span class="sql-block-label">WRONG vs CORRECT</span>
+    </div>
+    <pre><span class="comment">-- WRONG (always returns no results):</span>
+<span class="select">SELECT</span> * <span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span> <span class="where">WHERE</span> <span class="col">faction</span> = <span class="kw">NULL</span>;
+
+<span class="comment">-- CORRECT:</span>
+<span class="select">SELECT</span> * <span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span> <span class="where">WHERE</span> <span class="col">faction</span> <span class="kw">IS NULL</span>;</pre>
+  </div>
+
+  <div class="four-layers" id="layers-null">
+    <div class="four-layers-header">
+      <div class="four-layers-title">4-Layer Explanation &mdash; NULL</div>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-null', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-null', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-null', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-null', 3)"></div>
+      </div>
+    </div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Simple</span>
+        <span class="layer-label">For anyone</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>NULL means "we don't know this value." Not zero, not blank &mdash; genuinely unknown.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Mechanism</span>
+        <span class="layer-label">Three-valued logic</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>SQL uses three-valued logic, not two-valued. Every comparison can be TRUE, FALSE, or UNKNOWN. When NULL is involved, the result is UNKNOWN &mdash; and UNKNOWN rows don't appear in results. That's why <code>WHERE faction = NULL</code> returns nothing: the comparison produces UNKNOWN, not TRUE.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Technical</span>
+        <span class="layer-label">Codd's relational model</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>NULL in SQL follows Codd's relational model (E.F. Codd, who invented the relational database). NULL represents the absence of a value in a column. Any arithmetic or comparison operation involving NULL propagates NULL (NULL + 5 = NULL, NULL = NULL yields UNKNOWN). The only way to test for NULL is the IS operator (<code>IS NULL</code>, <code>IS NOT NULL</code>), which is purpose-built for this check.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">Expert</span>
+        <span class="layer-label">Edge cases and DV implications</span>
+        <span class="layer-toggle">&#9660;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>NULL semantics are one of SQL's most debated design decisions. The three-valued logic it introduces causes subtle bugs &mdash; NULLs in NOT IN clauses, NULLs in aggregates (COUNT(*) counts NULLs, COUNT(column) doesn't), NULLs in UNIQUE constraints (most databases allow multiple NULLs in a UNIQUE column because NULL != NULL). In Data Vault, Hub columns are NOT NULL by convention &mdash; a Hub row with a missing business key is meaningless. Satellites allow NULLs in attribute columns because the source system might not provide every field.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="key-concept">
+    <p><strong>Data Vault connection:</strong> Hub columns are always NOT NULL &mdash; every Hub row must have a hash key, business key, load date, record source. Satellite attribute columns can be NULL &mdash; the source system might not provide race, level, or faction for every character. NULL preserves honesty &mdash; better to say "we don't know" than to fill in a guess.</p>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 9: SQL + DATA VAULT
+     =================================================== -->
+<div class="section" id="s9">
+  <div class="section-header">
+    <div class="section-tag dv-t">Section 09</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>How SQL Connects to Data Vault</h2>
+
+  <div class="hook hook-default">
+    <p class="hook-text">SQL is not a separate topic from Data Vault. SQL is how you <em>read</em> the Data Vault model you already built. Hub_Character is a table. <code>SELECT * FROM Hub_Character;</code> reads it.</p>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot hub"></div>
+      <div class="data-panel-title">SQL Concept &rarr; Data Vault Connection</div>
+    </div>
+    <div class="data-panel-body">
+      <div class="result-table-wrap">
+        <table class="dv-map-table">
+          <thead>
+            <tr><th>SQL Concept</th><th>What It Touches in DV</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>SELECT columns</td><td>Choosing which Hub/Sat columns to see (hash_key, business_key, race, level...)</td></tr>
+            <tr><td>FROM table</td><td>Pointing at a specific Hub, Satellite, or Link</td></tr>
+            <tr><td>WHERE condition</td><td>Filtering rows &mdash; "only Nords," "only records from skyrim_crm," "only level &gt; 25"</td></tr>
+            <tr><td style="color:var(--sql-keyword);">AS (aliases)</td><td>Renaming DV-technical column names to human-readable ones</td></tr>
+            <tr><td style="color:var(--sql-keyword);">NULL</td><td>What it means when a Satellite attribute has no value (unknown, not zero)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <blockquote>Every Hub, Link, and Satellite is a table in the database. SQL is what reads them. SELECT pulls columns from a Hub or Satellite, WHERE filters to specific records, and JOINs follow the foreign keys that connect Hubs to their Satellites and Links.</blockquote>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">After This Chapter</div>
+    <blockquote>This chapter covers SQL through Data Vault tables &mdash; Hubs, Links, and Satellites as the practice domain. By the end, reading a query and explaining what it does should feel natural, and writing basic SELECT/WHERE statements should be comfortable. JOINs and more complex queries come next.</blockquote>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 10: EXERCISES
+     =================================================== -->
+<div class="section" id="s10">
+  <div class="section-header">
+    <div class="section-tag exercise-t">Section 10</div>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="exercise-section">
+    <div class="exercise-label">Final Exercise &mdash; You Know Enough For This</div>
+    <h2>Read, Write, Debug</h2>
+    <p style="color:var(--text-secondary);margin-bottom:24px;">Three tasks. Each one uses what you just learned. All completable right here.</p>
+
+    <!-- EXERCISE 1: Read a query -->
+    <div class="exercise-task">
+      <div class="exercise-task-number">Task 1 &mdash; Read This Query</div>
+      <p>What does this query return? Describe it in plain English.</p>
+      <div class="sql-block" style="margin:12px 0;">
+        <div class="sql-block-header">
+          <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+          <span class="sql-block-label">Read this</span>
+        </div>
+        <pre><span class="select">SELECT</span> <span class="col">race</span>, <span class="col">faction</span>, <span class="col">hold</span>
+<span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span>
+<span class="where">WHERE</span> <span class="col">hold</span> = <span class="str">'Whiterun'</span>;</pre>
+      </div>
+      <textarea class="exercise-input" id="ex1-input" placeholder="Describe what this query returns..."></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="check-btn" onclick="checkExercise1()">Check Answer</button>
+        <button class="reveal-btn" onclick="toggleReveal('ex1-reveal')">Show Answer</button>
+      </div>
+      <div class="feedback" id="ex1-feedback"></div>
+      <div class="reveal-area" id="ex1-reveal">
+        <div class="reveal-area-inner">
+          <p style="color:var(--text-secondary);font-size:14px;"><strong>Answer:</strong> This query selects the race, faction, and hold columns from the Sat_Character_Details table, filtering to only show rows where the hold is Whiterun. The result is 4 rows: Lydia (Nord, Companions), Nazeem (Redguard, None), Aela (Nord, Companions), and Balgruuf (Nord, Jarl). Ulfric is excluded because his hold is Eastmarch, not Whiterun.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXERCISE 2: Write a query -->
+    <div class="exercise-task">
+      <div class="exercise-task-number">Task 2 &mdash; Write a Query</div>
+      <p>Write the SQL to answer this question: <strong>"Give me all characters from the Companions faction."</strong></p>
+      <p style="font-size:13px;color:var(--text-dim);">(Hint: work with Sat_Character_Details only &mdash; we'll learn how to connect to Hub_Character names in Day 4.)</p>
+      <p style="font-size:13px;color:var(--text-dim);">Hint: SELECT the columns you'd want to see, FROM the right table, WHERE the faction matches.</p>
+      <textarea class="exercise-input" id="ex2-input" placeholder="Write your SQL here..." style="min-height:80px;"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="check-btn" onclick="checkExercise2()">Check Answer</button>
+        <button class="reveal-btn" onclick="toggleReveal('ex2-reveal')">Show Answer</button>
+      </div>
+      <div class="feedback" id="ex2-feedback"></div>
+      <div class="reveal-area" id="ex2-reveal">
+        <div class="reveal-area-inner">
+          <div class="sql-block" style="margin:0;">
+            <div class="sql-block-header">
+              <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+              <span class="sql-block-label">Answer</span>
+            </div>
+            <pre><span class="select">SELECT</span> <span class="col">race</span>, <span class="col">level</span>, <span class="col">faction</span>
+<span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span>
+<span class="where">WHERE</span> <span class="col">faction</span> = <span class="str">'Companions'</span>;</pre>
+          </div>
+          <p style="color:var(--text-dim);font-size:13px;margin-top:10px;">Any valid SELECT columns work &mdash; the key parts are FROM Sat_Character_Details and WHERE faction = 'Companions' (with single quotes).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXERCISE 3: Spot the bug -->
+    <div class="exercise-task">
+      <div class="exercise-task-number">Task 3 &mdash; Spot the Bug</div>
+      <p>This query has an error. What's wrong with it?</p>
+      <div class="sql-block" style="margin:12px 0;">
+        <div class="sql-block-header">
+          <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+          <span class="sql-block-label">Broken query</span>
+        </div>
+        <pre><span class="select">SELECT</span> <span class="col">race</span>, <span class="col">level</span>
+<span class="from">FROM</span> <span class="tbl">Sat_Character_Details</span>
+<span class="where">WHERE</span> <span class="col">faction</span> = <span class="kw">NULL</span>;</pre>
+      </div>
+      <textarea class="exercise-input" id="ex3-input" placeholder="What's the bug?"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="check-btn" onclick="checkExercise3()">Check Answer</button>
+        <button class="reveal-btn" onclick="toggleReveal('ex3-reveal')">Show Answer</button>
+      </div>
+      <div class="feedback" id="ex3-feedback"></div>
+      <div class="reveal-area" id="ex3-reveal">
+        <div class="reveal-area-inner">
+          <p style="color:var(--text-secondary);font-size:14px;"><strong>The bug:</strong> <code>= NULL</code> should be <code>IS NULL</code>. You can't use <code>=</code> to compare against NULL because NULL means "unknown" &mdash; the question "does unknown equal unknown?" produces UNKNOWN, not TRUE. So <code>WHERE faction = NULL</code> always returns zero rows. The correct syntax is <code>WHERE faction IS NULL</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completion banner -->
+    <div class="completion-banner" id="completion-banner">
+      <h3>All Three Complete</h3>
+      <p>You can read a query, write one, and debug one. That's SQL Part 1. Next up: JOINs &mdash; following foreign keys across Hubs, Links, and Satellites.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- FOOTER -->
+<div class="tutorial-footer">
+  <span>Chapter 3 &middot; SQL Part 1</span>
+  <span>Next: SQL Part 2 &mdash; JOINs</span>
+</div>
+
+</div><!-- /container -->
+</div><!-- /page-content -->
+
+<!-- DV-themed star constellation field (shared) -->
+<script src="../systems/particles.js"></script>
+
+<script>
+/* ===================================================
+   SECTION VISIBILITY (scroll observer)
+   =================================================== */
+var sections = document.querySelectorAll('.section');
+var navNodes = document.querySelectorAll('.nav-node');
+var navConnectors = document.querySelectorAll('.nav-connector');
+var lcarsSegs = document.querySelectorAll('.lcars-seg');
+var progressFill = document.getElementById('progress-fill');
+
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -50px 0px' });
+
+sections.forEach(function(s) { observer.observe(s); });
+
+var lastActiveIndex = 0;
+function updateNav() {
+  var activeIdx = 0;
+  var scrollY = window.scrollY + window.innerHeight * 0.35;
+
+  sections.forEach(function(s, i) {
+    if (s.offsetTop <= scrollY) {
+      activeIdx = i;
+    }
+  });
+
+  if (activeIdx !== lastActiveIndex || lastActiveIndex === 0) {
+    lastActiveIndex = activeIdx;
+    navNodes.forEach(function(n, i) {
+      n.classList.remove('active', 'completed');
+      if (i === activeIdx) n.classList.add('active');
+      else if (i < activeIdx) n.classList.add('completed');
+    });
+    navConnectors.forEach(function(c, i) {
+      if (i < activeIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+    lcarsSegs.forEach(function(seg, i) {
+      seg.classList.remove('active', 'completed');
+      if (i === activeIdx) seg.classList.add('active');
+      else if (i < activeIdx) seg.classList.add('completed');
+    });
+  }
+
+  var activeSection = sections[lastActiveIndex];
+  var nextSection = sections[lastActiveIndex + 1];
+  if (activeSection) {
+    var secTop = activeSection.offsetTop;
+    var secBottom = nextSection ? nextSection.offsetTop : document.documentElement.scrollHeight;
+    var secHeight = secBottom - secTop;
+    var currentY = window.scrollY + window.innerHeight * 0.35;
+    var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+    fill = Math.max(0, Math.min(100, fill));
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+    lcarsSegs.forEach(function(seg, i) {
+      if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+      else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+      else seg.style.removeProperty('--seg-fill');
+    });
+  }
+
+  var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  var scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) scrolled = 100;
+  progressFill.style.width = Math.min(scrolled, 100) + '%';
+}
+
+window.addEventListener('scroll', updateNav);
+window.addEventListener('load', updateNav);
+
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    var offset = 80;
+    var y = el.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
+
+
+/* ===================================================
+   4-LAYER TOGGLE
+   =================================================== */
+function toggleLayer(header) {
+  var layer = header.parentElement;
+  layer.classList.toggle('open');
+  var container = layer.closest('.four-layers');
+  if (container) { updateLayerDots(container); }
+}
+
+function jumpToLayer(containerId, layerIndex) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var layers = container.querySelectorAll('.layer');
+
+  layers.forEach(function(l, i) {
+    if (i <= layerIndex) l.classList.add('open');
+    else l.classList.remove('open');
+  });
+
+  updateLayerDots(container);
+}
+
+function updateLayerDots(container) {
+  var layers = container.querySelectorAll('.layer');
+  var dots = container.querySelectorAll('.layer-dot');
+
+  layers.forEach(function(l, i) {
+    if (dots[i]) {
+      if (l.classList.contains('open')) dots[i].classList.add('active');
+      else dots[i].classList.remove('active');
+    }
+  });
+}
+
+
+/* ===================================================
+   QUERY RESULT MATERIALIZER
+   =================================================== */
+function showResult(id) {
+  var resultArea = document.getElementById(id + '-result');
+  if (resultArea) { resultArea.classList.toggle('open'); }
+}
+
+
+/* ===================================================
+   REVEAL TOGGLE (for exercise answers)
+   =================================================== */
+function toggleReveal(id) {
+  var area = document.getElementById(id);
+  if (area) { area.classList.toggle('open'); }
+}
+
+
+/* ===================================================
+   EXERCISE CHECKING
+   =================================================== */
+var exercisesCompleted = { ex1: false, ex2: false, ex3: false };
+
+function setFeedback(elementId, isCorrect, message) {
+  var feedback = document.getElementById(elementId);
+  feedback.className = isCorrect ? 'feedback correct' : 'feedback incorrect';
+  feedback.textContent = '';
+  var span = document.createElement('span');
+  span.textContent = message;
+  feedback.appendChild(span);
+  feedback.style.display = 'block';
+}
+
+function checkExercise1() {
+  var input = document.getElementById('ex1-input').value.toLowerCase().trim();
+  var feedbackId = 'ex1-feedback';
+
+  if (input.length < 10) {
+    setFeedback(feedbackId, false, 'Write a bit more -- describe what columns and rows the result would contain.');
+    return;
+  }
+
+  var hasWhiterun = input.indexOf('whiterun') !== -1;
+  var hasHold = input.indexOf('hold') !== -1;
+  var hasRace = input.indexOf('race') !== -1;
+  var hasFaction = input.indexOf('faction') !== -1;
+  var hasFilter = hasWhiterun || (hasHold && (input.indexOf('filter') !== -1 || input.indexOf('where') !== -1 || input.indexOf('only') !== -1 || input.indexOf('match') !== -1));
+  var hasColumns = hasRace || hasFaction || hasHold;
+
+  if (hasFilter && hasColumns) {
+    setFeedback(feedbackId, true, 'Correct. The query returns race, faction, and hold for characters in the Whiterun hold -- Lydia, Nazeem, Aela, and Balgruuf. Ulfric is excluded (Eastmarch).');
+    exercisesCompleted.ex1 = true;
+    checkAllComplete();
+  } else if (hasFilter || hasColumns) {
+    setFeedback(feedbackId, false, 'On the right track. Make sure to mention both what columns are selected (race, faction, hold) and what the WHERE filter does (only Whiterun).');
+  } else {
+    setFeedback(feedbackId, false, 'Look at the three clauses: SELECT tells you what columns (race, faction, hold), FROM tells you the table, WHERE tells you the filter. Describe what each does.');
+  }
+}
+
+function checkExercise2() {
+  var input = document.getElementById('ex2-input').value.trim().toLowerCase();
+  var feedbackId = 'ex2-feedback';
+
+  if (input.length < 10) {
+    setFeedback(feedbackId, false, 'Write a SELECT ... FROM ... WHERE ... query.');
+    return;
+  }
+
+  var hasSelect = input.indexOf('select') !== -1;
+  var hasFrom = input.indexOf('from') !== -1 && (input.indexOf('sat_character') !== -1 || input.indexOf('character_details') !== -1);
+  var hasWhere = input.indexOf('where') !== -1 && input.indexOf('faction') !== -1 && input.indexOf("'companions'") !== -1;
+
+  if (hasSelect && hasFrom && hasWhere) {
+    setFeedback(feedbackId, true, 'Correct. SELECT with columns, FROM the right Satellite table, WHERE faction = \'Companions\'. The result would be Lydia and Aela.');
+    exercisesCompleted.ex2 = true;
+    checkAllComplete();
+  } else if (hasSelect && hasWhere && !hasFrom) {
+    setFeedback(feedbackId, false, 'SELECT and WHERE look right, but check your FROM clause -- it should point to Sat_Character_Details.');
+  } else if (hasSelect && hasFrom && !hasWhere) {
+    setFeedback(feedbackId, false, 'SELECT and FROM look good. Now add a WHERE clause: WHERE faction = \'Companions\' (single quotes around the value).');
+  } else {
+    setFeedback(feedbackId, false, 'Start with SELECT, then FROM, then WHERE. Remember: single quotes around the text value.');
+  }
+}
+
+function checkExercise3() {
+  var input = document.getElementById('ex3-input').value.toLowerCase().trim();
+  var feedbackId = 'ex3-feedback';
+
+  if (input.length < 5) {
+    setFeedback(feedbackId, false, 'Look at the WHERE clause carefully. What is the rule about NULL?');
+    return;
+  }
+
+  var hasIsNull = input.indexOf('is null') !== -1 || input.indexOf('is_null') !== -1;
+  var hasEqualsIssue = input.indexOf('= null') !== -1 || input.indexOf('equals null') !== -1 || input.indexOf('equal null') !== -1;
+  var hasCorrection = input.indexOf('can\'t') !== -1 || input.indexOf('cannot') !== -1 || input.indexOf('should') !== -1 || input.indexOf('instead') !== -1 || input.indexOf('wrong') !== -1;
+
+  if (hasIsNull || (hasEqualsIssue && hasCorrection)) {
+    setFeedback(feedbackId, true, 'Correct. = NULL does not work -- it should be IS NULL. Because NULL means "unknown," the equality check evaluates to UNKNOWN rather than TRUE, so zero rows are returned.');
+    exercisesCompleted.ex3 = true;
+    checkAllComplete();
+  } else {
+    setFeedback(feedbackId, false, 'Look at how NULL is being compared. Remember the special rule about checking for NULL values.');
+  }
+}
+
+function checkAllComplete() {
+  if (exercisesCompleted.ex1 && exercisesCompleted.ex2 && exercisesCompleted.ex3) {
+    var banner = document.getElementById('completion-banner');
+    banner.style.display = 'block';
+    setTimeout(function() {
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+}
+
+
+/* ===================================================
+   INITIALIZE
+   =================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.four-layers').forEach(function(container) {
+    updateLayerDots(container);
+  });
+});
+</script>
+
+<script src="../nav-inject.js"></script>
+
+
+<!-- ═══════ Game UI Elements ═══════ -->
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar -->
+<div id="inventory-toolbar" class="inventory-toolbar">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel -->
+<div id="inventory-panel" class="inventory-panel hidden">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script>
+/* ═══════ Game system init + scroll-based item discovery ═══════ */
+document.addEventListener('DOMContentLoaded', function() {
+  /* Initialize game systems */
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+    if (SV.achievements) SV.achievements.init();
+  }
+
+  var items = ['select-clause', 'from-clause', 'where-clause', 'three-valued-logic'];
+  var granted = {};
+
+  /* Restore already-granted items from persistence */
+  if (typeof SV !== 'undefined' && SV.persistence) {
+    var inv = SV.persistence.get('inventory', []);
+    for (var i = 0; i < inv.length; i++) { granted[inv[i].id] = true; }
+  }
+
+  function getScrollPct() {
+    var h = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    return window.scrollY / h;
+  }
+
+  function checkScroll() {
+    var pct = getScrollPct();
+    for (var i = 0; i < items.length; i++) {
+      var threshold = (i + 0.5) / items.length;
+      if (pct >= threshold && !granted[items[i]]) {
+        granted[items[i]] = true;
+        if (typeof SV !== 'undefined' && SV.inventory && SV.inventory.addItem) {
+          SV.inventory.addItem(items[i]);
+        }
+      }
+    }
+  }
+
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  setTimeout(checkScroll, 1500);
+});
+</script>
+
+</body>
+</html>

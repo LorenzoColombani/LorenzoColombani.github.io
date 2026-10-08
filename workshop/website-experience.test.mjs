@@ -2,18 +2,59 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as THREE from './vendor/three.module.min.js';
+import {PRODUCTS} from './product-catalog.js';
 const encode=s=>`data:text/javascript;base64,${Buffer.from(s).toString('base64')}`;
 const threeURL=new URL('./vendor/three.module.min.js',import.meta.url).href;
 const source=(await readFile(new URL('./website-experience.js',import.meta.url),'utf8')).replace("from 'three'",`from '${threeURL}'`).replace(/from '\.\/product-gestures\.js(?:\?[^']*)?'/,`from '${new URL('./product-gestures.js',import.meta.url).href}'`);
 const {createWebsiteExperience,websiteSource}=await import(encode(source));
 
 const item={id:'ai-applied',title:'AI, Applied.',website:{url:'https://wharton-ai-use-cases.netlify.app/',prototype:true,enabled:false}};
-test('the garage prototype points at the real HTTPS site and stays disabled on production until rollout',()=>{
+test('a prototype-only website requires localhost until explicitly enabled',()=>{
  assert.equal(websiteSource(item,{hostname:'127.0.0.1'}).url,item.website.url);
  assert.equal(websiteSource(item,{hostname:'the-workshop-garage-lorenzo.netlify.app'}),null);
  assert.equal(websiteSource({...item,website:{...item.website,enabled:true}},{hostname:'the-workshop-garage-lorenzo.netlify.app'}).url,item.website.url);
  for(const url of ['javascript:alert(1)','http://example.org/','not a url','https://user:password@example.org/'])assert.equal(websiteSource({...item,website:{url,enabled:true}},{hostname:'localhost'}),null);
  assert.equal(websiteSource({id:'bridge'},{hostname:'localhost'}),null);
+});
+
+const imported={...item,website:{...item.website,enabled:true,localPath:'/workshop/experiences/websites/ai-applied/'}};
+test('imported entries resolve on the Garage origin and retain their canonical source URL and permission state',()=>{
+ for(const origin of ['http://127.0.0.1:8766','http://localhost:8766','https://the-workshop-garage-lorenzo.netlify.app']){
+  for(const suffix of ['', 'index.html']){
+   const localPath=imported.website.localPath+suffix;
+   const result=websiteSource({...imported,website:{...imported.website,localPath}},new URL(origin));
+   assert.equal(result.url,origin+localPath);assert.equal(result.publicURL,item.website.url);assert.equal(result.pending,false);
+  }
+ }
+ assert.equal(websiteSource({...imported,website:{...imported.website,pendingPermission:true}},new URL('http://localhost:8766')).pending,true);
+});
+
+test('a supplied invalid imported entry rejects the card instead of falling back to its remote URL',()=>{
+ const base=imported.website.localPath;
+ const invalid=[undefined,null,false,42,{},'',base.slice(0,-1),'workshop/experiences/websites/ai-applied/',
+  '/workshop/experiences/bridge/', '/workshop/experiences/websites/', '/workshop/experiences/websites/AI/',
+  '/workshop/experiences/websites/-ai/', '/workshop/experiences/websites/ai--applied/',
+  base+'app.html',base+'nested/index.html',base+'../other/',base+'./index.html',
+  base+'%2e%2e/other/',base+'%252e%252e/other/',base+'%2findex.html',base+'%5cindex.html',
+  base+'?url=https://example.org/',base+'#index.html',base+'index.html?x=1',base+'index.html#x',
+  base+'\n',base+'\t',' '+base,base.replaceAll('/','\\'),
+  '//example.org'+base,'https://example.org'+base,'https://user:password@example.org'+base];
+ for(const localPath of invalid)assert.equal(websiteSource({...imported,website:{...imported.website,localPath}},new URL('http://localhost:8766')),null,String(localPath));
+});
+
+test('imported entries require a secure Garage origin or an exact local development host',()=>{
+ for(const origin of ['http://example.org','http://192.168.1.5:8766','http://localhost.example.org:8766','ftp://localhost','file://','null','https://user:password@example.org','https://example.org/path','https://example.org?x=1']){
+  assert.equal(websiteSource(imported,{hostname:'localhost',origin}),null,origin);
+ }
+ assert.equal(websiteSource(imported,{hostname:'localhost'}),null);
+ for(const url of ['http://example.org/','javascript:alert(1)','https://user:password@example.org/'])assert.equal(websiteSource({...imported,website:{...imported.website,url}},new URL('http://localhost:8766')),null);
+});
+
+test('imported entries keep the existing enabled and localhost prototype gates',()=>{
+ const prototype={...imported,website:{...imported.website,enabled:false}};
+ assert.equal(websiteSource(prototype,new URL('http://localhost:8766')).url,'http://localhost:8766'+imported.website.localPath);
+ assert.equal(websiteSource(prototype,new URL('https://the-workshop-garage-lorenzo.netlify.app')),null);
+ assert.equal(websiteSource({...prototype,website:{...prototype.website,prototype:false}},new URL('http://localhost:8766')),null);
 });
 
 class Element {
@@ -33,7 +74,7 @@ class Element {
 function setup(t,width=1200,height=800){
  const keys=['document','window','innerWidth','innerHeight','addEventListener','removeEventListener'],previous=keys.map(k=>Object.getOwnPropertyDescriptor(globalThis,k));
  const all=[],doc={defaultView:{Element},querySelector:()=>null};doc.body=new Element('body',doc);doc.createElement=tag=>{const e=new Element(tag,doc);all.push(e);return e;};const events=new Map(),timers=new Map();let nextTimer=0;
- Object.assign(globalThis,{document:doc,window:{location:{hostname:'localhost'},matchMedia:()=>({matches:true})},innerWidth:width,innerHeight:height,addEventListener:(k,fn)=>events.set(k,fn),removeEventListener:k=>events.delete(k)});
+ Object.assign(globalThis,{document:doc,window:{location:new URL('http://localhost:8766'),matchMedia:()=>({matches:true})},innerWidth:width,innerHeight:height,addEventListener:(k,fn)=>events.set(k,fn),removeEventListener:k=>events.delete(k)});
  t.mock.method(globalThis,'setTimeout',fn=>{timers.set(++nextTimer,fn);return nextTimer;});t.mock.method(globalThis,'clearTimeout',id=>timers.delete(id));
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(43,width/height,.1,100),canvas=doc.createElement('canvas');camera.position.set(0,5,12);camera.lookAt(0,4.75,1.5);camera.updateMatrixWorld();let opened=0,closed=0;const viewer=createWebsiteExperience({scene,camera,canvas,onOpen:()=>opened++,onClose:()=>closed++});
  const shell=doc.body.children[0],panel=all.find(e=>e.className==='holo-website'),bar=panel.children[0],content=panel.children[1];
@@ -41,6 +82,46 @@ function setup(t,width=1200,height=800){
  t.after(()=>{viewer.dispose();keys.forEach((k,i)=>previous[i]?Object.defineProperty(globalThis,k,previous[i]):delete globalThis[k]);});
  return {viewer,doc,shell,panel,bar,content,frame,timers,events,scene,camera,canvas,get opened(){return opened;},get closed(){return closed;}};
 }
+
+test('imported pages load only on launch, keep the original source link, and unload on return',t=>{
+ const h=setup(t);assert.equal(h.viewer.canOpen(imported),true);assert.equal(h.frame(),undefined);
+ assert.equal(h.viewer.open(imported),true);const frame=h.frame();
+ assert.equal(frame.src,'http://localhost:8766'+imported.website.localPath);
+ assert.equal(h.bar.children[1].children[1].href,item.website.url);
+ assert.equal(frame.attributes.sandbox,'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals');
+ frame.emit('load');h.bar.children[1].children[0].emit('click');assert.equal(h.frame(),frame);assert.equal(frame.attachments,1);
+ h.viewer.close();assert.equal(frame.src,'about:blank');assert.equal(h.frame(),undefined);assert.equal(h.closed,1);assert.equal(h.timers.size,0);
+});
+
+test('the shipped website catalogue opens real entry points one at a time and preserves dedicated experiences',async t=>{
+ const h=setup(t),location=new URL('https://the-workshop-garage-lorenzo.netlify.app');
+ for(const product of PRODUCTS){
+  if(!product.website){assert.equal(h.viewer.canOpen(product),false);continue;}
+  const resolved=websiteSource(product,location);
+  assert.ok(resolved,product.id);assert.equal(resolved.pending,false,product.id);
+  if(product.website.localPath){
+   const entry=new URL('..'+product.website.localPath+'index.html',import.meta.url);
+   assert.match(await readFile(entry,'utf8'),/<html[\s>]/i,product.id+' must have a real imported document');
+  }
+  assert.equal(h.frame(),undefined,'catalogue does not preload websites');
+  assert.equal(h.viewer.open(product),true,product.id);
+  assert.equal(product.website.native,undefined,'site previews are the active presentation');
+  assert.equal(h.frame().src,websiteSource(product,new URL('http://localhost:8766')).url);
+  assert.equal(h.frame().attributes.sandbox.includes('allow-modals'),Boolean(product.website.localPath),'dialogs are limited to owned imports');
+  h.frame().emit('load');h.viewer.close();assert.equal(h.frame(),undefined,'return unloads '+product.id);
+ }
+ for(const id of ['bridge','tva','openbots','privacy-protection-meta-data-eraser','what-is-it-like-to-be-french','a-demonstration-of-the-3d-data-vault-mechanism']){
+  assert.equal(PRODUCTS.find(product=>product.id===id).website,undefined,id+' keeps its existing route');
+ }
+});
+
+
+
+test('an invalid imported entry cannot launch or replace the current website',t=>{
+ const h=setup(t),invalid={...imported,website:{...imported.website,localPath:'/workshop/'}};
+ assert.equal(h.viewer.canOpen(invalid),false);assert.equal(h.viewer.open(invalid),false);assert.equal(h.frame(),undefined);assert.equal(h.opened,0);
+ h.viewer.open(item);const frame=h.frame();assert.equal(h.viewer.open(invalid),false);assert.equal(h.frame(),frame);assert.equal(h.opened,1);assert.equal(h.closed,0);
+});
 
 function projectedBounds(h,width,height){
  const pose=h.viewer.getFocusPose();h.camera.position.copy(pose.position);h.camera.lookAt(pose.target);h.camera.updateMatrixWorld();h.viewer.update(1/60);

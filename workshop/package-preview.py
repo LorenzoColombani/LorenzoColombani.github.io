@@ -42,6 +42,12 @@ ROOT_ASSETS = {
     'assets/fonts/jbmono-400.woff2',
 }
 OPTIONAL_MISSING = {'workshop/experiences/tva/assets/homemade/score.m4a'}
+WEBSITE_PREFIX = 'workshop/experiences/websites/'
+WEBSITES = {
+    'ai-applied', 'data-vault-foundations', 'exam-pacer', 'star-wars-decluttering-app',
+    'text-readability-guide', 'easy-local-llm-guide', 'ios-assistant-for-senior-citizens',
+    'can-you-understand-an-email', 'multicultural-job-applicants-guide', 'gamification-helper-tool',
+}
 MODULE_RE = re.compile(
     r'''(?:^|[;\n])\s*(?:import|export)\s*(?:[\w\s{},*$]+?\bfrom\s*)?['"]([^'"\n]+)['"]|\bimport\s*\(\s*['"]([^'"\n]+)['"]'''
 )
@@ -49,6 +55,37 @@ ASSET_RE = re.compile(
     r'''(['"])([^'"\n]+\.(?:glb|mp4|webm|m4a|mp3|opus|woff2?|ttf|webp|png|jpe?g|svg|json)(?:\?[^'"\n]*)?)\1'''
 )
 PORTFOLIO_RE = re.compile(r'''(['"])(\.\./(?:work(?:/[^'"\s]*)?)?)\1''')
+
+
+def website_parts(path: str) -> tuple[str, str] | None:
+    if not path.startswith(WEBSITE_PREFIX):
+        return None
+    slug, separator, relative = path.removeprefix(WEBSITE_PREFIX).partition('/')
+    return (slug, relative) if separator and slug in WEBSITES else None
+
+
+def website_allowed(slug: str, relative: str) -> bool:
+    # Deliberately exclude provenance, source maps, source/config files and hidden
+    # state. New runtime layouts require a reviewed addition to this allowlist.
+    if relative == 'index.html' or re.fullmatch(r'(?:LICENSE|LICENCE|COPYING|NOTICE)(?:\.(?:txt|md))?', relative, re.I):
+        return True
+    if slug == 'ai-applied':
+        return bool(
+            relative in {'404.html', 'favicon.svg', 'logo.svg', 'og-default.png',
+                         'contributors/index.html', 'attachments/wealthy-commitments-report.pdf'}
+            or re.fullmatch(r'(?:use-cases|contributors)/[a-z0-9-]+/index\.html', relative)
+            or re.fullmatch(r'_astro/[A-Za-z0-9_.-]+\.(?:js|css)', relative)
+        )
+    if slug == 'data-vault-foundations':
+        return bool(
+            relative == 'nav-inject.js'
+            or re.fullmatch(r'chapters/\d{2}-[a-z0-9-]+\.html', relative)
+            or re.fullmatch(r'systems/[a-z0-9-]+\.js', relative)
+            or re.fullmatch(r'assets/sounds/[a-z0-9-]+\.mp3', relative)
+        )
+    if slug in {'can-you-understand-an-email', 'multicultural-job-applicants-guide'}:
+        return bool(re.fullmatch(r'assets/index-[A-Za-z0-9_-]+\.(?:js|css)', relative))
+    return False
 
 
 def fail(message: str) -> None:
@@ -73,12 +110,18 @@ def local_path(reference: str, base: str) -> str | None:
     path = posixpath.normpath(path.lstrip('/') if path.startswith('/') else posixpath.join(base, path))
     if path == '..' or path.startswith('../'):
         fail(f'Reference escapes the site: {reference!r} from {base}')
-    if reference.split('?', 1)[0].endswith('/'):
+    if parts.path.endswith('/'):
+        path = posixpath.join(path, 'index.html')
+    website = website_parts(path)
+    if website and website[0] == 'ai-applied' and re.fullmatch(r'(?:contributors|(?:use-cases|contributors)/[a-z0-9-]+)', website[1]):
         path = posixpath.join(path, 'index.html')
     return path
 
 
 def allowed(path: str) -> bool:
+    website = website_parts(path)
+    if website:
+        return website_allowed(*website)
     if path in ROOT_ASSETS:
         return True
     if path.startswith('workshop/experiences/bridge/'):
@@ -105,20 +148,33 @@ def allowed(path: str) -> bool:
 
 
 class References(HTMLParser):
-    def __init__(self) -> None:
+    def __init__(self, website: bool = False) -> None:
         super().__init__()
+        self.website = website
         self.urls: list[str] = []
         self.maps: list[str] = []
         self.in_importmap = False
 
     def handle_starttag(self, tag: str, attributes: list[tuple[str, str | None]]) -> None:
         attrs = dict(attributes)
-        for key in ('src', 'poster'):
+        for key in ('src', 'poster', 'component-url', 'renderer-url', 'before-hydration-url'):
             if attrs.get(key):
                 self.urls.append(attrs[key])
-        if tag == 'link' and attrs.get('href'):
+        if (tag == 'link' or (self.website and tag == 'a')) and attrs.get('href'):
             self.urls.append(attrs['href'])
+        if self.website and tag == 'astro-island' and attrs.get('props'):
+            self.prop_urls(json.loads(attrs['props']))
         self.in_importmap = tag == 'script' and attrs.get('type') == 'importmap'
+
+    def prop_urls(self, value: object) -> None:
+        if isinstance(value, str) and value.startswith('/') and not value.startswith('//'):
+            self.urls.append(value)
+        elif isinstance(value, list):
+            for item in value:
+                self.prop_urls(item)
+        elif isinstance(value, dict):
+            for item in value.values():
+                self.prop_urls(item)
 
     def handle_endtag(self, tag: str) -> None:
         if tag == 'script':
@@ -131,7 +187,7 @@ class References(HTMLParser):
 
 def transform(path: str, source: str) -> str:
     text = source
-    if path.startswith('workshop/') and path.endswith(('.html', '.js')):
+    if path.startswith('workshop/') and not website_parts(path) and path.endswith(('.html', '.js')):
         text = PORTFOLIO_RE.sub(lambda m: m[1] + CANONICAL + m[2][3:] + m[1], text)
     if path == 'workshop/main.js' and 'goldenThreads' in text:
         interface = (ROOT / 'workshop/world-interface.js').read_text()
@@ -159,9 +215,10 @@ def transform(path: str, source: str) -> str:
 
 def dependencies(path: str, text: str) -> set[str]:
     base = posixpath.dirname(path)
+    website = website_parts(path)
     references: list[tuple[str, str]] = []
     if path.endswith('.html'):
-        parser = References()
+        parser = References(website=website is not None)
         parser.feed(text)
         references += [(url, base) for url in parser.urls + parser.maps]
     elif path.endswith('.css'):
@@ -179,13 +236,15 @@ def dependencies(path: str, text: str) -> set[str]:
             else:
                 fail(f'Unresolved bare module {reference!r} in {path}')
         if '/vendor/' not in path:
-            document_base = 'workshop/experiences/' + path.split('/experiences/', 1)[1].split('/')[0] if '/experiences/' in path else 'workshop'
+            document_base = WEBSITE_PREFIX + website[0] if website else ('workshop/experiences/' + path.split('/experiences/', 1)[1].split('/')[0] if '/experiences/' in path else 'workshop')
             references += [(match[2], document_base) for match in ASSET_RE.finditer(clean) if '/' in match[2]]
             references += [(match[2], document_base) for match in re.finditer(r'''\.src\s*=\s*(['"])(\.[^'"]*/(?:\?[^'"]*)?)\1''', clean)]
     result = set()
     for reference, reference_base in references:
         target = local_path(reference, reference_base)
         if target is not None and target not in OPTIONAL_MISSING:
+            if website and not target.startswith(WEBSITE_PREFIX + website[0] + '/'):
+                fail(f'Imported website dependency escapes its app: {path}: {reference}')
             result.add(target)
     return result
 
@@ -208,6 +267,14 @@ def build() -> tuple[dict[str, bytes], dict[str, str], int]:
     # The authored Bridge audio bank composes URLs from a directory and cue names.
     # Seed its curated copy because those dynamic references cannot be inferred.
     queue.extend(str(path.relative_to(ROOT)) for path in (ROOT / 'workshop/experiences/bridge').rglob('*') if path.is_file() and allowed(str(path.relative_to(ROOT))))
+    # Static imports have dynamically generated chapter/card routes and sound
+    # URLs. Seed every allowed runtime file, plus every required entry point.
+    # SOURCE.json is intentionally not used to select public package contents.
+    for slug in sorted(WEBSITES):
+        app = ROOT / WEBSITE_PREFIX / slug
+        queue.append(f'{WEBSITE_PREFIX}{slug}/index.html')
+        queue.extend(path.relative_to(ROOT).as_posix() for path in app.rglob('*')
+                     if path.is_file() and allowed(path.relative_to(ROOT).as_posix()))
     files: dict[str, bytes] = {}
     sources: dict[str, str] = {}
     edges = 0
@@ -245,8 +312,12 @@ def build() -> tuple[dict[str, bytes], dict[str, str], int]:
 def verify(files: dict[str, bytes]) -> int:
     required = ROOT_ASSETS | {'workshop/assets/robot.glb', 'workshop/assets/sofa.glb',
                              'workshop/assets/plant.glb', 'workshop/media/workshop-garage-rock-v1.mp3', 'workshop/media/openbots.mp4', 'workshop/assets/social-preview.png'}
+    required |= {f'{WEBSITE_PREFIX}{slug}/index.html' for slug in WEBSITES}
     if required - files.keys():
         fail(f'Required assets missing: {sorted(required - files.keys())}')
+    uncurated = {path for path in files if path.startswith(WEBSITE_PREFIX) and not allowed(path)}
+    if uncurated:
+        fail(f'Uncurated imported website files: {sorted(uncurated)}')
     node = shutil.which('node')
     if not node:
         fail('Node is required for JavaScript syntax checks; package not written.')
@@ -256,7 +327,7 @@ def verify(files: dict[str, bytes]) -> int:
             text = data.decode('utf-8')
             if path.endswith('.html') and text.count(ROBOTS_META) != 1:
                 fail(f'Noindex coverage failed: {path}')
-            if path.endswith(('.html', '.js')) and PORTFOLIO_RE.search(text):
+            if path.endswith(('.html', '.js')) and not website_parts(path) and PORTFOLIO_RE.search(text):
                 fail(f'Unconverted portfolio navigation: {path}')
             missing = dependencies(path, text) - files.keys()
             if missing:

@@ -7,7 +7,16 @@ export function websiteSource(item,location){
   if(publicURL.protocol!=='https:'||publicURL.username||publicURL.password)return null;
   const local=['127.0.0.1','localhost'].includes(location.hostname);
   if(!website.enabled&&!(local&&website.prototype))return null;
-  return {url:publicURL.href,publicURL:publicURL.href,pending:Boolean(website.pendingPermission),poster:website.poster};
+  let url=publicURL;
+  if(Object.hasOwn(website,'localPath')){
+    // Imported apps have one explicit entry point; never normalize arbitrary
+    // routes or silently fall back to the remote site after invalid input.
+    if(typeof website.localPath!=='string'||!/^\/workshop\/experiences\/websites\/[a-z0-9]+(?:-[a-z0-9]+)*\/(?:index\.html)?$/.test(website.localPath))return null;
+    try{url=new URL(website.localPath,location.origin);}catch{return null;}
+    if(url.origin!==location.origin||url.pathname!==website.localPath||url.username||url.password)return null;
+    if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['127.0.0.1','localhost'].includes(url.hostname)))return null;
+  }
+  return {url:url.href,publicURL:publicURL.href,pending:Boolean(website.pendingPermission),poster:website.poster};
 }
 
 /** A real, responsive web page inside the Workshop's projected screen. */
@@ -199,7 +208,8 @@ export function createWebsiteExperience({scene,camera,canvas,onOpen,onClose,onGe
     // The direct shell parent was connected before this navigation began.
     frame=document.createElement('iframe');frame.className='holo-website-frame';frame.title=`${item.title} — interactive website`;
     frame.setAttribute('allow','clipboard-write; fullscreen');
-    frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads');
+    // Owned imports retain their original confirm/alert controls.
+    frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads'+(item.website.localPath?' allow-modals':''));
     frame.referrerPolicy='strict-origin-when-cross-origin';frame.src=source.url;
     frame.addEventListener('load',()=>{if(token!==generation||!active||closing)return;clearTimers();status.hidden=true;});
     frame.addEventListener('error',()=>failed(token));content.append(frame);

@@ -29,8 +29,9 @@ test('missed throws and invalid pointer coordinates stay inside the product disp
  assert.deepEqual(boundedCardPosition({x:12,y:-9},bounds),{x:2,y:-1});
  assert.deepEqual(boundedCardPosition({x:NaN,y:Infinity},bounds),{x:0,y:0});
 });
-test('the catalogue keeps the two authored experiences and all published project records',()=>{
- assert.equal(PRODUCTS.length,26);assert.equal(new Set(PRODUCTS.map(p=>p.id)).size,PRODUCTS.length);
+test('the catalogue keeps the authored experiences and omits the retired seaside Workshop card',()=>{
+ assert.equal(PRODUCTS.length,25);assert.equal(new Set(PRODUCTS.map(p=>p.id)).size,PRODUCTS.length);
+ assert.equal(PRODUCTS.some(p=>p.id==='the-workshop'),false);
  assert.deepEqual(PRODUCTS.filter(p=>p.featured).map(p=>p.id),['bridge','tva']);
  assert.ok(PRODUCTS.every(p=>p.title&&p.description&&new URL(p.url).protocol==='https:'));
  assert.ok(PRODUCTS.some(p=>p.id==='exam-pacer'));assert.ok(PRODUCTS.some(p=>p.title==='One Thing Today'));

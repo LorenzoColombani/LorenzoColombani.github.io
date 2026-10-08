@@ -1,5 +1,5 @@
 // Catalogue from the public home and /work/ pages, verified 2026-09-24.
-// Descriptions are portfolio copy; external pages open only on explicit link activation.
+// Descriptions are portfolio copy. Websites load only after an explicit card launch.
 export const PRODUCTS = [
   {
     "id": "bridge",
@@ -24,17 +24,6 @@ export const PRODUCTS = [
     "number": "02"
   },
   {
-    "id": "the-workshop",
-    "symbol": "Ws",
-    "title": "The Workshop",
-    "category": "3D World · In progress",
-    "description": "A portfolio you walk into: a real-time 3D pavilion over the ocean, where the work sits on a table and opens when you touch it. Drag to look around, touch an object to use it. Still being built — shown as it renders today.",
-    "url": "https://lorenzocolombani.com/work/the-workshop/",
-    "featured": false,
-    "linkLabel": "View case study",
-    "number": "03"
-  },
-  {
     "id": "openbots",
     "symbol": "Ob",
     "title": "OpenBots",
@@ -52,6 +41,7 @@ export const PRODUCTS = [
     "category": "Learning Platform",
     "description": "A 14-chapter interactive learning platform — Data Vault architecture, SQL, dbt, EU compliance, Python — with quests, feedback and hands-on exercises. Independent work; for certification and enterprise Data Vault, see Scalefree.",
     "url": "https://lorenzocolombani.com/work/data-vault-foundations/",
+    "website": {"url":"https://datavault-foundations.netlify.app/","localPath":"/workshop/experiences/websites/data-vault-foundations/","enabled":true,"pendingPermission":false},
     "featured": false,
     "linkLabel": "View case study",
     "number": "05"
@@ -63,7 +53,7 @@ export const PRODUCTS = [
     "category": "Curation · Wharton",
     "description": "A searchable library of 87 real-world AI use cases. I convened the contributors and built the site for the Wharton Alumni AI Studio (an alumni nonprofit) — spotlight rotation, fuzzy search, contributor profiles; Astro, React, GSAP.",
     "url": "https://lorenzocolombani.com/work/ai-applied/",
-    "website": {"url": "https://wharton-ai-use-cases.netlify.app/", "prototype": true, "enabled": false, "pendingPermission": false, "poster": "../assets/previews/wharton.webp"},
+    "website": {"url":"https://wharton-ai-use-cases.netlify.app/","localPath":"/workshop/experiences/websites/ai-applied/","enabled":true,"pendingPermission":false,"poster":"../assets/previews/wharton.webp"},
     "featured": false,
     "linkLabel": "View case study",
     "number": "06"
@@ -75,6 +65,7 @@ export const PRODUCTS = [
     "category": "ai-tools",
     "description": "Unwind. Too many thoughts on your mind? Talk to our AI. It will actively listen to you and help you work through your thoughts without offering unsolicited advice. No clock. Free. Available 24/7.",
     "url": "https://www.makeworkingfun.com/s-projects-side-by-side",
+    "website": {"url":"https://www.makeworkingfun.com/s-projects-side-by-side","enabled":true},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "07"
@@ -84,7 +75,7 @@ export const PRODUCTS = [
     "symbol": "Ot",
     "title": "One Thing Today",
     "category": "ai-tools",
-    "description": "Use this tool to increase your feeling of self-reliance. Focus on accomplishing one meaningful thing each day to build momentum and confidence.",
+    "description": "Focus on accomplishing one meaningful thing each day to build momentum and confidence. The hosted wheel is currently unavailable; the original project page is linked below.",
     "url": "https://www.makeworkingfun.com/one-thing-today",
     "featured": false,
     "linkLabel": "Open original project",
@@ -97,6 +88,7 @@ export const PRODUCTS = [
     "category": "ai-tools",
     "description": "An engaging, interactive Star Wars-themed decluttering app offering actionable advice for physical and digital organization. Integrates strategies from Dana K. White's \"Decluttering at the Speed of Life\" and Cal Newport's \"Digital Minimalism\".",
     "url": "https://lorenzocolombani.com/star-wars-decluttering/",
+    "website": {"url":"https://lorenzocolombani.com/star-wars-decluttering/","localPath":"/workshop/experiences/websites/star-wars-decluttering-app/","enabled":true,"pendingPermission":false},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "09"
@@ -108,6 +100,7 @@ export const PRODUCTS = [
     "category": "ai-tools",
     "description": "Based on groundbreaking scientific research by Kruger, Epley, Parker, and Zhi-Wen Ng, this mini-website turns their world-famous paper on communication illusions into a tangible minigame.",
     "url": "https://lorenzocolombani.com/tone-illusion/",
+    "website": {"url":"https://lorenzocolombani.com/tone-illusion/","localPath":"/workshop/experiences/websites/can-you-understand-an-email/","enabled":true,"pendingPermission":false},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "10"
@@ -130,6 +123,7 @@ export const PRODUCTS = [
     "category": "ai-tools",
     "description": "A French webapp teaching iOS basics for seniors: swipe gestures, sending emails, messaging apps, intro to phishing and scamming, and basic troubleshooting.",
     "url": "https://lorenzocolombani.com/ios-assistant-seniors/",
+    "website": {"url":"https://lorenzocolombani.com/ios-assistant-seniors/","localPath":"/workshop/experiences/websites/ios-assistant-for-senior-citizens/","enabled":true,"pendingPermission":false},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "12"
@@ -141,6 +135,7 @@ export const PRODUCTS = [
     "category": "ai-tools",
     "description": "Sometimes we lose great talents because of cultural misunderstanding. This tool takes you on a short, impactful journey to discover why — and how to fix it.",
     "url": "https://lorenzocolombani.com/multicultural-hiring-guide/",
+    "website": {"url":"https://lorenzocolombani.com/multicultural-hiring-guide/","localPath":"/workshop/experiences/websites/multicultural-job-applicants-guide/","enabled":true,"pendingPermission":false},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "13"
@@ -152,6 +147,7 @@ export const PRODUCTS = [
     "category": "ai-tools",
     "description": "Write more impactful sentences. A concise one-pager with practical tips for clearer, more effective written communication.",
     "url": "https://lorenzocolombani.com/text-readability-guide/",
+    "website": {"url":"https://lorenzocolombani.com/text-readability-guide/","localPath":"/workshop/experiences/websites/text-readability-guide/","enabled":true,"pendingPermission":false},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "14"
@@ -163,6 +159,7 @@ export const PRODUCTS = [
     "category": "ai-tools",
     "description": "A website explaining what local LLMs are, how they protect your privacy, and easy-to-follow guides for installing the most popular ones on Mac.",
     "url": "https://lorenzocolombani.com/easy-local-llm-guide/",
+    "website": {"url":"https://lorenzocolombani.com/easy-local-llm-guide/","localPath":"/workshop/experiences/websites/easy-local-llm-guide/","enabled":true,"pendingPermission":false},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "15"
@@ -174,6 +171,7 @@ export const PRODUCTS = [
     "category": "ai-tools",
     "description": "An interactive tool inspired by Yu-Kai Chou's Octalysis framework from \"Actionable Gamification\". Design engaging experiences using the 8 Core Drives of human motivation.",
     "url": "https://lorenzocolombani.com/octalysis-explorer",
+    "website": {"url":"https://lorenzocolombani.com/octalysis-explorer/","localPath":"/workshop/experiences/websites/gamification-helper-tool/","enabled":true,"pendingPermission":false},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "16"
@@ -185,6 +183,7 @@ export const PRODUCTS = [
     "category": "mental-health",
     "description": "It's difficult to understand depression from an outsider's perspective. Play this idle game — for fun, or to broaden your horizons. Desktop version functional.",
     "url": "https://www.makeworkingfun.com/what-it-feels-like1",
+    "website": {"url":"https://www.makeworkingfun.com/what-it-feels-like1","enabled":true},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "17"
@@ -196,6 +195,7 @@ export const PRODUCTS = [
     "category": "ai-policy",
     "description": "Founded and led a think tank focused on AI governance and human augmentation regulation. Submitted formal recommendations to France's National Ethics Committee and contributed to the Villani Mission on AI.",
     "url": "https://www.thplus.org",
+    "website": {"url":"https://thplus.org/","enabled":true},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "18"
@@ -207,6 +207,7 @@ export const PRODUCTS = [
     "category": "ai-policy",
     "description": "Comprehensive collection of policy analysis work on AI governance, technology regulation, and human augmentation frameworks.",
     "url": "https://www.makeworkingfun.com/general-1",
+    "website": {"url":"https://www.makeworkingfun.com/general-1","enabled":true},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "19"
@@ -251,6 +252,7 @@ export const PRODUCTS = [
     "category": "workflow",
     "description": "Collection of iOS Shortcuts and automation workflows designed to streamline daily tasks and boost productivity.",
     "url": "https://www.makeworkingfun.com/single-project-1",
+    "website": {"url":"https://www.makeworkingfun.com/single-project-1","enabled":true},
     "featured": false,
     "linkLabel": "Open original project",
     "number": "23"
@@ -284,6 +286,7 @@ export const PRODUCTS = [
     "category": "Offline tool",
     "description": "A zero-dependency offline exam pacing timer with banked time, review reserve and session restore. MIT licensed.",
     "url": "https://github.com/LorenzoColombani/exam-pacer",
+    "website": {"url":"https://github.com/LorenzoColombani/exam-pacer","localPath":"/workshop/experiences/websites/exam-pacer/","enabled":true,"pendingPermission":false},
     "featured": false,
     "linkLabel": "View on GitHub",
     "number": "26"

@@ -9,3 +9,10 @@
 .playwright-mcp/
 
 .DS_Store
+
+# Local reference media, release receipts and linked-account state.
+.claude/
+.netlify/
+
+# Private import provenance retains local source paths; runtime/license files ship.
+workshop/experiences/websites/*/SOURCE.json

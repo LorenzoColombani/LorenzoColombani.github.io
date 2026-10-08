@@ -1,0 +1,3692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 5: Compliance and GDPR — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #030810;
+  --bg-void: #010409;
+  --pm-surface: rgba(8, 20, 42, 0.82);
+  --pm-surface-hover: rgba(12, 28, 54, 0.88);
+  --pm-glass: rgba(0, 180, 255, 0.06);
+  --pm-glass-edge: rgba(0, 180, 255, 0.12);
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+  --sql-select: #22c55e;
+  --sql-select-dim: rgba(34, 197, 94, 0.08);
+  --sql-select-glow: rgba(34, 197, 94, 0.25);
+  --sql-from: #3b82f6;
+  --sql-from-dim: rgba(59, 130, 246, 0.08);
+  --sql-from-glow: rgba(59, 130, 246, 0.25);
+  --sql-where: #f97316;
+  --sql-where-dim: rgba(249, 115, 22, 0.08);
+  --sql-where-glow: rgba(249, 115, 22, 0.25);
+  --sql-join: #06b6d4;
+  --sql-join-dim: rgba(6, 182, 212, 0.08);
+  --sql-join-glow: rgba(6, 182, 212, 0.3);
+  --sql-on: #e879f9;
+  --sql-on-dim: rgba(232, 121, 249, 0.08);
+  --sql-on-glow: rgba(232, 121, 249, 0.25);
+  --sql-keyword: #ec4899;
+  --sql-string: #fbbf24;
+  --sql-number: #a78bfa;
+  --sql-comment: #64748b;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --accent-dim: rgba(0, 180, 255, 0.06);
+  --accent-color: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --accent-bg: rgba(251, 191, 36, 0.04);
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.3);
+  --border-subtle: rgba(0, 180, 255, 0.08);
+  --border-medium: rgba(0, 180, 255, 0.15);
+  --border-glow: rgba(0, 180, 255, 0.3);
+  --border-active: rgba(0, 180, 255, 0.45);
+  --holo-cyan: #0ef;
+  --holo-cyan-dim: rgba(0, 238, 255, 0.04);
+  /* Compliance / PII colors */
+  --pii-color: #ef4444;
+  --pii-glow: rgba(239, 68, 68, 0.25);
+  --pii-dim: rgba(239, 68, 68, 0.08);
+  --pii-text: #f87171;
+  --gdpr-color: #3b82f6;
+  --gdpr-glow: rgba(59, 130, 246, 0.25);
+  --ai-act-color: #8b5cf6;
+  --ai-act-glow: rgba(139, 92, 246, 0.25);
+  /* Applied Practice zone (Part 2) */
+  --prep-surface: rgba(42, 28, 8, 0.82);
+  --prep-border: rgba(251, 191, 36, 0.15);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Exo 2', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#particle-field {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 15% 20%, rgba(0, 180, 255, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 85% 60%, rgba(168, 85, 247, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 90%, rgba(245, 158, 11, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.scanline-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 238, 255, 0.007) 2px, rgba(0, 238, 255, 0.007) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.scan-bar {
+  position: fixed;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 238, 255, 0.08), transparent);
+  animation: scan-sweep 12s linear infinite;
+  pointer-events: none;
+  z-index: 9997;
+}
+
+@keyframes scan-sweep {
+  0% { top: -3px; }
+  100% { top: 100vh; }
+}
+
+.page-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* NAVIGATION */
+.holo-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(3, 8, 16, 0.9);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nav-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.nav-nodes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0 8px;
+}
+
+.nav-node {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+}
+
+.nav-node:hover {
+  border-color: var(--accent);
+  color: var(--hub-text);
+  background: rgba(0, 180, 255, 0.1);
+  box-shadow: 0 0 18px rgba(0, 180, 255, 0.2);
+}
+
+.nav-node.active {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--bg-deep);
+  background: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.15);
+  animation: node-appear 0.4s ease both, node-pulse 3s ease-in-out 0.4s infinite;
+}
+
+.nav-node.completed {
+  opacity: 1;
+  border-color: var(--sql-select);
+  color: var(--sql-select);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.nav-connector {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+  min-width: 6px;
+  transition: all 0.6s;
+}
+
+.nav-connector.active {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+@keyframes node-pulse {
+  0%, 100% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.1); }
+  50% { box-shadow: 0 0 28px rgba(0, 180, 255, 0.5), 0 0 55px rgba(0, 180, 255, 0.2); }
+}
+
+.nav-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 2px 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* CONTAINER */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 92px 28px 140px;
+}
+
+/* TITLE SECTION */
+.title-section {
+  margin-bottom: 72px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--border-subtle);
+  opacity: 0;
+  animation: matter-form 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes matter-form {
+  0% { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(6px); }
+  40% { filter: blur(2px); }
+  70% { filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.title-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-label::before {
+  content: '';
+  width: 32px; height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.title-section h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text-bright);
+  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 40px rgba(0, 180, 255, 0.12);
+}
+
+.title-section .subtitle {
+  font-size: 17px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  line-height: 1.75;
+  max-width: 620px;
+}
+
+.meta-chips {
+  display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap;
+}
+
+.meta-chip {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 16px;
+  border-radius: 20px;
+  background: var(--holo-cyan-dim);
+  color: var(--text-dim);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.4s;
+}
+
+.meta-chip:hover {
+  border-color: var(--border-medium);
+  color: var(--text-secondary);
+  box-shadow: 0 0 12px rgba(0, 180, 255, 0.08);
+}
+
+/* SECTIONS */
+.section {
+  margin-bottom: 88px;
+}
+
+@supports (animation-timeline: view()) {
+  .section {
+    animation: scroll-materialize both linear;
+    animation-timeline: view();
+    animation-range: entry 0% entry 100%;
+  }
+  @keyframes scroll-materialize {
+    0% { opacity: 0; transform: translateY(30px) scale(0.97); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+}
+
+@supports not (animation-timeline: view()) {
+  .section {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                filter 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    filter: blur(4px);
+  }
+  .section.visible {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.section-tag {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bg-deep);
+  padding: 5px 16px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.section-tag.join-t { background: var(--sql-join); box-shadow: 0 0 14px var(--sql-join-glow); }
+.section-tag.on-t { background: var(--sql-on); box-shadow: 0 0 14px var(--sql-on-glow); }
+.section-tag.hub-t { background: var(--hub-color); box-shadow: 0 0 14px var(--hub-glow); }
+.section-tag.sat-t { background: var(--sat-color); box-shadow: 0 0 14px var(--sat-glow); }
+.section-tag.link-t { background: var(--link-color); box-shadow: 0 0 14px var(--link-glow); }
+.section-tag.accent-t { background: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+.section-tag.dv-t { background: linear-gradient(135deg, var(--hub-color), var(--sat-color)); box-shadow: 0 0 14px var(--accent-glow); }
+.section-tag.exercise-t { background: linear-gradient(135deg, var(--sql-select), var(--accent)); box-shadow: 0 0 16px var(--success-glow); }
+.section-tag.gdpr-t { background: var(--gdpr-color); box-shadow: 0 0 14px var(--gdpr-glow); }
+.section-tag.pii-t { background: var(--pii-color); box-shadow: 0 0 14px var(--pii-glow); }
+.section-tag.ai-t { background: var(--ai-act-color); box-shadow: 0 0 14px var(--ai-act-glow); }
+.section-tag.prep-t { background: var(--accent-color); box-shadow: 0 0 14px var(--accent-glow); }
+
+.section-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border-medium), transparent);
+}
+
+h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-bright);
+  margin-bottom: 22px;
+  letter-spacing: 0.01em;
+}
+
+h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin: 38px 0 14px;
+  letter-spacing: 0.02em;
+}
+
+p { margin-bottom: 16px; }
+strong { font-weight: 600; color: var(--text-bright); }
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  background: var(--accent-dim);
+  color: var(--hub-text);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+/* PM PANELS */
+.pm-panel {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  padding: 26px 30px;
+  margin: 26px 0;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  transition: border-color 0.5s, box-shadow 0.5s, transform 0.5s;
+}
+
+.pm-panel:hover {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 30px rgba(0, 180, 255, 0.06), inset 0 0 40px rgba(0, 180, 255, 0.02);
+  transform: translateY(-1px);
+}
+
+.pm-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.35;
+}
+
+.pm-panel::after {
+  content: '';
+  position: absolute;
+  top: -1px; left: 0;
+  width: 60px; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  animation: edge-charge 6s ease-in-out infinite;
+}
+
+@keyframes edge-charge {
+  0% { left: -60px; opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { left: calc(100% + 60px); opacity: 0; }
+}
+
+/* PII-highlighted panel */
+.pm-panel.pii-warn {
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.pm-panel.pii-warn::before {
+  background: linear-gradient(90deg, transparent, var(--pii-color), transparent);
+}
+
+/* HOOK PANELS */
+.hook {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  padding: 28px 32px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.hook::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+
+.hook::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 50px;
+  pointer-events: none;
+}
+
+.hook-gdpr::before { background: var(--gdpr-color); box-shadow: 0 0 12px var(--gdpr-glow); }
+.hook-gdpr::after { background: linear-gradient(90deg, rgba(59,130,246,0.06), transparent); }
+.hook-pii::before { background: var(--pii-color); box-shadow: 0 0 12px var(--pii-glow); }
+.hook-pii::after { background: linear-gradient(90deg, rgba(239,68,68,0.06), transparent); }
+.hook-hub::before { background: var(--hub-color); box-shadow: 0 0 12px var(--hub-glow); }
+.hook-hub::after { background: linear-gradient(90deg, rgba(6,182,212,0.06), transparent); }
+.hook-default::before { background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.hook-default::after { background: linear-gradient(90deg, rgba(0,180,255,0.06), transparent); }
+.hook-ai::before { background: var(--ai-act-color); box-shadow: 0 0 12px var(--ai-act-glow); }
+.hook-ai::after { background: linear-gradient(90deg, rgba(139,92,246,0.06), transparent); }
+.hook-prep::before { background: var(--accent-color); box-shadow: 0 0 12px var(--accent-glow); }
+.hook-prep::after { background: linear-gradient(90deg, rgba(251,191,36,0.06), transparent); }
+
+.hook .hook-text {
+  font-size: 17.5px;
+  font-weight: 400;
+  color: var(--text-bright);
+  line-height: 1.75;
+  margin: 0;
+}
+
+.hook-gdpr .hook-text em { color: var(--gdpr-color); text-shadow: 0 0 12px var(--gdpr-glow); font-style: normal; }
+.hook-pii .hook-text em { color: var(--pii-text); text-shadow: 0 0 12px var(--pii-glow); font-style: normal; }
+.hook-hub .hook-text em { color: var(--hub-text); text-shadow: 0 0 12px var(--hub-glow); font-style: normal; }
+.hook-default .hook-text em { color: var(--hub-text); text-shadow: 0 0 12px var(--hub-glow); font-style: normal; }
+.hook-ai .hook-text em { color: #a78bfa; text-shadow: 0 0 12px var(--ai-act-glow); font-style: normal; }
+.hook-prep .hook-text em { color: var(--accent-color); text-shadow: 0 0 12px var(--accent-glow); font-style: normal; }
+
+/* LANGUAGE BRIDGE */
+.language-bridge {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin: 26px 0;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.bridge-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--link-text);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bridge-label::before {
+  content: '';
+  width: 16px; height: 2px;
+  background: var(--link-color);
+  box-shadow: 0 0 6px var(--link-glow);
+}
+
+.language-bridge p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.language-bridge p:last-child { margin-bottom: 0; }
+.bridge-word { color: var(--link-text); font-weight: 600; }
+
+/* 4-LAYER EXPLANATION */
+.four-layers {
+  margin: 30px 0;
+  border: 1px solid var(--border-medium);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--pm-surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.four-layers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px 12px;
+}
+
+.four-layers-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.layer-dots {
+  display: flex; gap: 8px;
+}
+
+.layer-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-subtle);
+  background: transparent;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+}
+
+.layer-dot.l1 { border-color: var(--success-color); }
+.layer-dot.l2 { border-color: var(--hub-color); }
+.layer-dot.l3 { border-color: var(--link-color); }
+.layer-dot.l4 { border-color: var(--sat-color); }
+
+.layer-dot.active { transform: scale(1.4); }
+.layer-dot.l1.active { background: var(--success-color); box-shadow: 0 0 10px var(--success-glow); }
+.layer-dot.l2.active { background: var(--hub-color); box-shadow: 0 0 10px var(--hub-glow); }
+.layer-dot.l3.active { background: var(--link-color); box-shadow: 0 0 10px var(--link-glow); }
+.layer-dot.l4.active { background: var(--sat-color); box-shadow: 0 0 10px var(--sat-glow); }
+
+.layer {
+  border-top: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.layer-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 28px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.4s;
+}
+
+.layer-header:hover { background: rgba(0, 180, 255, 0.03); }
+
+.layer-badge {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 14px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.layer-1 .layer-badge { background: var(--success-color); color: var(--bg-deep); }
+.layer-2 .layer-badge { background: var(--hub-color); color: var(--bg-deep); }
+.layer-3 .layer-badge { background: var(--link-color); color: var(--bg-deep); }
+.layer-4 .layer-badge { background: var(--sat-color); color: var(--bg-deep); }
+
+.layer-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.layer-toggle {
+  font-size: 12px;
+  color: var(--text-dim);
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.layer.open .layer-toggle { transform: rotate(180deg); }
+
+.layer-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.layer.open .layer-content { max-height: 600px; }
+
+.layer-content-inner {
+  padding: 0 28px 22px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  animation: layer-fade 0.5s ease;
+}
+
+@keyframes layer-fade {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.layer-content-inner p { margin-bottom: 10px; font-size: 15px; }
+.layer-content-inner p:last-child { margin-bottom: 0; }
+
+/* DATA TABLES */
+.data-panel {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  margin: 26px 0;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+}
+
+.data-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+.data-panel.pii-panel::before {
+  background: linear-gradient(90deg, transparent, var(--pii-color), transparent);
+}
+
+.data-panel.pii-panel {
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.data-panel-header {
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-panel-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: dot-glow 3s ease-in-out infinite;
+}
+
+@keyframes dot-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.data-panel-dot.hub { background: var(--hub-color); box-shadow: 0 0 8px var(--hub-color); }
+.data-panel-dot.sat { background: var(--sat-color); box-shadow: 0 0 8px var(--sat-color); }
+.data-panel-dot.link { background: var(--link-color); box-shadow: 0 0 8px var(--link-color); }
+.data-panel-dot.result { background: var(--sql-select); box-shadow: 0 0 8px var(--sql-select); }
+.data-panel-dot.pii { background: var(--pii-color); box-shadow: 0 0 8px var(--pii-color); }
+.data-panel-dot.gdpr { background: var(--gdpr-color); box-shadow: 0 0 8px var(--gdpr-color); }
+.data-panel-dot.ai { background: var(--ai-act-color); box-shadow: 0 0 8px var(--ai-act-color); }
+.data-panel-dot.prep { background: var(--accent-color); box-shadow: 0 0 8px var(--accent-color); }
+
+.data-panel-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.data-panel-title.hub-title { color: var(--hub-text); }
+.data-panel-title.sat-title { color: var(--sat-text); }
+.data-panel-title.link-title { color: var(--link-text); }
+.data-panel-title.result-title { color: var(--sql-select); }
+.data-panel-title.pii-title { color: var(--pii-text); }
+.data-panel-title.gdpr-title { color: #60a5fa; }
+.data-panel-title.ai-title { color: #a78bfa; }
+.data-panel-title.prep-title { color: var(--accent-color); }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(0, 180, 255, 0.02);
+}
+
+.data-table td {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(0, 180, 255, 0.04);
+  color: var(--text-secondary);
+  transition: background 0.3s;
+}
+
+.data-table tr:hover td {
+  background: rgba(0, 180, 255, 0.03);
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+
+.data-table td.pk { color: var(--hub-text); font-weight: 500; }
+.data-table td.fk { color: var(--sat-text); font-weight: 500; }
+.data-table td.bk { color: var(--text-bright); font-weight: 500; }
+.data-table td.val { color: var(--text-secondary); }
+.data-table td.pii-val { color: var(--pii-text); font-weight: 500; }
+.data-table td.safe-val { color: var(--sql-select); font-weight: 500; }
+
+/* ===================================================
+   STICKY COMPARISON SECTIONS
+   Pin one table while explanation/comparison scrolls
+   =================================================== */
+.sticky-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-left: -120px;
+  margin-right: -120px;
+}
+.sticky-left {
+  position: sticky;
+  top: 160px;
+  align-self: start;
+  overflow-x: auto;
+}
+.sticky-left .data-table {
+  font-size: 10px;
+}
+.sticky-left .data-table th {
+  font-size: 8px;
+  white-space: nowrap;
+}
+.sticky-left .data-table td,
+.sticky-left .data-table th {
+  padding: 6px 8px;
+}
+.sticky-right {
+  min-height: 0;
+  min-width: 0;
+}
+.sticky-right .data-panel,
+.sticky-left .data-panel {
+  overflow-x: auto;
+}
+.sticky-right .data-table,
+.sticky-left .data-table {
+  min-width: 0;
+}
+@media (max-width: 700px) {
+  .sticky-split {
+    grid-template-columns: 1fr;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .sticky-left {
+    position: static;
+  }
+}
+
+/* CONCEPT CALLOUT */
+.concept-callout {
+  background: var(--accent-bg);
+  border: 1px solid rgba(251, 191, 36, 0.12);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 28px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-callout::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent-color);
+  box-shadow: 0 0 8px var(--accent-glow);
+  border-radius: 3px 0 0 3px;
+}
+
+.concept-callout::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 50px;
+  background: linear-gradient(90deg, rgba(251,191,36,0.04), transparent);
+  pointer-events: none;
+}
+
+.concept-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.concept-callout blockquote {
+  font-size: 15px;
+  color: var(--text-bright);
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.75;
+  font-style: italic;
+  border: none;
+  padding: 0;
+}
+
+/* EXERCISE SECTIONS */
+.exercise-section {
+  background: var(--pm-surface);
+  border: 2px solid var(--sql-select);
+  border-radius: 18px;
+  padding: 34px;
+  margin: 52px 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 35px var(--sql-select-glow), 0 0 70px rgba(34,197,94,0.04);
+}
+
+.exercise-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sql-select), transparent);
+  animation: exercise-glow 4s ease-in-out infinite;
+}
+
+@keyframes exercise-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+.exercise-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sql-select);
+  margin-bottom: 16px;
+  text-shadow: 0 0 10px var(--sql-select-glow);
+}
+
+.exercise-section h2 {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.check-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sql-select);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 10px;
+  padding: 10px 24px;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: all 0.4s;
+}
+
+.check-btn:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 0 20px rgba(34,197,94,0.2);
+}
+
+.feedback {
+  margin-top: 14px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  display: none;
+  animation: feedback-appear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes feedback-appear {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.feedback.correct {
+  display: block;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: var(--sql-select);
+}
+
+.feedback.incorrect {
+  display: block;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  color: var(--sql-where);
+}
+
+/* EXPLORE MORE */
+.explore-opener {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  margin: 24px 0 0;
+  background: rgba(10, 25, 47, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 180, 255, 0.12);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.35s ease;
+  user-select: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 180, 255, 0.15);
+}
+.explore-opener:hover {
+  background: rgba(10, 25, 47, 0.85);
+  border-color: var(--accent);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 180, 255, 0.1);
+  transform: translateY(-1px);
+}
+.explore-opener .explore-icon {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--accent);
+  flex-shrink: 0;
+  transition: transform 0.35s ease, background 0.35s ease;
+}
+.explore-opener.open .explore-icon {
+  transform: rotate(45deg);
+  background: var(--accent);
+  color: var(--bg-deep);
+}
+.explore-opener .explore-label {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+.explore-opener:hover .explore-label { color: var(--text-primary); }
+.explore-opener .explore-hint {
+  font-family: 'Orbitron', monospace;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  opacity: 0.5;
+  margin-left: auto;
+  transition: opacity 0.3s ease;
+}
+.explore-opener:hover .explore-hint { opacity: 1; }
+
+.explore-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.explore-panel.open { max-height: 800px; }
+.explore-panel-inner {
+  padding: 20px 22px 16px;
+  margin: 6px 0 20px;
+  background: rgba(10, 25, 47, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 180, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 180, 255, 0.1);
+  animation: explore-slide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+@keyframes explore-slide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.explore-panel-inner p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0 0 10px;
+}
+.explore-panel-inner p:last-child { margin: 0; }
+.explore-panel-inner strong { color: var(--text-primary); }
+
+/* COMPLETION BANNER */
+.completion-banner {
+  display: none;
+  background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.06));
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin-top: 28px;
+  text-align: center;
+  animation: matter-form 0.8s ease forwards;
+}
+
+.completion-banner h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px;
+  color: var(--sql-select);
+  margin-bottom: 8px;
+  text-shadow: 0 0 15px var(--sql-select-glow);
+}
+
+.completion-banner p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* FOOTER */
+.tutorial-footer {
+  margin-top: 80px;
+  padding: 24px 0;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* LCARS SEGMENTED PROGRESS BAR */
+.lcars-bar {
+  display: flex;
+  align-items: stretch;
+  padding: 6px 24px 4px;
+  gap: 0;
+}
+
+.lcars-elbow {
+  width: 18px;
+  flex-shrink: 0;
+  background: var(--accent);
+  border-radius: 0 0 0 14px;
+  opacity: 0.35;
+  position: relative;
+  transition: opacity 0.6s ease;
+}
+.lcars-elbow::after {
+  content: '';
+  position: absolute;
+  bottom: -12px; left: 0;
+  width: 100%; height: 12px;
+  background: var(--accent);
+  border-radius: 0 0 0 8px;
+  opacity: inherit;
+}
+
+.lcars-segments {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+  height: 32px;
+  padding-left: 4px;
+}
+
+.lcars-seg {
+  flex: 1;
+  border-radius: 3px;
+  background: linear-gradient(90deg,
+    var(--seg-color) 0%,
+    var(--seg-color) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) 100%
+  );
+  font-family: 'Orbitron', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0;
+  animation: seg-appear 0.4s ease both;
+}
+
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; }
+.lcars-seg:nth-child(2) { animation-delay: 0.1s; }
+.lcars-seg:nth-child(3) { animation-delay: 0.15s; }
+.lcars-seg:nth-child(4) { animation-delay: 0.2s; }
+.lcars-seg:nth-child(5) { animation-delay: 0.25s; }
+.lcars-seg:nth-child(6) { animation-delay: 0.3s; }
+.lcars-seg:nth-child(7) { animation-delay: 0.35s; }
+.lcars-seg:nth-child(8) { animation-delay: 0.4s; }
+.lcars-seg:nth-child(9) { animation-delay: 0.45s; }
+.lcars-seg:nth-child(10) { animation-delay: 0.5s; }
+.lcars-seg:nth-child(11) { animation-delay: 0.55s; }
+
+@keyframes seg-appear {
+  from { opacity: 0; transform: scaleX(0.3); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+
+.lcars-seg.active {
+  box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent),
+              inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent);
+  color: var(--bg-deep);
+}
+
+.lcars-seg.completed {
+  --seg-fill: 100%;
+  filter: brightness(0.7);
+  color: var(--bg-deep);
+}
+
+.lcars-seg:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent);
+}
+
+.lcars-flow {
+  height: 3px;
+  margin: 0 24px;
+  background: rgba(0, 180, 255, 0.06);
+}
+
+.lcars-flow-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--hub-color), var(--accent), var(--sat-color));
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+/* AMBIENT COLOR OVERLAY */
+.ambient-glow {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 1.5s ease;
+  background:
+    radial-gradient(ellipse 600px 400px at 15% 20%, var(--ambient-c1, rgba(0, 180, 255, 0.06)) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 85% 60%, var(--ambient-c2, rgba(168, 85, 247, 0.04)) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 90%, var(--ambient-c3, rgba(245, 158, 11, 0.03)) 0%, transparent 70%);
+}
+
+/* PARALLAX DEPTH */
+.parallax-layer {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.depth-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.04;
+  will-change: transform;
+}
+
+.depth-shape.shape-1 {
+  width: 300px; height: 300px;
+  top: 10%; left: 5%;
+  background: radial-gradient(circle, var(--hub-color), transparent 70%);
+}
+.depth-shape.shape-2 {
+  width: 200px; height: 200px;
+  top: 40%; right: 10%;
+  background: radial-gradient(circle, var(--sat-color), transparent 70%);
+}
+.depth-shape.shape-3 {
+  width: 250px; height: 250px;
+  top: 70%; left: 60%;
+  background: radial-gradient(circle, var(--link-color), transparent 70%);
+}
+.depth-shape.shape-4 {
+  width: 180px; height: 180px;
+  top: 30%; left: 40%;
+  background: radial-gradient(circle, var(--accent), transparent 70%);
+}
+
+/* WORD REVEAL */
+.hook-text .word {
+  opacity: 0.2;
+  transition: opacity 0.25s ease;
+}
+
+.section.visible .hook-text .word,
+.hook-text .word.lit {
+  opacity: 1;
+}
+
+@supports (animation-timeline: view()) {
+  .section h2 {
+    background: linear-gradient(90deg,
+      var(--text-bright) 0%,
+      var(--text-bright) 50%,
+      var(--text-dim) 50.5%,
+      var(--text-dim) 100%
+    );
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: heading-sweep both linear;
+    animation-timeline: view();
+    animation-range: entry 10% entry 80%;
+  }
+  @keyframes heading-sweep {
+    from { background-position: 100% 0; }
+    to { background-position: 0% 0; }
+  }
+}
+
+/* STAGGER REVEALS */
+@supports not (animation-timeline: view()) {
+  .section .data-table tr {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .section.visible .data-table tr { opacity: 1; transform: translateY(0); }
+  .section.visible .data-table tr:nth-child(1) { transition-delay: 0ms; }
+  .section.visible .data-table tr:nth-child(2) { transition-delay: 60ms; }
+  .section.visible .data-table tr:nth-child(3) { transition-delay: 120ms; }
+  .section.visible .data-table tr:nth-child(4) { transition-delay: 180ms; }
+  .section.visible .data-table tr:nth-child(5) { transition-delay: 240ms; }
+  .section.visible .data-table tr:nth-child(6) { transition-delay: 300ms; }
+  .section.visible .data-table tr:nth-child(7) { transition-delay: 360ms; }
+  .section.visible .data-table tr:nth-child(8) { transition-delay: 420ms; }
+}
+
+.nav-node {
+  opacity: 0;
+  animation: node-appear 0.4s ease both;
+}
+.nav-node:nth-child(1) { animation-delay: 0.1s; }
+.nav-node:nth-child(3) { animation-delay: 0.15s; }
+.nav-node:nth-child(5) { animation-delay: 0.2s; }
+.nav-node:nth-child(7) { animation-delay: 0.25s; }
+.nav-node:nth-child(9) { animation-delay: 0.3s; }
+.nav-node:nth-child(11) { animation-delay: 0.35s; }
+.nav-node:nth-child(13) { animation-delay: 0.4s; }
+.nav-node:nth-child(15) { animation-delay: 0.45s; }
+.nav-node:nth-child(17) { animation-delay: 0.5s; }
+.nav-node:nth-child(19) { animation-delay: 0.55s; }
+.nav-node:nth-child(21) { animation-delay: 0.6s; }
+
+@keyframes node-appear {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.meta-chip {
+  opacity: 0;
+  animation: chip-appear 0.5s ease both;
+}
+.meta-chip:nth-child(1) { animation-delay: 0.6s; }
+.meta-chip:nth-child(2) { animation-delay: 0.7s; }
+.meta-chip:nth-child(3) { animation-delay: 0.8s; }
+.meta-chip:nth-child(4) { animation-delay: 0.9s; }
+.meta-chip:nth-child(5) { animation-delay: 1.0s; }
+.meta-chip:nth-child(6) { animation-delay: 1.1s; }
+
+@keyframes chip-appear {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* DELETION WALKTHROUGH */
+.deletion-step {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 16px 0;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.5s, box-shadow 0.5s;
+}
+
+.deletion-step:hover {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 20px rgba(0, 180, 255, 0.05);
+}
+
+.deletion-step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.deletion-step-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.deletion-step-num.deleted {
+  background: var(--pii-color);
+  color: var(--bg-deep);
+  box-shadow: 0 0 10px var(--pii-glow);
+}
+.deletion-step-num.retained {
+  background: var(--sql-select);
+  color: var(--bg-deep);
+  box-shadow: 0 0 10px var(--success-glow);
+}
+.deletion-step-num.reviewed {
+  background: var(--accent-color);
+  color: var(--bg-deep);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.deletion-step-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  flex: 1;
+}
+
+.deletion-step-status {
+  font-family: 'Orbitron', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+
+.deletion-step-status.deleted {
+  background: var(--pii-dim);
+  color: var(--pii-text);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.deletion-step-status.retained {
+  background: var(--sql-select-dim);
+  color: var(--sql-select);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+.deletion-step-status.reviewed {
+  background: rgba(251, 191, 36, 0.08);
+  color: var(--accent-color);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.deletion-step p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.deletion-step p:last-child { margin-bottom: 0; }
+
+/* PII CLASSIFICATION EXERCISE */
+.pii-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  margin: 8px 0;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.pii-item-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-bright);
+  min-width: 160px;
+  flex-shrink: 0;
+}
+
+.pii-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.pii-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.pii-btn:hover {
+  border-color: var(--border-medium);
+  color: var(--text-secondary);
+}
+
+.pii-btn.selected {
+  border-color: var(--accent);
+  color: var(--text-bright);
+  background: rgba(0, 180, 255, 0.1);
+}
+
+.pii-btn.selected.pii-yes {
+  border-color: var(--pii-color);
+  background: var(--pii-dim);
+  color: var(--pii-text);
+}
+
+.pii-btn.selected.pii-no {
+  border-color: var(--sql-select);
+  background: var(--sql-select-dim);
+  color: var(--sql-select);
+}
+
+.pii-feedback {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 12px;
+  margin-left: auto;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* MATCHING EXERCISE */
+.match-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.match-label {
+  font-size: 14px;
+  color: var(--text-bright);
+  min-width: 200px;
+  flex-shrink: 0;
+}
+
+.match-select {
+  flex: 1;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 13px;
+  background: rgba(2, 6, 14, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.match-select:focus {
+  border-color: var(--accent);
+}
+
+.match-select option {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+
+.match-feedback {
+  font-size: 12px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* PART 2 SEPARATOR */
+.part2-separator {
+  margin: 100px 0 60px;
+  padding: 60px 0;
+  border-top: 2px solid rgba(251, 191, 36, 0.15);
+  border-bottom: 2px solid rgba(251, 191, 36, 0.15);
+  text-align: center;
+  position: relative;
+  background: linear-gradient(180deg,
+    rgba(251, 191, 36, 0.02) 0%,
+    rgba(251, 191, 36, 0.06) 50%,
+    rgba(251, 191, 36, 0.02) 100%
+  );
+}
+
+.part2-separator .title-label {
+  justify-content: center;
+  color: var(--accent-color);
+}
+
+.part2-separator .title-label::before {
+  background: var(--accent-color);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.part2-separator h1 {
+  color: var(--accent-color);
+  text-shadow: 0 0 40px var(--accent-glow);
+}
+
+.part2-separator .subtitle {
+  margin: 0 auto;
+}
+
+/* SCENARIO PANEL */
+.scenario-panel {
+  background: var(--prep-surface);
+  border: 2px solid var(--prep-border);
+  border-radius: 16px;
+  padding: 30px 34px;
+  margin: 30px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.scenario-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+  opacity: 0.4;
+}
+
+.scenario-panel p {
+  font-size: 16px;
+  color: var(--text-bright);
+  line-height: 1.8;
+}
+
+/* STEP PANELS (Part 2) */
+.step-panel {
+  background: var(--prep-surface);
+  border: 1px solid var(--prep-border);
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin: 16px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-panel::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent-color);
+  box-shadow: 0 0 8px var(--accent-glow);
+  border-radius: 3px 0 0 3px;
+}
+
+.step-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  margin-bottom: 8px;
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.step-panel h3 {
+  margin: 0 0 12px;
+  color: var(--accent-color);
+}
+
+.step-panel p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+.step-panel p:last-child { margin-bottom: 0; }
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .container { padding: 88px 18px 100px; }
+  .title-section h1 { font-size: 28px; }
+  h2 { font-size: 20px; }
+  .pm-panel { padding: 20px 22px; }
+  .hook { padding: 22px 24px; }
+  .exercise-section { padding: 24px 20px; }
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .pii-item { flex-wrap: wrap; }
+  .pii-item-name { min-width: 120px; }
+  .match-row { flex-wrap: wrap; }
+  .match-label { min-width: 140px; }
+  .sticky-split { grid-template-columns: 1fr; margin-left: 0; margin-right: 0; }
+  .sticky-left { position: static; }
+}
+
+/* REDUCED MOTION */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.1ms !important;
+  }
+  .section { opacity: 1; transform: none; filter: none; }
+  .title-section { opacity: 1; animation: none; }
+  .nav-node { opacity: 1; }
+  .meta-chip { opacity: 1; }
+  .lcars-seg { opacity: 1; }
+  .hook-text .word { opacity: 1; }
+  .data-table tr { opacity: 1; transform: none; }
+  .ambient-glow { transition: none; }
+  .section h2 {
+    -webkit-text-fill-color: var(--text-bright);
+    background: none;
+  }
+}
+
+/* ═══════ Game UI: Inventory + Achievements ═══════ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary, rgba(255,255,255,0.5)); }
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim, rgba(255,255,255,0.3)); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.3));
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright, #fff); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright, #fff); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim, rgba(255,255,255,0.3)); font-family: 'Orbitron', sans-serif; }
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+@media (max-width: 600px) {
+  .inventory-toolbar { bottom: 8px; left: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .inventory-panel { width: calc(100vw - 16px); left: 8px; bottom: 60px; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+
+</style>
+</head>
+<body data-chapter="5" style="padding-top: 52px;">
+<!-- Particle field canvas -->
+<canvas id="particle-field"></canvas>
+
+<!-- Scanline + scan bar overlays -->
+<div class="scanline-overlay"></div>
+<div class="scan-bar"></div>
+
+<!-- Dynamic ambient glow -->
+<div class="ambient-glow" id="ambient-glow"></div>
+
+<!-- Parallax depth shapes -->
+<div class="parallax-layer" id="parallax-layer">
+  <div class="depth-shape shape-1"></div>
+  <div class="depth-shape shape-2"></div>
+  <div class="depth-shape shape-3"></div>
+  <div class="depth-shape shape-4"></div>
+</div>
+
+<div class="page-content">
+
+<!-- NAVIGATION -->
+<nav class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('s1')">1</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s2')">2</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s3')">3</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s4')">4</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s5')">5</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s6')">6</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s7')">7</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s8')">8</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s9')">9</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s10')">10</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s11')">P2</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">GDPR Refresh</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: var(--gdpr-color)" onclick="scrollToSection('s1')">1</div>
+        <div class="lcars-seg" style="--seg-color: var(--gdpr-color)" onclick="scrollToSection('s2')">2</div>
+        <div class="lcars-seg" style="--seg-color: var(--sat-color)" onclick="scrollToSection('s3')">3</div>
+        <div class="lcars-seg" style="--seg-color: var(--pii-color)" onclick="scrollToSection('s4')">4</div>
+        <div class="lcars-seg" style="--seg-color: var(--hub-color)" onclick="scrollToSection('s5')">5</div>
+        <div class="lcars-seg" style="--seg-color: var(--accent)" onclick="scrollToSection('s6')">6</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-select)" onclick="scrollToSection('s7')">7</div>
+        <div class="lcars-seg" style="--seg-color: var(--ai-act-color)" onclick="scrollToSection('s8')">8</div>
+        <div class="lcars-seg" style="--seg-color: var(--hub-color)" onclick="scrollToSection('s9')">9</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-select)" onclick="scrollToSection('s10')">10</div>
+        <div class="lcars-seg" style="--seg-color: var(--accent-color)" onclick="scrollToSection('s11')">P2</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- TITLE -->
+<div class="title-section">
+  <div class="title-label">Chapter 5 &mdash; Compliance Day 1</div>
+  <h1>The Conflict</h1>
+  <p class="subtitle">GDPR says delete everything. Data Vault says delete nothing. Both are right.</p>
+  <div class="meta-chips">
+    <span class="meta-chip">GDPR</span>
+    <span class="meta-chip">Article 17</span>
+    <span class="meta-chip">PII Isolation</span>
+    <span class="meta-chip">Artificial Hubs</span>
+    <span class="meta-chip">EU AI Act</span>
+    <span class="meta-chip">Data Mesh</span>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 1: GDPR REFRESH ======= -->
+<div class="section" id="s1" data-label="GDPR Refresh">
+  <div class="section-header">
+    <div class="section-tag gdpr-t">GDPR</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>The Conflict</h2>
+
+  <div class="hook hook-gdpr">
+    <p class="hook-text">GDPR says delete everything. Data Vault says delete nothing. Both are law. Both are right. Resolving this conflict is one of the <em>hardest problems</em> in data engineering.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; Compliance</div>
+    <p><span class="bridge-word">Compliance</span> &mdash; from Latin <em>compl&#275;re</em>: &ldquo;to fill up, to fulfill, to complete.&rdquo;</p>
+    <p>Same root as <strong>complete</strong> (fulfilled, nothing missing) and <strong>complement</strong> (what fills a gap).</p>
+    <p><strong>Why this word:</strong> Compliance means fulfilling an obligation completely. Not partially, not approximately. When GDPR says &ldquo;delete,&rdquo; compliance means actually deleted &mdash; from every layer, every backup, every mart. The word itself tells you: half-measures don&rsquo;t count.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; Erasure</div>
+    <p><span class="bridge-word">Erasure</span> &mdash; from Latin <em>erasura</em>, from <em>eradere</em>: &ldquo;to scrape off.&rdquo; In Roman times, writing was done on wax tablets. To erase, you scraped the wax flat.</p>
+    <p><strong>Why this word:</strong> Article 17 uses &ldquo;right to erasure&rdquo; rather than &ldquo;right to deletion&rdquo; because erasure implies thoroughness. You don&rsquo;t just remove the record &mdash; you scrape away all traces. In a data warehouse with 6+ layers, that scraping reaches deep.</p>
+  </div>
+
+  <div class="four-layers" id="layers-gdpr">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; GDPR Core</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-gdpr', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-gdpr', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-gdpr', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-gdpr', 3)"></div>
+      </div>
+    </div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L1</span>
+        <span class="layer-label">Plain language &mdash; for anyone</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>GDPR is a European law that gives people control over their personal data. If someone asks a company to delete their data, the company has to do it.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L2</span>
+        <span class="layer-label">With mechanism &mdash; how it works</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>GDPR (General Data Protection Regulation) applies to any organization processing personal data of EU residents. It grants specific rights &mdash; access, erasure, portability, rectification &mdash; and imposes obligations: purpose limitation, data minimization, accountability. Enforceable since May 2018. Fines up to EUR&nbsp;20M or 4% of global annual turnover for the most serious violations (Art.&nbsp;83(5)); EUR&nbsp;10M or 2% for other violations (Art.&nbsp;83(4)).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L3</span>
+        <span class="layer-label">Technical &mdash; full detail</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>GDPR was designed for transactional databases where you find a row and delete it. Data warehouses keep everything forever for analytical purposes. These two design philosophies are in direct conflict. The regulation doesn&rsquo;t distinguish between an operational database and a data warehouse &mdash; Article 17 applies to both. This means right to erasure requires a multi-layer deletion: staging, Raw Vault, Business Vault, Information Marts, and backups.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L4</span>
+        <span class="layer-label">Expert &mdash; nuance &amp; edge cases</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>GDPR is a regulation (directly applicable across all EU member states), but member states have implementation discretion. Germany has 17 supervisory authorities (1 federal + 16 state-level) and stricter employee data protection (&#167;26 BDSG). France has CNIL, which has issued the largest GDPR fines in Europe. A Data Vault serving clients in both Germany and France may need different handling depending on the national authority&rsquo;s guidance. A consultant with GDPR transition experience under CNIL's regime brings directly applicable knowledge to French-market clients.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 2: KEY GDPR RIGHTS ======= -->
+<div class="section" id="s2" data-label="GDPR Rights">
+  <div class="section-header">
+    <div class="section-tag gdpr-t">Rights</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Key GDPR Rights</h2>
+
+  <p>Six rights that directly impact how you design and operate a Data Vault:</p>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot gdpr"></div>
+      <span class="data-panel-title gdpr-title">GDPR Rights &amp; DV Implications</span>
+    </div>
+    <table class="data-table">
+      <tr><th>Right</th><th>Article</th><th>What It Means</th><th>DV Implication</th></tr>
+      <tr><td class="bk">Right to erasure</td><td class="val">Art. 17</td><td class="val">Delete my personal data</td><td class="val">Multi-layer deletion across all DV layers</td></tr>
+      <tr><td class="bk">Right of access (DSAR)</td><td class="val">Art. 15</td><td class="val">Show me all data you hold about me</td><td class="val">JOINs from Hub through all Satellites</td></tr>
+      <tr><td class="bk">Right to rectification</td><td class="val">Art. 16</td><td class="val">Fix incorrect data about me</td><td class="val">Append-only Satellite: insert corrected row</td></tr>
+      <tr><td class="bk">Right to data portability</td><td class="val">Art. 20</td><td class="val">Give me my data in machine-readable format</td><td class="val">Export from vault in structured format</td></tr>
+      <tr><td class="bk">Purpose limitation</td><td class="val">Art. 5(1)(b)</td><td class="val">Data collected for one purpose can&rsquo;t be freely repurposed</td><td class="val">Tracked via record_source and metadata</td></tr>
+      <tr><td class="bk">Data minimization</td><td class="val">Art. 5(1)(c)</td><td class="val">Only collect what&rsquo;s necessary</td><td class="val">Tension with DV&rsquo;s &ldquo;load everything&rdquo; philosophy</td></tr>
+    </table>
+  </div>
+
+  <div class="pm-panel pii-warn">
+    <h3 style="margin-top:0; color: var(--pii-text);">Pseudonymization &ne; Anonymization</h3>
+    <p><strong>Pseudonymization:</strong> Replace identifying info with a code. Person can still be re-identified if you have the mapping key. Data is <strong>still personal data</strong> under GDPR. Still protected.</p>
+    <p><strong>Anonymization:</strong> Remove all identifying info such that re-identification is impossible. Only truly anonymized data falls outside GDPR&rsquo;s scope.</p>
+    <p style="margin-bottom:0"><strong style="color: var(--pii-text)">Hash keys in Data Vault are pseudonymization, not anonymization.</strong> If the business key is an email address, the hash of that email is recoverable by anyone with the original email and the hash algorithm. Retaining the hash after deleting the business key does NOT achieve GDPR compliance.</p>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 3: PII SATELLITE ISOLATION ======= -->
+<div class="section" id="s3" data-label="PII Isolation">
+  <div class="section-header">
+    <div class="section-tag sat-t">PII Isolation</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>PII Satellite Isolation</h2>
+
+  <div class="hook hook-pii">
+    <p class="hook-text">Not all attributes are created equal. Some are <em>personal data</em> protected by law. Others are analytical data safe to keep forever. The trick: put them in <em>different Satellites</em>.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; Isolation</div>
+    <p><span class="bridge-word">Isolation</span> &mdash; from Latin <em>insula</em>: &ldquo;island.&rdquo; To isolate is to make something into an island &mdash; separated, surrounded, reachable only by deliberate crossing.</p>
+    <p><strong>Why this word:</strong> PII Satellite isolation makes personal data into an island. It&rsquo;s physically separated from the analytical data. When a deletion request arrives, you delete the island without touching the mainland.</p>
+  </div>
+
+  <div class="four-layers" id="layers-pii">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; PII Isolation</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-pii', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-pii', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-pii', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-pii', 3)"></div>
+      </div>
+    </div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L1</span>
+        <span class="layer-label">Plain language</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Instead of putting all of a character&rsquo;s details in one Satellite table, you split it: personal stuff (name, email, address) goes in one Satellite, analytical stuff (race, level, faction) goes in another. When someone says &ldquo;delete my personal data,&rdquo; you delete the personal Satellite and leave the analytical one untouched.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L2</span>
+        <span class="layer-label">With mechanism</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>This is a specific case of the Satellite splitting you already know. In Day 2, you learned Satellites split by rate of change or by source system. Here&rsquo;s a third reason: by data classification. PII attributes get their own Satellite. Both Satellites still connect to the same Hub via the same hash key. The split is physical, not logical.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L3</span>
+        <span class="layer-label">Technical</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>The PII Satellite (<code>Sat_Character_PII</code>) contains attributes classified as personal data: name, email, address, date of birth. The non-PII Satellite (<code>Sat_Character_Attributes</code>) contains analytical attributes: race, level, faction, guild membership. Both share the same <code>hub_character_hk</code>. On deletion: DELETE FROM <code>Sat_Character_PII</code> WHERE <code>hub_character_hk</code> = [target]. The non-PII Satellite is untouched.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L4</span>
+        <span class="layer-label">Expert nuance</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>The classification decision &mdash; which attributes are PII and which aren&rsquo;t &mdash; is not purely technical. It requires legal judgment. &ldquo;Race&rdquo; might seem like analytical data, but under GDPR Article 9, racial/ethnic origin is <strong>special category data</strong> with even stricter protections. PII classification should be done with the Data Protection Officer, not by the data engineer alone. This is exactly where a BI consultant with legal background adds value.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>The Skyrim Model &mdash; Before &amp; After</h3>
+
+  <div class="sticky-split">
+    <div class="sticky-left">
+      <div class="data-panel">
+        <div class="data-panel-header">
+          <div class="data-panel-dot sat"></div>
+          <span class="data-panel-title sat-title">Before: Sat_Character_Details (all together)</span>
+        </div>
+        <table class="data-table">
+          <tr><th>Column</th><th>Example Value</th><th>Classification</th></tr>
+          <tr><td class="pk">hub_character_hk</td><td class="val">a3f7...</td><td class="val">&mdash;</td></tr>
+          <tr><td class="pii-val">real_name</td><td class="pii-val">Nazeem</td><td class="pii-val">PII</td></tr>
+          <tr><td class="pii-val">email_address</td><td class="pii-val">nazeem@whiterun.gov</td><td class="pii-val">PII</td></tr>
+          <tr><td class="safe-val">race</td><td class="safe-val">Redguard</td><td class="safe-val">Non-PII*</td></tr>
+          <tr><td class="safe-val">level</td><td class="safe-val">10</td><td class="safe-val">Non-PII</td></tr>
+          <tr><td class="safe-val">faction</td><td class="safe-val">None</td><td class="safe-val">Non-PII</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="sticky-right">
+      <div class="data-panel pii-panel">
+        <div class="data-panel-header">
+          <div class="data-panel-dot pii"></div>
+          <span class="data-panel-title pii-title">After: Sat_Character_PII (deletable)</span>
+        </div>
+        <table class="data-table">
+          <tr><th>Column</th><th>Example Value</th></tr>
+          <tr><td class="pk">hub_character_hk</td><td class="val">a3f7...</td></tr>
+          <tr><td class="pii-val">real_name</td><td class="pii-val">Nazeem</td></tr>
+          <tr><td class="pii-val">email_address</td><td class="pii-val">nazeem@whiterun.gov</td></tr>
+          <tr><td class="pii-val">home_address</td><td class="pii-val">Chillfurrow Farm, Whiterun</td></tr>
+          <tr><td class="pii-val">date_of_birth</td><td class="pii-val">4E 175</td></tr>
+          <tr><td class="val">load_date</td><td class="val">2026-01-01</td></tr>
+          <tr><td class="val">record_source</td><td class="val">Whiterun Census</td></tr>
+        </table>
+      </div>
+
+      <div class="data-panel">
+        <div class="data-panel-header">
+          <div class="data-panel-dot result"></div>
+          <span class="data-panel-title result-title">After: Sat_Character_Attributes (retained)</span>
+        </div>
+        <table class="data-table">
+          <tr><th>Column</th><th>Example Value</th></tr>
+          <tr><td class="pk">hub_character_hk</td><td class="val">a3f7...</td></tr>
+          <tr><td class="safe-val">race</td><td class="safe-val">Redguard</td></tr>
+          <tr><td class="safe-val">level</td><td class="safe-val">10</td></tr>
+          <tr><td class="safe-val">faction</td><td class="safe-val">None</td></tr>
+          <tr><td class="safe-val">guild_membership</td><td class="safe-val">None</td></tr>
+          <tr><td class="val">load_date</td><td class="val">2026-01-01</td></tr>
+          <tr><td class="val">record_source</td><td class="val">Whiterun Census</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p>Same Hub. Same hash key. Two Satellites instead of one. Deletion targets only the PII Satellite.</p>
+</div>
+
+
+<!-- ======= SECTION 4: DELETION WALKTHROUGH ======= -->
+<div class="section" id="s4" data-label="Erasure">
+  <div class="section-header">
+    <div class="section-tag pii-t">Erasure</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>The Deletion Walkthrough</h2>
+
+  <p><strong>Scenario:</strong> Nazeem wants to be forgotten. He submits an Article 17 erasure request. Here&rsquo;s what happens at each layer of the Data Vault.</p>
+
+  <div class="deletion-step">
+    <div class="deletion-step-header">
+      <div class="deletion-step-num deleted">1</div>
+      <span class="deletion-step-title">Persistent Staging Area (PSA)</span>
+      <span class="deletion-step-status deleted">Delete</span>
+    </div>
+    <p><strong>Challenge:</strong> PSA is a historical copy of source data &mdash; it exists for auditability. Deleting from it means losing the ability to replay loads.</p>
+    <p><strong>Solution:</strong> Find all source records containing Nazeem&rsquo;s data. Delete or overwrite with tombstone records. This is a deliberate tradeoff: compliance trumps replayability.</p>
+  </div>
+
+  <div class="deletion-step">
+    <div class="deletion-step-header">
+      <div class="deletion-step-num reviewed">2</div>
+      <span class="deletion-step-title">Raw Vault &mdash; Hub</span>
+      <span class="deletion-step-status reviewed">Review</span>
+    </div>
+    <p><strong>Challenge:</strong> Hub_Character contains Nazeem&rsquo;s business key. Is the business key PII?</p>
+    <p>If business key = &ldquo;Nazeem&rdquo; (a name) &rarr; <strong style="color:var(--pii-text)">YES, it&rsquo;s PII</strong> &rarr; must address (see Artificial Hubs).</p>
+    <p>If business key = &ldquo;CHAR_00742&rdquo; (a system ID) &rarr; <strong style="color:var(--sql-select)">NO</strong> &rarr; Hub can remain.</p>
+  </div>
+
+  <div class="deletion-step">
+    <div class="deletion-step-header">
+      <div class="deletion-step-num deleted">3</div>
+      <span class="deletion-step-title">Raw Vault &mdash; PII Satellite</span>
+      <span class="deletion-step-status deleted">Delete</span>
+    </div>
+    <p><strong>Action:</strong> Delete all rows for Nazeem&rsquo;s hash key from Sat_Character_PII, OR insert tombstone records.</p>
+    <p>After this: the hash key still exists in the Hub, but points to nothing identifiable.</p>
+  </div>
+
+  <div class="deletion-step">
+    <div class="deletion-step-header">
+      <div class="deletion-step-num retained">4</div>
+      <span class="deletion-step-title">Raw Vault &mdash; Non-PII Satellite</span>
+      <span class="deletion-step-status retained">Keep</span>
+    </div>
+    <p><strong>Action:</strong> KEEP. Sat_Character_Attributes contains race (Redguard), level (10), faction (None). These are not identifiable without the PII Satellite.</p>
+    <p>Analytical value preserved: &ldquo;an anonymous Redguard, level 10, no faction&rdquo; still contributes to aggregate analysis.</p>
+  </div>
+
+  <div class="deletion-step">
+    <div class="deletion-step-header">
+      <div class="deletion-step-num reviewed">5</div>
+      <span class="deletion-step-title">Raw Vault &mdash; Links</span>
+      <span class="deletion-step-status reviewed">Review</span>
+    </div>
+    <p>If Nazeem&rsquo;s Hub entry remains (non-PII business key or Artificial Hub): Links can remain.</p>
+    <p>If Nazeem&rsquo;s Hub entry is deleted: Links referencing it become orphaned &rarr; clean up.</p>
+  </div>
+
+  <div class="deletion-step">
+    <div class="deletion-step-header">
+      <div class="deletion-step-num reviewed">6</div>
+      <span class="deletion-step-title">Business Vault</span>
+      <span class="deletion-step-status reviewed">Review</span>
+    </div>
+    <p>Any derived calculations using Nazeem&rsquo;s PII directly: recalculate without it. If only aggregated/anonymized data was used: may remain.</p>
+  </div>
+
+  <div class="deletion-step">
+    <div class="deletion-step-header">
+      <div class="deletion-step-num reviewed">7</div>
+      <span class="deletion-step-title">Information Marts &amp; Backups</span>
+      <span class="deletion-step-status reviewed">Review</span>
+    </div>
+    <p><strong>Marts:</strong> Pre-aggregated views including Nazeem at row level &rarr; rebuild without him. Aggregate summaries &rarr; usually fine.</p>
+    <p><strong>Backups:</strong> Right to erasure extends to backups. Practical reality: deletion is deferred to the next backup rotation cycle, documented with a retention exception and timeline.</p>
+  </div>
+
+  <div class="pm-panel">
+    <h3 style="margin-top:0">Key Insight: Data Lineage Is Compliance Infrastructure</h3>
+    <p>The deletion walkthrough above requires knowing exactly where Nazeem&rsquo;s data lives across all layers. This is data lineage. Without it, you can&rsquo;t fulfill the erasure request.</p>
+    <p style="margin-bottom:0">Data Vault&rsquo;s <code>record_source</code> and <code>load_date</code> on every row make lineage traceable by design &mdash; but you still need tooling (data catalog, lineage graphs) to operationalize it.</p>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 5: ARTIFICIAL HUBS ======= -->
+<div class="section" id="s5" data-label="Artificial Hubs">
+  <div class="section-header">
+    <div class="section-tag hub-t">Artificial Hubs</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Artificial Hubs</h2>
+
+  <div class="hook hook-hub">
+    <p class="hook-text">PII Satellite isolation works perfectly &mdash; until the <em>business key IS the personal data</em>. If Nazeem&rsquo;s Hub stores his email address as the business key, deleting the PII Satellite doesn&rsquo;t help. The Hub itself is the problem.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; Artificial</div>
+    <p><span class="bridge-word">Artificial</span> &mdash; from Latin <em>artificium</em>: &ldquo;made by human craft.&rdquo; <em>Ars</em> (skill, craft) + <em>facere</em> (to make). Not fake or inferior &mdash; deliberately constructed for a purpose.</p>
+    <p><strong>Why this word:</strong> An Artificial Hub uses a crafted, synthetic key instead of the natural business key. It&rsquo;s artificial not because it&rsquo;s fake, but because it was deliberately constructed to solve a specific problem: making the Hub non-identifiable.</p>
+  </div>
+
+  <div class="four-layers" id="layers-artificial">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; Artificial Hubs</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-artificial', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-artificial', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-artificial', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-artificial', 3)"></div>
+      </div>
+    </div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L1</span>
+        <span class="layer-label">Plain language</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Sometimes the business key itself is personal data (like an email). You can&rsquo;t just split it into a Satellite &mdash; it&rsquo;s the core identifier in the Hub. So you create an Artificial Hub that uses a random number as its business key instead. The real personal identifier lives in a Satellite that can be deleted.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L2</span>
+        <span class="layer-label">With mechanism</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>The Artificial Hub replaces the PII business key with a randomly generated surrogate key (e.g., a UUID). The real personal identifier lives in a PII Satellite attached to the Artificial Hub. When a deletion request arrives: delete the PII Satellite, the Artificial Hub remains (it&rsquo;s just a random number), and all analytical relationships remain intact.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L3</span>
+        <span class="layer-label">Technical</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Standard Hub: <code>Hub_Customer(hub_customer_hk, email_address, load_date, record_source)</code> &mdash; the email is the business key. Artificial Hub: <code>Hub_Customer(hub_customer_hk, artificial_key, load_date, record_source)</code> &mdash; the business key is a UUID like <code>a8f3e2b1-...</code>. The email lives in <code>Sat_Customer_PII(hub_customer_hk, email_address, real_name, ...)</code>. On deletion: DELETE all rows from Sat_Customer_PII. The Hub retains <code>a8f3e2b1-...</code> &mdash; meaningless without the PII Satellite.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L4</span>
+        <span class="layer-label">Expert nuance</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>The hash key itself may still be problematic. If the original business key was an email, the hash key was derived FROM that email. Anyone with the original email and the hash algorithm could recalculate the hash and match it &mdash; meaning the hash constitutes personal data under GDPR. With an Artificial Hub, the hash key is derived from the random surrogate, not from PII, so this problem disappears. This is one of the strongest arguments for Artificial Hubs in GDPR-sensitive implementations.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Standard Hub vs. Artificial Hub</h3>
+
+  <div class="sticky-split">
+    <div class="sticky-left">
+      <div class="data-panel pii-panel">
+        <div class="data-panel-header">
+          <div class="data-panel-dot pii"></div>
+          <span class="data-panel-title pii-title">Standard Hub (PII business key &mdash; problem)</span>
+        </div>
+        <table class="data-table">
+          <tr><th>Column</th><th>Value</th><th>Issue</th></tr>
+          <tr><td class="pk">hub_character_hk</td><td class="val">hash(&ldquo;Nazeem&rdquo;)</td><td class="pii-val">Derived from PII</td></tr>
+          <tr><td class="pii-val">business_key</td><td class="pii-val">Nazeem</td><td class="pii-val">IS personal data</td></tr>
+          <tr><td class="val">load_date</td><td class="val">2026-01-01</td><td class="val">&mdash;</td></tr>
+          <tr><td class="val">record_source</td><td class="val">Whiterun Census</td><td class="val">&mdash;</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="sticky-right">
+      <div class="data-panel">
+        <div class="data-panel-header">
+          <div class="data-panel-dot result"></div>
+          <span class="data-panel-title result-title">Artificial Hub (safe surrogate key)</span>
+        </div>
+        <table class="data-table">
+          <tr><th>Column</th><th>Value</th><th>Status</th></tr>
+          <tr><td class="pk">hub_character_hk</td><td class="val">hash(&ldquo;ART-00742&rdquo;)</td><td class="safe-val">Not derived from PII</td></tr>
+          <tr><td class="safe-val">business_key</td><td class="safe-val">ART-00742</td><td class="safe-val">Not personal data</td></tr>
+          <tr><td class="val">load_date</td><td class="val">2026-01-01</td><td class="val">&mdash;</td></tr>
+          <tr><td class="val">record_source</td><td class="val">Whiterun Census</td><td class="val">&mdash;</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 6: TOMBSTONE RECORDS ======= -->
+<div class="section" id="s6" data-label="Tombstones">
+  <div class="section-header">
+    <div class="section-tag accent-t">Tombstones</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Tombstone Records</h2>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; Tombstone</div>
+    <p><span class="bridge-word">Tombstone</span> &mdash; literally, a gravestone. A marker that says: &ldquo;something was here. It is gone now.&rdquo;</p>
+    <p><strong>Why this word:</strong> A tombstone record replaces deleted data with a marker that says &ldquo;this data existed and was deleted on this date, for this reason.&rdquo; It preserves the audit trail without preserving the personal data.</p>
+  </div>
+
+  <div class="four-layers" id="layers-tombstone">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; Tombstone Records</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-tombstone', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-tombstone', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-tombstone', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-tombstone', 3)"></div>
+      </div>
+    </div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L1</span>
+        <span class="layer-label">Plain language</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Instead of just deleting a row and leaving nothing, you replace it with a special row that says &ldquo;deleted.&rdquo; That way the audit trail shows the deletion happened &mdash; you can prove you complied with the request.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L2</span>
+        <span class="layer-label">With mechanism</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>A tombstone record contains the hash key (to identify which entity), a deletion timestamp, the reason for deletion (e.g., &ldquo;Article 17 request #2847&rdquo;), and NULL or placeholder values where the PII used to be. The row itself contains no personal data &mdash; it&rsquo;s just a marker.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L3</span>
+        <span class="layer-label">Technical</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>In Data Vault&rsquo;s append-only model, a DELETE is philosophically uncomfortable &mdash; you&rsquo;re destroying history. Tombstones resolve this: you INSERT a new Satellite row with the same hash key, a current load_date, NULLs for all PII columns, and a flag indicating &ldquo;GDPR_ERASED.&rdquo; The previous PII rows are then physically deleted. The tombstone remains as the audit trail.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L4</span>
+        <span class="layer-label">Expert nuance</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>The tombstone itself must not contain PII. &ldquo;Deleted per request from nazeem@whiterun.gov&rdquo; defeats the purpose. The deletion reason should reference a request ID, not the requester&rsquo;s identity. The request ID maps to a separate, access-controlled deletion log maintained by the DPO&rsquo;s office &mdash; not stored in the data warehouse itself.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-panel pii-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot pii"></div>
+      <span class="data-panel-title pii-title">Tombstone Record in Sat_Character_PII</span>
+    </div>
+    <table class="data-table">
+      <tr><th>Column</th><th>Value</th></tr>
+      <tr><td class="pk">hub_character_hk</td><td class="val">a3f7...</td></tr>
+      <tr><td class="val">real_name</td><td class="val" style="color:var(--text-dim);font-style:italic">NULL</td></tr>
+      <tr><td class="val">email_address</td><td class="val" style="color:var(--text-dim);font-style:italic">NULL</td></tr>
+      <tr><td class="val">home_address</td><td class="val" style="color:var(--text-dim);font-style:italic">NULL</td></tr>
+      <tr><td class="val">date_of_birth</td><td class="val" style="color:var(--text-dim);font-style:italic">NULL</td></tr>
+      <tr><td class="val">load_date</td><td class="bk">2026-02-21</td></tr>
+      <tr><td class="val">record_source</td><td class="bk">GDPR_ERASED</td></tr>
+      <tr><td class="val">deletion_request_id</td><td class="bk">ART17-2847</td></tr>
+    </table>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 7: EXERCISE 1 ======= -->
+<div class="section" id="s7" data-label="Exercise 1">
+  <div class="section-header">
+    <div class="section-tag exercise-t">Exercise 01</div>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="exercise-section">
+    <div class="exercise-label">Exercise 01</div>
+    <h2>PII Classification</h2>
+    <p>Given these Skyrim character attributes, classify each as <strong>PII</strong> (personal data under GDPR) or <strong>Non-PII</strong> (analytical data safe to retain). Click your choice for each, then check.</p>
+
+    <div id="pii-exercise">
+      <div class="pii-item" data-correct="pii">
+        <span class="pii-item-name">real_name</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+
+      <div class="pii-item" data-correct="pii">
+        <span class="pii-item-name">race</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+
+      <div class="pii-item" data-correct="non-pii">
+        <span class="pii-item-name">level</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+
+      <div class="pii-item" data-correct="non-pii" data-accept-both="true">
+        <span class="pii-item-name">faction</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+
+      <div class="pii-item" data-correct="pii">
+        <span class="pii-item-name">home_address</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+
+      <div class="pii-item" data-correct="pii">
+        <span class="pii-item-name">date_of_birth</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+
+      <div class="pii-item" data-correct="non-pii">
+        <span class="pii-item-name">guild_membership</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+
+      <div class="pii-item" data-correct="pii">
+        <span class="pii-item-name">email_address</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+
+      <div class="pii-item" data-correct="non-pii">
+        <span class="pii-item-name">weapon_preference</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+
+      <div class="pii-item" data-correct="non-pii">
+        <span class="pii-item-name">bounty_amount</span>
+        <div class="pii-btn-group">
+          <button class="pii-btn pii-yes" onclick="selectPii(this, 'pii')">PII</button>
+          <button class="pii-btn pii-no" onclick="selectPii(this, 'non-pii')">Non-PII</button>
+        </div>
+        <span class="pii-feedback"></span>
+      </div>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise1()">Check Answers</button>
+    <div id="ex1-feedback" class="feedback"></div>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 8: EU AI ACT ======= -->
+<div class="section" id="s8" data-label="AI Act">
+  <div class="section-header">
+    <div class="section-tag ai-t">AI Act</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>EU AI Act &mdash; Article 10</h2>
+
+  <div class="hook hook-ai">
+    <p class="hook-text">GDPR tells you what to <em>delete</em>. The AI Act tells you what to <em>document</em>. They&rsquo;re designed to be complementary &mdash; but in practice, they create compounding obligations that only a governed data architecture can satisfy.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; Governance</div>
+    <p><span class="bridge-word">Governance</span> &mdash; from Greek <em>kybernan</em>: &ldquo;to steer a ship.&rdquo; Same root as <strong>cybernetics</strong> (the study of steering/control systems) and <strong>governor</strong> (the one who steers).</p>
+    <p><strong>Why this word:</strong> Data governance is steering your data &mdash; deciding where it goes, who can use it, how it&rsquo;s documented, and what happens when things go wrong. Without governance, AI on data is a ship without a rudder.</p>
+  </div>
+
+  <div class="four-layers" id="layers-aiact">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; EU AI Act</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-aiact', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-aiact', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-aiact', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-aiact', 3)"></div>
+      </div>
+    </div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L1</span>
+        <span class="layer-label">Plain language</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>The EU AI Act is a new law that regulates AI systems based on how risky they are. High-risk AI (like credit scoring or hiring tools) must prove their training data is high-quality, unbiased, and well-documented. Article 10 is the part that says how.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L2</span>
+        <span class="layer-label">With mechanism</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>The AI Act classifies AI into four risk tiers: prohibited (banned), high-risk (heavily regulated), limited risk (transparency required), minimal risk (no obligations). Article 10 applies to high-risk systems and requires documented data provenance, transformation documentation, quality verification, and bias examination.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L3</span>
+        <span class="layer-label">Technical</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Article 10(2) requires: documented design choices for data selection, full data lineage including original collection purpose (DV&rsquo;s <code>record_source</code> + <code>load_date</code>), documentation of all preparation operations (staging + Business Vault transformations), assessment of data quantity and suitability (pre-AI Mart validation), and bias examination for impacts on health, safety, and fundamental rights.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L4</span>
+        <span class="layer-label">Expert nuance</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Article 10(5) creates a limited exception to GDPR&rsquo;s prohibition on processing special category data (race, health, religion). Providers of high-risk AI may process this data specifically for bias detection and correction &mdash; but only when anonymized/synthetic data won&rsquo;t work, with strict safeguards, no third-party transfers, and mandatory deletion after bias correction. This is a direct bridge between GDPR and the AI Act.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>AI Act Requirements &rarr; Data Vault Features</h3>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot ai"></div>
+      <span class="data-panel-title ai-title">Article 10 &harr; Data Vault Mapping</span>
+    </div>
+    <table class="data-table">
+      <tr><th>AI Act Requirement</th><th>Data Vault Feature</th></tr>
+      <tr><td class="bk">Data provenance (Art. 10(2)(aa))</td><td class="val">record_source and load_date on every row</td></tr>
+      <tr><td class="bk">Transformation documentation (Art. 10(2)(c))</td><td class="val">Staging &rarr; Raw Vault &rarr; Business Vault: each layer is distinct and auditable</td></tr>
+      <tr><td class="bk">Quality verification (Art. 10(3))</td><td class="val">Business Vault validation rules + Feature Mart quality gates</td></tr>
+      <tr><td class="bk">Bias examination (Art. 10(2)(f))</td><td class="val">Profiling queries on Business Vault &mdash; demographic breakdowns</td></tr>
+      <tr><td class="bk">Immutability for audit (Arts. 11-12)</td><td class="val">Append-only Satellite design &mdash; nothing overwritten</td></tr>
+    </table>
+  </div>
+
+  <div class="pm-panel">
+    <h3 style="margin-top:0">Penalty Comparison</h3>
+    <table class="data-table">
+      <tr><th>Regulation</th><th>Maximum Fine</th><th>% of Turnover</th></tr>
+      <tr><td class="bk">GDPR (most serious violations, Art.&nbsp;83(5))</td><td class="val">EUR 20,000,000</td><td class="val">or 4%</td></tr>
+      <tr><td class="bk">AI Act (high-risk non-compliance)</td><td class="val">EUR 15,000,000</td><td class="val">or 3%</td></tr>
+      <tr><td class="bk">AI Act (prohibited practices)</td><td class="val">EUR 35,000,000</td><td class="val">or 7%</td></tr>
+    </table>
+    <p style="margin-top:14px;margin-bottom:0;font-size:14px;">The AI Act&rsquo;s top tier is nearly double GDPR&rsquo;s. Combined violations compound.</p>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 9: DATA MESH ======= -->
+<div class="section" id="s9" data-label="Data Mesh">
+  <div class="section-header">
+    <div class="section-tag dv-t">Data Mesh</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Data Mesh Governance</h2>
+
+  <div class="pm-panel">
+    <h3 style="margin-top:0">Four Principles of Data Mesh</h3>
+    <p><strong>1. Domain Ownership</strong> &mdash; Each business domain (sales, logistics, finance) owns its data end-to-end.</p>
+    <p><strong>2. Data as a Product</strong> &mdash; Each domain treats its data outputs with the same rigor as customer-facing products.</p>
+    <p><strong>3. Self-Serve Data Infrastructure</strong> &mdash; A central platform provides tools and templates so domains can build independently.</p>
+    <p style="margin-bottom:0"><strong>4. Federated Computational Governance</strong> &mdash; Governance policies defined centrally, executed locally by each domain.</p>
+  </div>
+
+  <h3>How Data Vault Supports Data Mesh</h3>
+  <p><strong>Raw Vault = centralized</strong> &mdash; single integration layer across all domains, cross-domain consistency.</p>
+  <p><strong>Business Vault = decentralized</strong> &mdash; each domain applies its own business rules.</p>
+  <p><strong>Built-in governance = federated governance infrastructure</strong> &mdash; <code>record_source</code>, <code>load_date</code>, immutability provide the audit infrastructure that federated governance relies on.</p>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Takeaway</div>
+    <blockquote>ScaleFree has presented on this at conferences. Understanding Data Mesh means being able to define it, state the four principles, and explain how Data Vault supports it.</blockquote>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 10: EXERCISE 2 ======= -->
+<div class="section" id="s10" data-label="Exercise 2">
+  <div class="section-header">
+    <div class="section-tag exercise-t">Exercise 02</div>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="exercise-section">
+    <div class="exercise-label">Exercise 02</div>
+    <h2>Match GDPR Rights to DV Features</h2>
+    <p>For each GDPR right, select the Data Vault feature that helps implement it.</p>
+
+    <div id="match-exercise">
+      <div class="match-row" data-correct="1">
+        <span class="match-label">A. Right to erasure (Art. 17)</span>
+        <select class="match-select">
+          <option value="">Select a DV feature...</option>
+          <option value="1">PII Satellite isolation + tombstone records</option>
+          <option value="2">load_date + record_source on every row</option>
+          <option value="3">JOINs across Hub + Satellites</option>
+          <option value="4">Append-only Satellite design</option>
+          <option value="5">record_source tracks collection purpose</option>
+        </select>
+        <span class="match-feedback"></span>
+      </div>
+
+      <div class="match-row" data-correct="3">
+        <span class="match-label">B. Right of access / DSAR (Art. 15)</span>
+        <select class="match-select">
+          <option value="">Select a DV feature...</option>
+          <option value="1">PII Satellite isolation + tombstone records</option>
+          <option value="2">load_date + record_source on every row</option>
+          <option value="3">JOINs across Hub + Satellites</option>
+          <option value="4">Append-only Satellite design</option>
+          <option value="5">record_source tracks collection purpose</option>
+        </select>
+        <span class="match-feedback"></span>
+      </div>
+
+      <div class="match-row" data-correct="4">
+        <span class="match-label">C. Right to rectification (Art. 16)</span>
+        <select class="match-select">
+          <option value="">Select a DV feature...</option>
+          <option value="1">PII Satellite isolation + tombstone records</option>
+          <option value="2">load_date + record_source on every row</option>
+          <option value="3">JOINs across Hub + Satellites</option>
+          <option value="4">Append-only Satellite design</option>
+          <option value="5">record_source tracks collection purpose</option>
+        </select>
+        <span class="match-feedback"></span>
+      </div>
+
+      <div class="match-row" data-correct="5">
+        <span class="match-label">D. Purpose limitation (Art. 5(1)(b))</span>
+        <select class="match-select">
+          <option value="">Select a DV feature...</option>
+          <option value="1">PII Satellite isolation + tombstone records</option>
+          <option value="2">load_date + record_source on every row</option>
+          <option value="3">JOINs across Hub + Satellites</option>
+          <option value="4">Append-only Satellite design</option>
+          <option value="5">record_source tracks collection purpose</option>
+        </select>
+        <span class="match-feedback"></span>
+      </div>
+
+      <div class="match-row" data-correct="2">
+        <span class="match-label">E. Accountability (Art. 5(2))</span>
+        <select class="match-select">
+          <option value="">Select a DV feature...</option>
+          <option value="1">PII Satellite isolation + tombstone records</option>
+          <option value="2">load_date + record_source on every row</option>
+          <option value="3">JOINs across Hub + Satellites</option>
+          <option value="4">Append-only Satellite design</option>
+          <option value="5">record_source tracks collection purpose</option>
+        </select>
+        <span class="match-feedback"></span>
+      </div>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise2()">Check Answers</button>
+    <div id="ex2-feedback" class="feedback"></div>
+
+    <div class="completion-banner" id="completion-banner">
+      <h3>Both Exercises Complete</h3>
+      <p>You understand PII classification and how GDPR rights map to Data Vault features. Well done — solid foundations.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======= PART 2 SEPARATOR ======= -->
+<div class="part2-separator">
+  <div class="title-label">Part 2 &mdash; Applied Concepts</div>
+  <h1>The Consultant&rsquo;s Day</h1>
+  <p class="subtitle">Walking through a real compliance scenario</p>
+</div>
+
+
+<!-- ======= SECTION 11: PART 2 ======= -->
+<div class="section" id="s11" data-label="Consultant's Day">
+  <div class="section-header">
+    <div class="section-tag">Applied Concepts</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>The Scenario</h2>
+
+  <div class="scenario-panel">
+    <p>You&rsquo;re a BI consultant at ScaleFree. A German financial services client calls: a customer has submitted a <strong>DSAR</strong> and a <strong>deletion request</strong> under Article 17. The client&rsquo;s data warehouse is built on Data Vault 2.0.</p>
+  </div>
+
+  <div class="step-panel">
+    <div class="step-num">Step 1</div>
+    <h3>Understand the Request</h3>
+    <p>Two separate obligations:</p>
+    <p><strong>DSAR (Art. 15):</strong> Show the customer all data held about them. Must respond within 30 days.</p>
+    <p><strong>Deletion request (Art. 17):</strong> Delete all personal data. Also 30 days. The DPO checks for exceptions (legal retention obligations, ongoing disputes, public interest).</p>
+    <p><strong>Your role as BI consultant:</strong> You don&rsquo;t handle the legal side &mdash; the DPO does. You handle the architectural side: finding the data, executing the deletion, documenting it.</p>
+  </div>
+
+  <div class="step-panel">
+    <div class="step-num">Step 2</div>
+    <h3>Map the Data</h3>
+    <p>Use the data catalog and lineage tools to find every location of this customer&rsquo;s data:</p>
+    <div class="data-panel" style="margin:16px 0;">
+      <div class="data-panel-header">
+        <div class="data-panel-dot prep"></div>
+        <span class="data-panel-title prep-title">Data Map &mdash; Layer by Layer</span>
+      </div>
+      <table class="data-table">
+        <tr><th>Layer</th><th>Contains PII?</th><th>Action</th></tr>
+        <tr><td class="bk">Persistent Staging Area</td><td class="pii-val">Yes</td><td class="val">Delete / tombstone</td></tr>
+        <tr><td class="bk">Raw Vault &mdash; Hub</td><td class="val">Depends on BK</td><td class="val">Keep if non-PII key; Artificial Hub if PII</td></tr>
+        <tr><td class="bk">Raw Vault &mdash; PII Satellite</td><td class="pii-val">Yes</td><td class="pii-val">Delete + tombstone</td></tr>
+        <tr><td class="bk">Raw Vault &mdash; Non-PII Sat</td><td class="safe-val">No</td><td class="safe-val">Keep</td></tr>
+        <tr><td class="bk">Raw Vault &mdash; Links</td><td class="val">Depends</td><td class="val">Keep if Hub remains</td></tr>
+        <tr><td class="bk">Business Vault</td><td class="val">Possibly</td><td class="val">Review and recalculate</td></tr>
+        <tr><td class="bk">Information Marts</td><td class="val">Possibly</td><td class="val">Rebuild affected views</td></tr>
+        <tr><td class="bk">Backups</td><td class="pii-val">Yes</td><td class="val">Mark for next rotation</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="step-panel">
+    <div class="step-num">Step 3</div>
+    <h3>Execute the DSAR</h3>
+    <p>Query the vault to find all data about this customer. Follow every hash key path:</p>
+    <p><code>Hub_Customer</code> &rarr; <code>Sat_Customer_PII</code> (name, email, address)</p>
+    <p><code>Hub_Customer</code> &rarr; <code>Sat_Customer_Attributes</code> (analytical data)</p>
+    <p><code>Hub_Customer</code> &rarr; <code>Link_Customer_Account</code> &rarr; <code>Hub_Account</code></p>
+    <p>Compile the results. Send to DPO for review and delivery to the customer.</p>
+  </div>
+
+  <div class="step-panel">
+    <div class="step-num">Step 4</div>
+    <h3>Execute the Deletion</h3>
+    <p>1. Run the deletion procedure (automated via datavault4dbt if configured, manual otherwise).</p>
+    <p>2. Log every action: what was deleted, from which table, at what timestamp, by whom, under which request ID.</p>
+    <p>3. The deletion log itself is a new audit record &mdash; you need to prove you deleted the data.</p>
+  </div>
+
+  <div class="step-panel">
+    <div class="step-num">Step 5</div>
+    <h3>Confirm and Document</h3>
+    <p>DPO confirms completion to the data subject.</p>
+    <p>Deletion record stored (without the deleted PII) for accountability.</p>
+    <p>If data was shared with third parties: notify them (Art. 17(2)).</p>
+  </div>
+
+  <h3>The Collaboration Points</h3>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot prep"></div>
+      <span class="data-panel-title prep-title">Consultant vs. DPO Responsibilities</span>
+    </div>
+    <table class="data-table">
+      <tr><th>Phase</th><th>Consultant&rsquo;s Role</th><th>DPO&rsquo;s Role</th></tr>
+      <tr><td class="bk">Design time</td><td class="val">Design Satellite splitting, Artificial Hub pattern</td><td class="val">Review and approve PII classification</td></tr>
+      <tr><td class="bk">Build time</td><td class="val">Implement deletion procedures, lineage tracking</td><td class="val">Validate all PII locations are covered</td></tr>
+      <tr><td class="bk">Runtime</td><td class="val">Architecture executes the deletion</td><td class="val">Triggers the request, confirms to data subject</td></tr>
+    </table>
+  </div>
+
+  <h3>Key Concepts</h3>
+
+  <div class="concept-callout">
+    <div class="concept-label">On the GDPR-DV Tension</div>
+    <blockquote>&ldquo;What makes this genuinely interesting is that GDPR was written for transactional systems where you find a row and delete it. Data warehouses are designed to never delete anything &mdash; that&rsquo;s the whole point. Resolving that tension isn&rsquo;t just a legal problem or a technical problem, it&rsquo;s both at once.&rdquo;</blockquote>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">On PII Satellite Isolation</div>
+    <blockquote>&ldquo;The standard approach is to design your Satellites so PII attributes are physically separated from analytical data. When a deletion request comes in, you delete the PII Satellite rows and leave the analytical value intact. The Hub and its hash key can remain because they no longer point to identifiable data.&rdquo;</blockquote>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">On Artificial Hubs</div>
+    <blockquote>&ldquo;When the business key itself is personal data &mdash; like an email address &mdash; you use an Artificial Hub with a synthetic surrogate key. The real personal identifier lives in a deletable Satellite. That way the Hub can survive deletion without breaking referential integrity.&rdquo;</blockquote>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">On Data Vault&rsquo;s GDPR Advantage</div>
+    <blockquote>&ldquo;Data Vault wasn&rsquo;t designed for GDPR, but its architecture is structurally well-suited for compliance. Every row has a load timestamp and record source &mdash; that&rsquo;s your audit trail built in. Nothing gets overwritten &mdash; that&rsquo;s your accountability. The layered architecture means you can track data lineage from source to mart.&rdquo;</blockquote>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">On AI Act + DV</div>
+    <blockquote>&ldquo;The EU AI Act requires documented data provenance, transformation audit trails, and bias examination for high-risk AI systems. Data Vault provides most of this by design &mdash; record source, load date, and the separation between Raw Vault and Business Vault create a traceable transformation chain. The Feature Mart becomes the compliance enforcement point.&rdquo;</blockquote>
+  </div>
+
+  
+
+
+<!-- FOOTER -->
+<div class="tutorial-footer">
+  <span>Chapter 5 &mdash; Compliance Day 1</span>
+  <span>Data Vault Foundations</span>
+</div>
+
+</div><!-- /container -->
+</div><!-- /page-content -->
+
+<script>
+/* ===================================================
+   STAR CONSTELLATION PARTICLE FIELD
+   =================================================== */
+(function() {
+  var canvas = document.getElementById('particle-field');
+  var ctx = canvas.getContext('2d');
+  var w, h;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var STAR_COUNT = 110;
+  var HUB_FRACTION = 0.15;
+  var CONNECT_DIST = 140;
+  var MOUSE_RADIUS = 200;
+  var MOUSE_STRENGTH = 0.015;
+
+  var starColors = [
+    { r: 6, g: 182, b: 212 },
+    { r: 168, g: 85, b: 247 },
+    { r: 245, g: 158, b: 11 },
+    { r: 0, g: 180, b: 255 },
+    { r: 59, g: 130, b: 246 },
+    { r: 239, g: 68, b: 68 },
+    { r: 139, g: 92, b: 246 }
+  ];
+
+  var stars = [];
+  for (var i = 0; i < STAR_COUNT; i++) {
+    var isHub = Math.random() < HUB_FRACTION;
+    var col = starColors[Math.floor(Math.random() * starColors.length)];
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      baseSize: isHub ? (2.5 + Math.random() * 2) : (0.8 + Math.random() * 1.2),
+      opacity: isHub ? (0.6 + Math.random() * 0.4) : (0.25 + Math.random() * 0.35),
+      r: col.r, g: col.g, b: col.b,
+      isHub: isHub,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.008 + Math.random() * 0.012,
+      driftAngle: Math.random() * Math.PI * 2,
+      driftSpeed: 0.08 + Math.random() * 0.15,
+      driftTurn: (Math.random() - 0.5) * 0.005
+    });
+  }
+
+  var mouse = { x: 0, y: 0, active: false };
+
+  function isOverContent(el) {
+    if (!el) return false;
+    while (el) {
+      if (el.classList) {
+        if (el.classList.contains('section') || el.classList.contains('container') ||
+            el.classList.contains('holo-nav') || el.classList.contains('pm-panel') ||
+            el.classList.contains('hook') || el.classList.contains('four-layers') ||
+            el.classList.contains('data-panel') || el.classList.contains('exercise-section') ||
+            el.classList.contains('concept-callout') || el.classList.contains('language-bridge') ||
+            el.classList.contains('deletion-step') || el.classList.contains('step-panel') ||
+            el.classList.contains('scenario-panel') || el.classList.contains('part2-separator') ||
+            el.classList.contains('explore-panel') || el.classList.contains('title-section')) {
+          return true;
+        }
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = !isOverContent(e.target);
+  });
+  document.addEventListener('mouseleave', function() { mouse.active = false; });
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      p.pulse += p.pulseSpeed;
+      p.driftAngle += p.driftTurn;
+      p.x += Math.cos(p.driftAngle) * p.driftSpeed;
+      p.y += Math.sin(p.driftAngle) * p.driftSpeed;
+
+      if (mouse.active) {
+        var dx = mouse.x - p.x;
+        var dy = mouse.y - p.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS && dist > 1) {
+          var force = (1 - dist / MOUSE_RADIUS) * MOUSE_STRENGTH;
+          p.x += dx * force;
+          p.y += dy * force;
+        }
+      }
+
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+    }
+
+    /* Constellation lines */
+    for (var i = 0; i < stars.length; i++) {
+      for (var j = i + 1; j < stars.length; j++) {
+        var dx = stars[i].x - stars[j].x;
+        var dy = stars[i].y - stars[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          var alpha = (1 - dist / CONNECT_DIST) * 0.12;
+          if (stars[i].isHub || stars[j].isHub) alpha *= 1.8;
+          ctx.beginPath();
+          ctx.moveTo(stars[i].x, stars[i].y);
+          ctx.lineTo(stars[j].x, stars[j].y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    /* Mouse connection lines */
+    if (mouse.active) {
+      for (var i = 0; i < stars.length; i++) {
+        var p = stars[i];
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          var mFade = 1 - mDist / MOUSE_RADIUS;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + (mFade * mFade * 0.2) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    /* Draw stars */
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      var pulseVal = 0.6 + 0.4 * Math.sin(p.pulse);
+      var currentOpacity = p.opacity * pulseVal;
+      var currentSize = p.baseSize * (0.85 + 0.15 * Math.sin(p.pulse));
+
+      var proximityBoost = 1;
+      if (mouse.active) {
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          proximityBoost = 1 + (1 - mDist / MOUSE_RADIUS) * 1.5;
+        }
+      }
+
+      var boostedOpacity = Math.min(currentOpacity * proximityBoost, 1);
+
+      var glowRadius = currentSize * (p.isHub ? 8 : 5);
+      var grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      grd.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.3) + ')');
+      grd.addColorStop(0.4, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.08) + ')');
+      grd.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + Math.min(p.r + 60, 255) + ',' + Math.min(p.g + 60, 255) + ',' + Math.min(p.b + 60, 255) + ',' + boostedOpacity + ')';
+      ctx.fill();
+
+      if (p.isHub) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, currentSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (boostedOpacity * 0.7) + ')';
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+/* ===================================================
+   SECTION VISIBILITY + NAV (scroll observer)
+   =================================================== */
+var sections = document.querySelectorAll('.section');
+var navNodes = document.querySelectorAll('.nav-node');
+var navConnectors = document.querySelectorAll('.nav-connector');
+var progressFill = document.getElementById('progress-fill');
+var navLabel = document.getElementById('nav-current-label');
+var lcarsSegs = document.querySelectorAll('.lcars-seg');
+var ambientEl = document.getElementById('ambient-glow');
+
+var usesCSSTimeline = CSS.supports && CSS.supports('animation-timeline', 'view()');
+
+if (!usesCSSTimeline) {
+  var sectionObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      } else {
+        entry.target.classList.remove('visible');
+      }
+    });
+  }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' });
+
+  sections.forEach(function(s) { sectionObserver.observe(s); });
+}
+
+var sectionColors = [
+  { r: 59, g: 130, b: 246 },
+  { r: 59, g: 130, b: 246 },
+  { r: 168, g: 85, b: 247 },
+  { r: 239, g: 68, b: 68 },
+  { r: 6, g: 182, b: 212 },
+  { r: 0, g: 180, b: 255 },
+  { r: 34, g: 197, b: 94 },
+  { r: 139, g: 92, b: 246 },
+  { r: 6, g: 182, b: 212 },
+  { r: 34, g: 197, b: 94 },
+  { r: 251, g: 191, b: 36 }
+];
+
+var lastActiveIndex = -1;
+function updateNav() {
+  var activeIdx = 0;
+  var scrollY = window.scrollY + window.innerHeight * 0.35;
+
+  sections.forEach(function(s, i) {
+    if (s.offsetTop <= scrollY) activeIdx = i;
+  });
+
+  if (activeIdx !== lastActiveIndex) {
+    lastActiveIndex = activeIdx;
+
+    navNodes.forEach(function(n, i) {
+      n.classList.remove('active', 'completed');
+      if (i === activeIdx) n.classList.add('active');
+      else if (i < activeIdx) n.classList.add('completed');
+    });
+    navConnectors.forEach(function(c, i) {
+      if (i < activeIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+
+    var currentSection = sections[activeIdx];
+    if (currentSection) {
+      navLabel.textContent = currentSection.getAttribute('data-label') || '';
+    }
+
+    lcarsSegs.forEach(function(seg, i) {
+      seg.classList.remove('active', 'completed');
+      if (i === activeIdx) seg.classList.add('active');
+      else if (i < activeIdx) seg.classList.add('completed');
+    });
+
+    var c = sectionColors[activeIdx];
+    if (c && ambientEl) {
+      ambientEl.style.setProperty('--ambient-c1', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.06)');
+      ambientEl.style.setProperty('--ambient-c2', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.03)');
+      ambientEl.style.setProperty('--ambient-c3', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.02)');
+    }
+  }
+
+  var activeSection = sections[lastActiveIndex];
+  var nextSection = sections[lastActiveIndex + 1];
+  if (activeSection) {
+    var secTop = activeSection.offsetTop;
+    var secBottom = nextSection ? nextSection.offsetTop : document.documentElement.scrollHeight;
+    var secHeight = secBottom - secTop;
+    var currentY = window.scrollY + window.innerHeight * 0.35;
+    var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+    fill = Math.max(0, Math.min(100, fill));
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+    lcarsSegs.forEach(function(seg, i) {
+      if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+      else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+      else seg.style.removeProperty('--seg-fill');
+    });
+  }
+
+  var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  var scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) scrolled = 100;
+  progressFill.style.width = Math.min(scrolled, 100) + '%';
+}
+
+
+/* ===================================================
+   SCROLL PROGRESS
+   =================================================== */
+function updateScrollProgress() {
+  var viewH = window.innerHeight;
+  sections.forEach(function(section) {
+    var rect = section.getBoundingClientRect();
+    var progress = 1 - (rect.top / viewH);
+    progress = Math.max(0, Math.min(1, progress));
+    section.style.setProperty('--scroll-progress', progress);
+
+    section.querySelectorAll('.hook-text').forEach(function(hook) {
+      var count = parseInt(hook.getAttribute('data-word-count')) || 1;
+      var litCount = Math.floor(progress * count * 1.3);
+      hook.querySelectorAll('.word').forEach(function(word, i) {
+        if (i < litCount) word.classList.add('lit');
+        else word.classList.remove('lit');
+      });
+    });
+  });
+}
+
+
+/* ===================================================
+   PARALLAX DEPTH SHAPES
+   =================================================== */
+var depthShapes = document.querySelectorAll('.depth-shape');
+var depthRates = [0.03, 0.05, 0.02, 0.04];
+
+function updateParallax() {
+  var scrollY = window.scrollY;
+  depthShapes.forEach(function(shape, i) {
+    shape.style.transform = 'translateY(' + (-scrollY * depthRates[i]) + 'px)';
+  });
+}
+
+
+/* ===================================================
+   UNIFIED SCROLL HANDLER
+   =================================================== */
+var scrollTicking = false;
+function onScroll() {
+  if (!scrollTicking) {
+    requestAnimationFrame(function() {
+      updateNav();
+      updateScrollProgress();
+      updateParallax();
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}
+
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('load', function() {
+  updateNav();
+  updateScrollProgress();
+});
+
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    var y = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
+
+
+/* ===================================================
+   4-LAYER TOGGLE
+   =================================================== */
+function toggleLayer(header) {
+  var layer = header.parentElement;
+  layer.classList.toggle('open');
+  var container = layer.closest('.four-layers');
+  if (container) updateLayerDots(container);
+}
+
+function jumpToLayer(containerId, layerIndex) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var layers = container.querySelectorAll('.layer');
+  layers.forEach(function(l, i) {
+    if (i <= layerIndex) l.classList.add('open');
+    else l.classList.remove('open');
+  });
+  updateLayerDots(container);
+}
+
+function updateLayerDots(container) {
+  var layers = container.querySelectorAll('.layer');
+  var dots = container.querySelectorAll('.layer-dot');
+  layers.forEach(function(l, i) {
+    if (dots[i]) {
+      if (l.classList.contains('open')) dots[i].classList.add('active');
+      else dots[i].classList.remove('active');
+    }
+  });
+}
+
+
+/* ===================================================
+   EXPLORE MORE TOGGLE
+   =================================================== */
+function toggleExplore(opener) {
+  var panel = opener.nextElementSibling;
+  var isOpen = opener.classList.toggle('open');
+  if (panel) panel.classList.toggle('open', isOpen);
+}
+
+
+/* ===================================================
+   PII CLASSIFICATION EXERCISE
+   =================================================== */
+function selectPii(btn, value) {
+  var item = btn.closest('.pii-item');
+  var btns = item.querySelectorAll('.pii-btn');
+  btns.forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  item.setAttribute('data-selected', value);
+}
+
+function checkExercise1() {
+  var items = document.querySelectorAll('#pii-exercise .pii-item');
+  var correct = 0;
+  var total = items.length;
+  var allAnswered = true;
+
+  items.forEach(function(item) {
+    var selected = item.getAttribute('data-selected');
+    var expected = item.getAttribute('data-correct');
+    var acceptBoth = item.getAttribute('data-accept-both') === 'true';
+    var feedback = item.querySelector('.pii-feedback');
+
+    if (!selected) {
+      allAnswered = false;
+      feedback.textContent = '?';
+      feedback.style.color = 'var(--text-dim)';
+      item.style.borderColor = 'var(--border-subtle)';
+      return;
+    }
+
+    var isCorrect = (selected === expected) || (acceptBoth);
+    /* Special case: race is PII (special category) - accept PII as correct */
+    var attrName = item.querySelector('.pii-item-name').textContent;
+    if (attrName === 'race' && selected === 'pii') isCorrect = true;
+
+    if (isCorrect) {
+      correct++;
+      feedback.textContent = '\u2713';
+      feedback.style.color = 'var(--sql-select)';
+      item.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+      item.style.background = 'rgba(34, 197, 94, 0.03)';
+    } else {
+      feedback.textContent = '\u2717';
+      feedback.style.color = 'var(--pii-text)';
+      item.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+      item.style.background = 'rgba(239, 68, 68, 0.03)';
+    }
+  });
+
+  var fid = document.getElementById('ex1-feedback');
+  if (!allAnswered) {
+    fid.className = 'feedback incorrect';
+    fid.textContent = 'Select PII or Non-PII for every attribute before checking.';
+    fid.style.display = 'block';
+    return;
+  }
+
+  if (correct >= 9) {
+    fid.className = 'feedback correct';
+    fid.textContent = correct + '/' + total + ' correct. Strong PII classification. Note: race is special category data under Article 9 -- even stricter than regular PII.';
+    fid.style.display = 'block';
+    exercisesCompleted.ex1 = true;
+    checkAllComplete();
+  } else if (correct >= 7) {
+    fid.className = 'feedback correct';
+    fid.textContent = correct + '/' + total + ' correct. Good work. Review the ones marked wrong -- remember that race is special category data (Art. 9) and faction is a genuine judgment call.';
+    fid.style.display = 'block';
+    exercisesCompleted.ex1 = true;
+    checkAllComplete();
+  } else {
+    fid.className = 'feedback incorrect';
+    fid.textContent = correct + '/' + total + ' correct. Key rule: if an attribute can identify or single out a person (directly or in combination), it is PII. Names, emails, addresses, dates of birth -- all PII.';
+    fid.style.display = 'block';
+  }
+}
+
+
+/* ===================================================
+   MATCHING EXERCISE
+   =================================================== */
+function checkExercise2() {
+  var rows = document.querySelectorAll('#match-exercise .match-row');
+  var correct = 0;
+  var total = rows.length;
+  var allAnswered = true;
+
+  rows.forEach(function(row) {
+    var select = row.querySelector('.match-select');
+    var expected = row.getAttribute('data-correct');
+    var feedback = row.querySelector('.match-feedback');
+    var selected = select.value;
+
+    if (!selected) {
+      allAnswered = false;
+      feedback.textContent = '?';
+      feedback.style.color = 'var(--text-dim)';
+      row.style.borderColor = 'var(--border-subtle)';
+      return;
+    }
+
+    if (selected === expected) {
+      correct++;
+      feedback.textContent = '\u2713';
+      feedback.style.color = 'var(--sql-select)';
+      row.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+      row.style.background = 'rgba(34, 197, 94, 0.03)';
+    } else {
+      feedback.textContent = '\u2717';
+      feedback.style.color = 'var(--pii-text)';
+      row.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+      row.style.background = 'rgba(239, 68, 68, 0.03)';
+    }
+  });
+
+  var fid = document.getElementById('ex2-feedback');
+  if (!allAnswered) {
+    fid.className = 'feedback incorrect';
+    fid.textContent = 'Select a DV feature for every GDPR right before checking.';
+    fid.style.display = 'block';
+    return;
+  }
+
+  if (correct === total) {
+    fid.className = 'feedback correct';
+    fid.textContent = correct + '/' + total + ' correct. Perfect match. You understand how Data Vault architecture implements GDPR rights.';
+    fid.style.display = 'block';
+    exercisesCompleted.ex2 = true;
+    checkAllComplete();
+  } else if (correct >= 3) {
+    fid.className = 'feedback correct';
+    fid.textContent = correct + '/' + total + ' correct. Close. Review: erasure = PII Sat + tombstones, access = JOINs, rectification = append-only, purpose = record_source, accountability = load_date + record_source.';
+    fid.style.display = 'block';
+    exercisesCompleted.ex2 = true;
+    checkAllComplete();
+  } else {
+    fid.className = 'feedback incorrect';
+    fid.textContent = correct + '/' + total + ' correct. Think about what each right ASKS for, then which DV feature PROVIDES it. Erasure needs deletion capability, access needs query capability, etc.';
+    fid.style.display = 'block';
+  }
+}
+
+var exercisesCompleted = { ex1: false, ex2: false };
+
+function checkAllComplete() {
+  if (exercisesCompleted.ex1 && exercisesCompleted.ex2) {
+    var banner = document.getElementById('completion-banner');
+    banner.style.display = 'block';
+    setTimeout(function() {
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+  }
+}
+
+
+/* ===================================================
+   WORD-WRAP UTILITY
+   =================================================== */
+function wrapHookWords(hookEl) {
+  var nodes = Array.prototype.slice.call(hookEl.childNodes);
+  var frag = document.createDocumentFragment();
+
+  nodes.forEach(function(node) {
+    if (node.nodeType === 1 && node.tagName === 'EM') {
+      var span = document.createElement('span');
+      span.className = 'word';
+      span.appendChild(node.cloneNode(true));
+      frag.appendChild(span);
+    } else if (node.nodeType === 3) {
+      var words = node.textContent.split(/(\s+)/);
+      words.forEach(function(w) {
+        if (/^\s+$/.test(w)) {
+          frag.appendChild(document.createTextNode(w));
+        } else if (w.length > 0) {
+          var span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = w;
+          frag.appendChild(span);
+        }
+      });
+    } else {
+      frag.appendChild(node.cloneNode(true));
+    }
+  });
+
+  while (hookEl.firstChild) hookEl.removeChild(hookEl.firstChild);
+  hookEl.appendChild(frag);
+  hookEl.setAttribute('data-word-count', hookEl.querySelectorAll('.word').length);
+}
+
+
+/* ===================================================
+   INIT
+   =================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.four-layers').forEach(function(container) {
+    updateLayerDots(container);
+  });
+
+  document.querySelectorAll('.hook-text').forEach(function(hook) {
+    wrapHookWords(hook);
+  });
+});
+</script>
+
+<script src="../nav-inject.js"></script>
+
+
+<!-- ═══════ Game UI Elements ═══════ -->
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar -->
+<div id="inventory-toolbar" class="inventory-toolbar">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel -->
+<div id="inventory-panel" class="inventory-panel hidden">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script>
+/* ═══════ Game system init + scroll-based item discovery ═══════ */
+document.addEventListener('DOMContentLoaded', function() {
+  /* Initialize game systems */
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+    if (SV.achievements) SV.achievements.init();
+  }
+
+  var items = ['gdpr-fundamentals', 'data-subject-rights', 'data-mesh-concept', 'compliance-differentiator'];
+  var granted = {};
+
+  /* Restore already-granted items from persistence */
+  if (typeof SV !== 'undefined' && SV.persistence) {
+    var inv = SV.persistence.get('inventory', []);
+    for (var i = 0; i < inv.length; i++) { granted[inv[i].id] = true; }
+  }
+
+  function getScrollPct() {
+    var h = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    return window.scrollY / h;
+  }
+
+  function checkScroll() {
+    var pct = getScrollPct();
+    for (var i = 0; i < items.length; i++) {
+      var threshold = (i + 0.5) / items.length;
+      if (pct >= threshold && !granted[items[i]]) {
+        granted[items[i]] = true;
+        if (typeof SV !== 'undefined' && SV.inventory && SV.inventory.addItem) {
+          SV.inventory.addItem(items[i]);
+        }
+      }
+    }
+  }
+
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  setTimeout(checkScroll, 1500);
+});
+</script>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { productLayout, productPanelRect } from './viewport-layout.js?v=interaction-round-1';
-import { PRODUCTS } from './product-catalog.js?v=website-prototype-15';
+import { PRODUCTS } from './product-catalog.js?v=site-preview-restored-23';
 import { releaseVelocity, captureIntent, boundedCardPosition } from './product-gestures.js?v=interaction-round-1';
 
 const CYAN=0x9fe8ff,PINK=0xff86bd;

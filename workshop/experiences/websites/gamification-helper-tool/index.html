@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yu-kai Chou's Octalysis Framework: The Complete Deck</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfbf7;
+            color: #1f2937;
+        }
+
+        /* Ensure anchor links don't get hidden behind the sticky header */
+        section {
+            scroll-margin-top: 100px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; 
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px;
+            }
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .technique-row:nth-child(even) {
+            background-color: #fafaf9;
+        }
+        .technique-row:hover {
+            background-color: #f3f4f6;
+        }
+
+        /* Color Borders for Master List Identification */
+        .cd-1-border { border-left: 4px solid #F59E0B; }
+        .cd-2-border { border-left: 4px solid #10B981; }
+        .cd-3-border { border-left: 4px solid #3B82F6; }
+        .cd-4-border { border-left: 4px solid #6366F1; }
+        .cd-5-border { border-left: 4px solid #8B5CF6; }
+        .cd-6-border { border-left: 4px solid #EC4899; }
+        .cd-7-border { border-left: 4px solid #F43F5E; }
+        .cd-8-border { border-left: 4px solid #64748B; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo / Title -->
+                <div class="flex items-center cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                    <i class="fa-solid fa-shapes text-indigo-600 text-2xl mr-3"></i>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900 tracking-tight">Octalysis Explorer</h1>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">Complete Strategy Deck</p>
+                    </div>
+                </div>
+                
+                <!-- Desktop Nav -->
+                <nav class="hidden md:flex space-x-4">
+                    <button onclick="document.getElementById('dashboard').scrollIntoView({behavior: 'smooth'})" class="text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
+                        Dashboard
+                    </button>
+                    <button onclick="document.getElementById('master-list').scrollIntoView({behavior: 'smooth'})" class="flex items-center text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-4 py-2 rounded-md text-sm font-bold transition shadow-sm">
+                        <i class="fa-solid fa-list-ol mr-2"></i> Full Deck (<span id="nav-count">160+</span>)
+                    </button>
+                </nav>
+
+                <!-- Mobile Nav Icon -->
+                <div class="md:hidden text-gray-500">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        
+        <!-- Dashboard Section -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10" id="dashboard">
+            <div class="text-center max-w-3xl mx-auto mb-8">
+                <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">The 8 Core Drives</h2>
+                <p class="mt-4 text-lg text-gray-600">
+                    Interact with the radar chart to explore the psychological drivers. Adjust the sliders to simulate different gamification profiles.
+                </p>
+            </div>
+
+            <!-- Main Interactive Dashboard -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- Left: Chart Visualization -->
+                <div class="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                    <div class="mb-4 flex justify-between items-end">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800">Framework Visualizer</h3>
+                            <p class="text-xs text-gray-500">Click chart points to change the view.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="octalysisChart"></canvas>
+                    </div>
+
+                    <!-- Sandbox Controls (Mini) -->
+                    <div class="mt-6 pt-6 border-t border-gray-100">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">Profile Simulator</h4>
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-2" id="slider-container">
+                            <!-- Sliders injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Detailed Info Panel -->
+                <div class="lg:col-span-7 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col h-full min-h-[600px]">
+                    <!-- Dynamic Header -->
+                    <div id="drive-header" class="bg-indigo-600 p-6 text-white transition-colors duration-300">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h2 id="drive-title" class="text-2xl font-bold">Loading...</h2>
+                                <span id="drive-type" class="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/20">...</span>
+                            </div>
+                            <i id="drive-icon" class="fa-solid fa-circle-notch fa-spin text-4xl opacity-80"></i>
+                        </div>
+                        <p id="drive-desc" class="mt-4 text-indigo-50 leading-relaxed min-h-[3rem]">
+                            Select a core drive to view details.
+                        </p>
+                    </div>
+
+                    <!-- Techniques List -->
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">
+                            <span><i class="fa-solid fa-star mr-2 text-gray-400"></i>Highlighted Techniques</span>
+                            <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Showing top 6 of <span id="drive-tech-count">0</span></span>
+                        </h3>
+                        
+                        <div id="techniques-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4 custom-scroll overflow-y-auto max-h-[500px] pr-2">
+                            <!-- Technique cards injected via JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Navigation Buttons -->
+                    <div class="bg-gray-50 p-4 border-t border-gray-200 flex justify-between">
+                        <button id="prev-drive" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition shadow-sm">
+                            <i class="fa-solid fa-arrow-left mr-2"></i> Prev Drive
+                        </button>
+                        <button id="next-drive" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition shadow-sm">
+                            Next Drive <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW SECTION: Master Strategy Deck -->
+        <section class="bg-white py-16 border-t border-gray-200 mt-12 scroll-mt-24" id="master-list">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-extrabold text-gray-900">The Complete Strategy Deck</h2>
+                        <p class="mt-2 text-gray-600 max-w-2xl">
+                            The exhaustive collection of <span class="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded" id="total-count">...</span> Game Techniques (GT), derived from the Octalysis Levels 1, 2, and Prime.
+                        </p>
+                    </div>
+                    <div class="mt-4 md:mt-0 relative w-full md:w-96">
+                        <input type="text" id="master-search" placeholder="Search (e.g., 'Sunk Cost', 'Timer')..." class="pl-10 pr-4 py-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none shadow-sm transition">
+                        <i class="fa-solid fa-search absolute left-3 top-4 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- Control Bar -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    
+                    <!-- Filters -->
+                    <div class="flex flex-wrap gap-2">
+                        <button class="master-filter active px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-900 text-white transition shadow-sm border border-transparent" data-filter="all">All</button>
+                        <button class="master-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm" data-filter="cd1" style="border-left: 3px solid #F59E0B">1. Meaning</button>
+                        <button class="master-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm" data-filter="cd2" style="border-left: 3px solid #10B981">2. Accomp.</button>
+                        <button class="master-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm" data-filter="cd3" style="border-left: 3px solid #3B82F6">3. Empower.</button>
+                        <button class="master-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm" data-filter="cd4" style="border-left: 3px solid #6366F1">4. Own.</button>
+                        <button class="master-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm" data-filter="cd5" style="border-left: 3px solid #8B5CF6">5. Social</button>
+                        <button class="master-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm" data-filter="cd6" style="border-left: 3px solid #EC4899">6. Scarcity</button>
+                        <button class="master-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm" data-filter="cd7" style="border-left: 3px solid #F43F5E">7. Curiosity</button>
+                        <button class="master-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm" data-filter="cd8" style="border-left: 3px solid #64748B">8. Avoid.</button>
+                    </div>
+
+                    <!-- Sort Controls -->
+                    <div class="flex bg-gray-100 p-1 rounded-lg">
+                        <button class="sort-btn active px-3 py-1.5 rounded-md text-xs font-bold text-gray-700 transition" data-sort="drive">
+                            <i class="fa-solid fa-layer-group mr-1"></i> By Drive
+                        </button>
+                        <button class="sort-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-500 hover:text-gray-700 transition" data-sort="id">
+                            <i class="fa-solid fa-arrow-down-1-9 mr-1"></i> By ID #
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden min-h-[400px]">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-20 cursor-pointer hover:bg-gray-100" onclick="toggleSort('id')"># <i class="fa-solid fa-sort ml-1"></i></th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-64">Technique Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-48 cursor-pointer hover:bg-gray-100" onclick="toggleSort('drive')">Core Drive <i class="fa-solid fa-sort ml-1"></i></th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="master-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Rows injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="no-results" class="hidden p-12 text-center">
+                        <i class="fa-solid fa-magnifying-glass text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">No techniques found matching your search.</p>
+                        <button onclick="document.getElementById('master-search').value = ''; renderMasterList();" class="mt-4 text-indigo-600 hover:text-indigo-800 text-sm font-semibold">Clear Search</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-900 border-t border-gray-800 py-10 mt-auto text-gray-400">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+            <p class="font-semibold text-white">Interactive Octalysis Explorer</p>
+            <p class="mt-2">Based on the Octalysis Framework by Yu-kai Chou.</p>
+            <p class="mt-1">Generated for educational purposes. All techniques belong to the Octalysis Group.</p>
+            <p class="mt-1">Web App built by Lorenzo Colombani 2025©</p>
+        </div>
+    </footer>
+
+    <!-- JS Implementation -->
+    <script>
+        // FULL DATASET: 160+ Techniques
+        const octalysisData = [
+            {
+                id: 1,
+                title: "Epic Meaning & Calling",
+                short: "Meaning",
+                color: "#F59E0B",
+                icon: "fa-earth-americas",
+                type: "White Hat / Right Brain",
+                techniques: [
+                    { id: 1, name: "Narrative", desc: "A compelling context or story that gives meaning to user actions." },
+                    { id: 2, name: "Elitism", desc: "Creating a group that causes users to feel pride in belonging." },
+                    { id: 3, name: "Humanity Hero", desc: "Users believe their actions are saving the world or helping humanity." },
+                    { id: 4, name: "Beginner's Luck", desc: "Giving users an unearned reward early on to make them feel 'destined'." },
+                    { id: 5, name: "Free Lunch", desc: "Giving something for free to make users feel grateful/special." },
+                    { id: 6, name: "Higher Meaning", desc: "Believing the action serves a higher purpose/deity/mission." },
+                    { id: 7, name: "Co-Creator", desc: "Involving users in the creation of the mission or product." },
+                    { id: 8, name: "Destiny Child", desc: "The user is explicitly told they are the 'Chosen One' within the narrative." },
+                    { id: 9, name: "Win State", desc: "A clear condition where the 'good' prevails over 'evil'." },
+                    { id: 10, name: "Moral Martyrdom", desc: "Sacrificing oneself for the greater good of the group." },
+                    { id: 11, name: "Glow Effect", desc: "Visual cues showing a user is 'special' or powered up." },
+                    { id: 81, name: "Crowdsourcing", desc: "Allowing the community to contribute to a massive goal." },
+                    { id: 89, name: "Halo Effect", desc: "Associating the task with a beloved figure or symbol." },
+                    { id: 116, name: "Parental Vision", desc: "Seeing your creation grow up and become successful." },
+                    { id: 117, name: "Heirloom", desc: "Passing something down to future generations (users)." },
+                    { id: 118, name: "Exclusive Club", desc: "Membership that is hard to earn and thus meaningful." },
+                    { id: 119, name: "Greater Purpose", desc: "Connecting a boring task to a massive result." },
+                    { id: 120, name: "Calling", desc: "Users feel they were born to do this task." },
+                    { id: 160, name: "Prestige", desc: "Doing something just for the honor of it." }
+                ]
+            },
+            {
+                id: 2,
+                title: "Development & Accomplishment",
+                short: "Accomplishment",
+                color: "#10B981",
+                icon: "fa-trophy",
+                type: "White Hat / Left Brain",
+                techniques: [
+                    { id: 12, name: "Points", desc: "Numerical representations of progress." },
+                    { id: 13, name: "Badges", desc: "Visual symbols of achievement." },
+                    { id: 14, name: "Leaderboards", desc: "Ranking users to drive competition." },
+                    { id: 15, name: "Progress Bars", desc: "Visual tracking of completion towards a goal." },
+                    { id: 16, name: "Quest Lists", desc: "A clear set of tasks to achieve a state of completion." },
+                    { id: 17, name: "Dessert Oasis", desc: "Visualizing the reward at the end of the tunnel." },
+                    { id: 18, name: "High Five", desc: "Celebratory feedback (sound/visual) upon completion." },
+                    { id: 19, name: "Level Up", desc: "Permanent increase in status/power after accumulation." },
+                    { id: 20, name: "Boss Fights", desc: "A major challenge that tests accumulated skills." },
+                    { id: 21, name: "Fixed Action Rewards", desc: "A clear reward for a clear action (Earned Lunch)." },
+                    { id: 22, name: "Step-by-Step Tutorial", desc: "Guiding users through development phases." },
+                    { id: 82, name: "Crowning", desc: "A special status symbol for the top user (e.g., King of the Hill)." },
+                    { id: 88, name: "Status Points", desc: "Points that only count for rank, not currency." },
+                    { id: 94, name: "Rock Star Effect", desc: "Making the user feel incredibly skilled (e.g., Guitar Hero)." },
+                    { id: 99, name: "Lil' Score", desc: "Showing a score for even trivial actions." },
+                    { id: 110, name: "Win-States", desc: "Defining exactly what 'winning' looks like." },
+                    { id: 121, name: "Cornerstone", desc: "An achievement that unlocks a new tier of possibilities." },
+                    { id: 122, name: "Achievement Symbols", desc: "Physical or digital tokens of past victories." },
+                    { id: 123, name: "Head Start", desc: "Giving a user progress before they even begin." },
+                    { id: 124, name: "Visual Progress", desc: "Seeing the environment change as you progress." },
+                    { id: 125, name: "Earned Pride", desc: "The feeling of overcoming a difficult challenge." },
+                    { id: 126, name: "Skill Mastery", desc: "The intrinsic reward of getting better at something." },
+                    { id: 161, name: "Completionist", desc: "The drive to fill every empty slot or check every box." },
+                    { id: 162, name: "Milestone Celebration", desc: "Major fanfare for big number achievements." }
+                ]
+            },
+            {
+                id: 3,
+                title: "Empowerment of Creativity",
+                short: "Empowerment",
+                color: "#3B82F6",
+                icon: "fa-palette",
+                type: "White Hat / Right Brain",
+                techniques: [
+                    { id: 23, name: "Milestone Unlock", desc: "Unlocking new abilities/tools after reaching a milestone." },
+                    { id: 24, name: "Evergreen Mechanics", desc: "Allowing users to create their own workflow/strategy." },
+                    { id: 25, name: "Instant Feedback", desc: "Users see the results of their creativity immediately." },
+                    { id: 26, name: "Boosters", desc: "Power-ups that allow users to overcome challenges creatively." },
+                    { id: 27, name: "Voluntary Autonomy", desc: "Giving users genuine choice in how to proceed." },
+                    { id: 28, name: "Poison Picker", desc: "Offering a choice of negatives, giving a sense of agency." },
+                    { id: 29, name: "Exploration", desc: "Freedom to roam and discover." },
+                    { id: 30, name: "Blank Canvas", desc: "Starting from nothing to create something unique." },
+                    { id: 31, name: "Plant Picker", desc: "Meaningful choices that shape the outcome." },
+                    { id: 32, name: "General's Carrot", desc: "Strategic choices determine the reward." },
+                    { id: 83, name: "Real-Time Control", desc: "Giving users direct control over movement/action." },
+                    { id: 84, name: "Chain Combos", desc: "Allowing users to link actions for greater effect." },
+                    { id: 101, name: "Creativity Tools", desc: "Providing a toolset rather than a path." },
+                    { id: 102, name: "Folding", desc: "Allowing users to customize the interface/experience." },
+                    { id: 127, name: "Unlockable Content", desc: "New areas or items accessible only by creativity." },
+                    { id: 128, name: "Minesweeper Choice", desc: "Using logic to determine the correct path." },
+                    { id: 129, name: "Sandbox", desc: "A safe environment to experiment without penalty." },
+                    { id: 130, name: "Daily Strategy", desc: "A setup that changes daily, requiring new tactics." },
+                    { id: 131, name: "Avatar Customization", desc: "Expressing self-identity through visuals." },
+                    { id: 163, name: "Meaningful Choice", desc: "Choices that actually change the ending/outcome." }
+                ]
+            },
+            {
+                id: 4,
+                title: "Ownership & Possession",
+                short: "Ownership",
+                color: "#6366F1",
+                icon: "fa-box-open",
+                type: "White Hat / Left Brain",
+                techniques: [
+                    { id: 33, name: "Virtual Goods", desc: "Digital items that users can collect and own." },
+                    { id: 34, name: "Build from Scratch", desc: "IKEA Effect: Valuing what you build yourself." },
+                    { id: 35, name: "Collection Sets", desc: "Encouraging users to complete a set of items." },
+                    { id: 36, name: "Avatar", desc: "Personalizing a representation of oneself." },
+                    { id: 37, name: "Alfred Effect", desc: "The system learns user preferences, making it hard to switch." },
+                    { id: 38, name: "Protection", desc: "Defending what one owns from loss." },
+                    { id: 39, name: "Recruitment", desc: "Owning/managing a team or followers." },
+                    { id: 40, name: "Monitoring Attachment", desc: "Constantly checking a status because you own it." },
+                    { id: 41, name: "Earned Lunch", desc: "Working for a reward makes it feel more owned." },
+                    { id: 64, name: "Totem", desc: "An object that represents the user's progress/status." },
+                    { id: 72, name: "Exchangeable Points", desc: "Currency that can be traded for goods." },
+                    { id: 85, name: "Pleading", desc: "An owned item 'begs' the user to come back." },
+                    { id: 103, name: "Learning Curve", desc: "The time invested in learning a system creates ownership." },
+                    { id: 104, name: "Collection Set", desc: "Collecting a series of related items." },
+                    { id: 132, name: "Virtual Pet", desc: "Something that requires care and attention." },
+                    { id: 133, name: "Sticker Book", desc: "A place to display collected achievements." },
+                    { id: 134, name: "Endowment Effect", desc: "Valuing something more simply because you own it." },
+                    { id: 135, name: "Stockpile", desc: "Hoarding resources for future use." },
+                    { id: 136, name: "Legacy", desc: "Building something that will outlast the user." },
+                    { id: 137, name: "Pinned Content", desc: "Saving items to a personal board." }
+                ]
+            },
+            {
+                id: 5,
+                title: "Social Influence & Relatedness",
+                short: "Social",
+                color: "#8B5CF6",
+                icon: "fa-users",
+                type: "Right Brain", 
+                techniques: [
+                    { id: 42, name: "Friending", desc: "Connecting with peers." },
+                    { id: 43, name: "Social Treasure", desc: "Rewards that can only be given to others, not kept." },
+                    { id: 44, name: "Group Quests", desc: "Challenges that require cooperative effort." },
+                    { id: 45, name: "Mentorship", desc: "Experienced users helping new users." },
+                    { id: 46, name: "Social Prods", desc: "Small interactions (pokes, likes) to engage others." },
+                    { id: 47, name: "Brag Buttons", desc: "Easy ways to share achievements." },
+                    { id: 48, name: "Water Cooler", desc: "Spaces for social conversation." },
+                    { id: 49, name: "Tout Flags", desc: "Showcasing top performers to others." },
+                    { id: 50, name: "Thank You Economy", desc: "Facilitating gratitude between users." },
+                    { id: 51, name: "Conformity Anchors", desc: "Showing what the 'majority' does to guide behavior." },
+                    { id: 52, name: "Envy", desc: "Desiring what others have." },
+                    { id: 91, name: "See-Saw", desc: "One user wins only if another loses (Zero Sum)." },
+                    { id: 92, name: "Group Bonus", desc: "Everyone gets a bonus if everyone performs." },
+                    { id: 105, name: "Cheerleading", desc: "Non-functional support from other users." },
+                    { id: 106, name: "Social Gifting", desc: "Giving gifts to pull friends back in." },
+                    { id: 138, name: "Trophy Shelf", desc: "A public display of achievements for others to see." },
+                    { id: 139, name: "Social Nudging", desc: "The community pushes a user to act." },
+                    { id: 140, name: "Social Anchor", desc: "Staying in a system because your friends are there." },
+                    { id: 141, name: "Competition", desc: "Direct head-to-head conflict." },
+                    { id: 142, name: "Cooperation", desc: "Working together towards a common goal." },
+                    { id: 143, name: "Social Norming", desc: "Using peer pressure to enforce rules." },
+                    { id: 164, name: "Guilds/Clans", desc: "Formalized groups with their own hierarchies." }
+                ]
+            },
+            {
+                id: 6,
+                title: "Scarcity & Impatience",
+                short: "Scarcity",
+                color: "#EC4899",
+                icon: "fa-hourglass-half",
+                type: "Black Hat / Left Brain",
+                techniques: [
+                    { id: 53, name: "Appointment Dynamics", desc: "Action must be taken at a specific absolute time." },
+                    { id: 54, name: "Countdown Timers", desc: "Visualizing time running out." },
+                    { id: 55, name: "Fixed Intervals", desc: "Wait times between actions (e.g., farming crops)." },
+                    { id: 56, name: "Moats", desc: "Barriers that require effort/time to cross." },
+                    { id: 57, name: "Dangling", desc: "Showing a reward that is just out of reach." },
+                    { id: 58, name: "Throttling", desc: "Artificially slowing down progress to increase value." },
+                    { id: 59, name: "Limited Edition", desc: "Scarcity in quantity." },
+                    { id: 60, name: "Torture Breaks", desc: "Forcing a pause when the user wants to continue." },
+                    { id: 61, name: "Magnetic Caps", desc: "Limits on how many resources can be held." },
+                    { id: 86, name: "The Last Mile", desc: "The feeling of being so close to the finish line." },
+                    { id: 93, name: "Anchored Juxtaposition", desc: "Comparing two options to make one look expensive/rare." },
+                    { id: 107, name: "Urgent Optimism", desc: "The belief that immediate action will solve the problem." },
+                    { id: 115, name: "Absolute Scarcity", desc: "Only one person can have this item." },
+                    { id: 144, name: "Impatience", desc: "The desire to speed up a process (pay to skip)." },
+                    { id: 145, name: "Feature Lock", desc: "Features that are visible but not yet accessible." },
+                    { id: 146, name: "Seasonal Event", desc: "Content only available for a short calendar window." },
+                    { id: 147, name: "Paywall", desc: "A hard barrier removable only by payment/premium currency." },
+                    { id: 148, name: "Wait to Restock", desc: "Goods are sold out and user must wait." },
+                    { id: 149, name: "Slow Decay", desc: "Assets that lose value over time if not maintained." }
+                ]
+            },
+            {
+                id: 7,
+                title: "Unpredictability & Curiosity",
+                short: "Unpredictability",
+                color: "#F43F5E",
+                icon: "fa-dice",
+                type: "Black Hat / Right Brain",
+                techniques: [
+                    { id: 62, name: "Easter Eggs", desc: "Hidden surprises found through exploration." },
+                    { id: 63, name: "Rolling Rewards", desc: "Randomized rewards (lottery system)." },
+                    { id: 65, name: "Mystery Box", desc: "A reward of unknown value." },
+                    { id: 66, name: "Sudden Rewards", desc: "Unexpected positive events." },
+                    { id: 67, name: "Oracle Effect", desc: "Ideally wanting to know the future." },
+                    { id: 68, name: "Glowing Choice", desc: "Highlighting a path without explaining why." },
+                    { id: 69, name: "Mini-Quests", desc: "Small, random side missions." },
+                    { id: 70, name: "Visual Storytelling", desc: "Revealing story pieces over time." },
+                    { id: 71, name: "Obvious Wonder", desc: "Something clearly interesting but unexplained." },
+                    { id: 72, name: "Mischief", desc: "Harmless pranks or unpredictable system behavior." },
+                    { id: 95, name: "Random Rewards", desc: "Skinner Box variable ratio reinforcement." },
+                    { id: 96, name: "Refreshing Content", desc: "Updates that change the environment." },
+                    { id: 108, name: "Cliffhangers", desc: "Ending a segment with unresolved tension." },
+                    { id: 112, name: "Lottery", desc: "Buying a chance to win big." },
+                    { id: 150, name: "Gambling", desc: "Wagering assets on an uncertain outcome." },
+                    { id: 151, name: "Variable Rewards", desc: "Rewards that change in magnitude unpredictably." },
+                    { id: 152, name: "Curiosity Teaser", desc: "Showing a blurred preview of what's to come." },
+                    { id: 153, name: "Dynamic Feedback", desc: "Feedback that changes based on performance nuances." },
+                    { id: 154, name: "Random Encounters", desc: "Unpredictable events that interrupt the flow." }
+                ]
+            },
+            {
+                id: 8,
+                title: "Loss & Avoidance",
+                short: "Avoidance",
+                color: "#64748B",
+                icon: "fa-shield-halved",
+                type: "Black Hat / Left Brain",
+                techniques: [
+                    { id: 73, name: "Sunk Cost Tragedy", desc: "Users continue because they invested too much to quit." },
+                    { id: 74, name: "FOMO", desc: "Fear Of Missing Out on limited opportunities." },
+                    { id: 75, name: "Progress Loss", desc: "Penalty of losing progress if an action isn't taken." },
+                    { id: 76, name: "Visual Grave", desc: "Showing what was lost (withered crops)." },
+                    { id: 77, name: "Status Quo Sloth", desc: "Avoiding change to prevent potential loss." },
+                    { id: 78, name: "Evanescence", desc: "Opportunity disappears if not acted upon immediately." },
+                    { id: 79, name: "Rightful Heritage", desc: "Feeling something is yours, then threatened to be taken away." },
+                    { id: 80, name: "Countdown to Doom", desc: "A timer until a negative event occurs." },
+                    { id: 97, name: "Scarlet Letter", desc: "Social penalty/negative badge." },
+                    { id: 98, name: "Weeping Willow", desc: "Emotional manipulation (character is sad if you leave)." },
+                    { id: 109, name: "Crucial Decision", desc: "A choice that has permanent negative consequences." },
+                    { id: 111, name: "Last Mile (Negative)", desc: "Fear of falling at the final hurdle." },
+                    { id: 113, name: "Quester's Fatigue", desc: "Giving up because the effort to sustain is too high." },
+                    { id: 114, name: "Zombification", desc: "Mindless repetition to avoid penalty." },
+                    { id: 155, name: "Loss Aversion", desc: "The tendency to prefer avoiding losses to acquiring gains." },
+                    { id: 156, name: "Opportunity Cost", desc: "The loss of potential gain from other alternatives." },
+                    { id: 157, name: "Guilt Trip", desc: "Making the user feel guilty for not taking action." },
+                    { id: 158, name: "Social Ostracism", desc: "Fear of being excluded from the group." },
+                    { id: 159, name: "Prisoner's Dilemma", desc: "Fear that others will betray you." }
+                ]
+            }
+        ];
+
+        // App State
+        let currentDriveIndex = 0;
+        let chartInstance = null;
+        let sliderValues = [8, 8, 5, 4, 6, 3, 4, 2]; 
+
+        // DOM Elements
+        const titleEl = document.getElementById('drive-title');
+        const typeEl = document.getElementById('drive-type');
+        const iconEl = document.getElementById('drive-icon');
+        const descEl = document.getElementById('drive-desc');
+        const techniquesListEl = document.getElementById('techniques-list');
+        const headerEl = document.getElementById('drive-header');
+        const sliderContainer = document.getElementById('slider-container');
+        const masterTableBody = document.getElementById('master-table-body');
+        const masterSearch = document.getElementById('master-search');
+        const noResultsMsg = document.getElementById('no-results');
+        const totalCountEl = document.getElementById('total-count');
+        const navCountEl = document.getElementById('nav-count');
+        const driveTechCountEl = document.getElementById('drive-tech-count');
+
+        // Initialize Application
+        function init() {
+            try {
+                // Count total techniques
+                let total = 0;
+                octalysisData.forEach(d => total += d.techniques.length);
+                if(totalCountEl) totalCountEl.textContent = total;
+                if(navCountEl) navCountEl.textContent = total + "+";
+
+                // Init modules
+                initChart();
+                renderSliders();
+                renderMasterList(); // Render full list initially
+                updateDashboard(0);
+                setupEventListeners();
+                
+                console.log("Octalysis App Initialized Successfully.");
+            } catch (e) {
+                console.error("Initialization Error:", e);
+            }
+        }
+
+        // Initialize Chart.js Radar
+        function initChart() {
+            const ctx = document.getElementById('octalysisChart').getContext('2d');
+            
+            chartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: octalysisData.map(d => d.short),
+                    datasets: [{
+                        label: 'Gamification Profile',
+                        data: sliderValues,
+                        fill: true,
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        pointBackgroundColor: octalysisData.map(d => d.color),
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e5e7eb' },
+                            grid: { color: '#f3f4f6' },
+                            pointLabels: {
+                                font: { size: 12, family: 'Inter', weight: '600' },
+                                color: '#374151'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 10,
+                            ticks: { display: false } 
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (ctx) => octalysisData[ctx[0].dataIndex].title
+                            }
+                        }
+                    },
+                    onClick: (evt, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            updateDashboard(index);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update Dashboard Content
+        function updateDashboard(index) {
+            currentDriveIndex = index;
+            const data = octalysisData[index];
+
+            // Animate Text Update
+            titleEl.style.opacity = 0;
+            setTimeout(() => {
+                titleEl.textContent = `${data.id}. ${data.title}`;
+                typeEl.textContent = data.type;
+                iconEl.className = `fa-solid ${data.icon} text-4xl opacity-80`;
+                descEl.textContent = data.desc || "Explore the techniques related to this drive.";
+                headerEl.style.backgroundColor = data.color;
+                headerEl.className = `p-6 text-white transition-colors duration-300`;
+                
+                driveTechCountEl.textContent = data.techniques.length;
+                // Show first 6 techniques in dashboard
+                renderTechniques(data.techniques.slice(0, 6));
+                
+                titleEl.style.opacity = 1;
+            }, 150);
+        }
+
+        // Render Techniques in the Detail Panel
+        function renderTechniques(techniques) {
+            techniquesListEl.innerHTML = '';
+            techniques.forEach(tech => {
+                const techCard = document.createElement('div');
+                techCard.className = 'bg-gray-50 p-4 rounded-lg border border-gray-100 card-hover';
+                techCard.innerHTML = `
+                    <h5 class="font-bold text-gray-800 text-sm mb-1">#${tech.id} ${tech.name}</h5>
+                    <p class="text-xs text-gray-500 leading-snug">${tech.desc}</p>
+                `;
+                techniquesListEl.appendChild(techCard);
+            });
+        }
+
+        // Render Sliders for Simulation
+        function renderSliders() {
+            sliderContainer.innerHTML = '';
+            octalysisData.forEach((drive, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = `
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-semibold text-gray-600 truncate mr-2">${drive.short}</span>
+                        <span class="text-gray-400" id="val-${index}">${sliderValues[index]}</span>
+                    </div>
+                    <input type="range" min="0" max="10" value="${sliderValues[index]}" 
+                        class="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 slider-input"
+                        data-index="${index}">
+                `;
+                sliderContainer.appendChild(wrapper);
+            });
+
+            // Slider Events
+            document.querySelectorAll('.slider-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.dataset.index);
+                    const val = parseInt(e.target.value);
+                    sliderValues[idx] = val;
+                    document.getElementById(`val-${idx}`).textContent = val;
+                    chartInstance.data.datasets[0].data = sliderValues;
+                    chartInstance.update();
+                    if(currentDriveIndex !== idx) updateDashboard(idx);
+                });
+            });
+        }
+
+        // Render Master List (Table)
+        // GLOBAL FILTER STATE
+        let activeFilter = 'all';
+        let activeSort = 'drive'; // 'drive' or 'id'
+
+        function renderMasterList(searchTerm = '', filterDrive = activeFilter, sortBy = activeSort) {
+            masterTableBody.innerHTML = '';
+            
+            // 1. Flatten all techniques
+            let allTechs = [];
+            octalysisData.forEach((d, i) => {
+                d.techniques.forEach(t => {
+                    allTechs.push({
+                        ...t,
+                        driveIndex: i + 1,
+                        driveShort: d.short,
+                        driveColor: d.color,
+                        driveTitle: d.title
+                    });
+                });
+            });
+
+            // 2. Filter
+            let filtered = allTechs.filter(t => {
+                // Drive Filter
+                if (filterDrive !== 'all' && filterDrive !== `cd${t.driveIndex}`) return false;
+
+                // Search Filter
+                const lower = searchTerm.toLowerCase();
+                if (!lower) return true;
+                return t.name.toLowerCase().includes(lower) || 
+                       t.desc.toLowerCase().includes(lower) || 
+                       t.driveTitle.toLowerCase().includes(lower) ||
+                       t.id.toString().includes(lower);
+            });
+
+            // 3. Sort
+            filtered.sort((a, b) => {
+                if (sortBy === 'id') {
+                    return a.id - b.id;
+                } else {
+                    // Sort by Drive first, then by ID
+                    if (a.driveIndex !== b.driveIndex) return a.driveIndex - b.driveIndex;
+                    return a.id - b.id;
+                }
+            });
+
+            // 4. Render
+            if (filtered.length === 0) {
+                noResultsMsg.classList.remove('hidden');
+                return;
+            }
+            
+            noResultsMsg.classList.add('hidden');
+
+            filtered.forEach(tech => {
+                const row = document.createElement('tr');
+                row.className = 'technique-row transition-colors cd-' + tech.driveIndex + '-border';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">#${tech.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${tech.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style="background-color: ${tech.driveColor}20; color: ${tech.driveColor}">
+                            ${tech.driveShort}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${tech.desc}</td>
+                `;
+                masterTableBody.appendChild(row);
+            });
+        }
+
+        // Toggle Sort Wrapper
+        function toggleSort(type) {
+            activeSort = type;
+            updateSortUI();
+            renderMasterList(masterSearch.value, activeFilter, activeSort);
+        }
+
+        function updateSortUI() {
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                const btnType = btn.dataset.sort;
+                if(btnType === activeSort) {
+                    btn.classList.add('active', 'bg-white', 'text-gray-900', 'shadow-sm', 'border', 'border-gray-200');
+                    btn.classList.remove('text-gray-500');
+                } else {
+                    btn.classList.remove('active', 'bg-white', 'text-gray-900', 'shadow-sm', 'border', 'border-gray-200');
+                    btn.classList.add('text-gray-500');
+                }
+            });
+        }
+
+        // Navigation & Filter Listeners
+        function setupEventListeners() {
+            document.getElementById('prev-drive').addEventListener('click', () => {
+                let newIndex = currentDriveIndex - 1;
+                if (newIndex < 0) newIndex = 7;
+                updateDashboard(newIndex);
+            });
+
+            document.getElementById('next-drive').addEventListener('click', () => {
+                let newIndex = currentDriveIndex + 1;
+                if (newIndex > 7) newIndex = 0;
+                updateDashboard(newIndex);
+            });
+
+            // Master List Search
+            masterSearch.addEventListener('input', (e) => {
+                renderMasterList(e.target.value, activeFilter, activeSort);
+            });
+
+            // Master List Category Filters
+            document.querySelectorAll('.master-filter').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.master-filter').forEach(b => {
+                        b.classList.remove('active', 'bg-gray-900', 'text-white');
+                        b.classList.add('bg-white', 'text-gray-600');
+                    });
+                    
+                    e.target.classList.remove('bg-white', 'text-gray-600');
+                    e.target.classList.add('active', 'bg-gray-900', 'text-white');
+
+                    activeFilter = e.target.dataset.filter;
+                    renderMasterList(masterSearch.value, activeFilter, activeSort);
+                });
+            });
+
+            // Sort Buttons
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Handle click on icon vs button
+                    const target = e.target.closest('.sort-btn');
+                    toggleSort(target.dataset.sort);
+                });
+            });
+
+            // Initial UI state
+            updateSortUI();
+        }
+
+        // Run
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>

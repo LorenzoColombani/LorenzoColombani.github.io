@@ -1,0 +1,3645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 4: SQL JOINs — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ===================================================
+   32nd CENTURY HOLOGRAPHIC DESIGN SYSTEM
+   Star Trek Discovery / Starfleet Academy (3180s)
+   Programmable matter surfaces, volumetric depth,
+   organic motion, adaptive interfaces
+   =================================================== */
+
+:root {
+  /* Deep space */
+  --bg-deep: #030810;
+  --bg-void: #010409;
+
+  /* Programmable matter surface layers */
+  --pm-surface: rgba(8, 20, 42, 0.82);
+  --pm-surface-hover: rgba(12, 28, 54, 0.88);
+  --pm-glass: rgba(0, 180, 255, 0.06);
+  --pm-glass-edge: rgba(0, 180, 255, 0.12);
+
+  /* DV Component Colors — consistent across tutorials */
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+
+  /* SQL Keyword Colors */
+  --sql-select: #22c55e;
+  --sql-select-dim: rgba(34, 197, 94, 0.08);
+  --sql-select-glow: rgba(34, 197, 94, 0.25);
+
+  --sql-from: #3b82f6;
+  --sql-from-dim: rgba(59, 130, 246, 0.08);
+  --sql-from-glow: rgba(59, 130, 246, 0.25);
+
+  --sql-where: #f97316;
+  --sql-where-dim: rgba(249, 115, 22, 0.08);
+  --sql-where-glow: rgba(249, 115, 22, 0.25);
+
+  /* NEW — JOIN keyword */
+  --sql-join: #06b6d4;
+  --sql-join-dim: rgba(6, 182, 212, 0.08);
+  --sql-join-glow: rgba(6, 182, 212, 0.3);
+
+  --sql-on: #e879f9;
+  --sql-on-dim: rgba(232, 121, 249, 0.08);
+  --sql-on-glow: rgba(232, 121, 249, 0.25);
+
+  --sql-keyword: #ec4899;
+  --sql-string: #fbbf24;
+  --sql-number: #a78bfa;
+  --sql-comment: #64748b;
+
+  /* Text */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+
+  /* Accent */
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --accent-dim: rgba(0, 180, 255, 0.06);
+
+  /* Concept callouts */
+  --accent-color: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --accent-bg: rgba(251, 191, 36, 0.04);
+
+  /* Feedback */
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.3);
+
+  /* Borders — programmable matter edges */
+  --border-subtle: rgba(0, 180, 255, 0.08);
+  --border-medium: rgba(0, 180, 255, 0.15);
+  --border-glow: rgba(0, 180, 255, 0.3);
+  --border-active: rgba(0, 180, 255, 0.45);
+
+  /* Holographic */
+  --holo-cyan: #0ef;
+  --holo-cyan-dim: rgba(0, 238, 255, 0.04);
+}
+
+/* === RESET === */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Exo 2', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===================================================
+   AMBIENT ATMOSPHERE
+   Deep space + holographic grid + scanlines
+   =================================================== */
+
+/* Particle canvas (JS-driven) */
+#particle-field {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Ambient glow spots — static, zero perf cost */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 15% 20%, rgba(0, 180, 255, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 85% 60%, rgba(168, 85, 247, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 90%, rgba(245, 158, 11, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Scan line overlay — holographic display signal */
+.scanline-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 238, 255, 0.007) 2px, rgba(0, 238, 255, 0.007) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* Moving scan bar */
+.scan-bar {
+  position: fixed;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 238, 255, 0.08), transparent);
+  animation: scan-sweep 12s linear infinite;
+  pointer-events: none;
+  z-index: 9997;
+}
+
+@keyframes scan-sweep {
+  0% { top: -3px; }
+  100% { top: 100vh; }
+}
+
+.page-content {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ===================================================
+   NAVIGATION — holographic node chain
+   =================================================== */
+.holo-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(3, 8, 16, 0.9);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nav-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.nav-nodes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0 8px;
+}
+
+.nav-node {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+}
+
+.nav-node:hover {
+  border-color: var(--accent);
+  color: var(--hub-text);
+  background: rgba(0, 180, 255, 0.1);
+  box-shadow: 0 0 18px rgba(0, 180, 255, 0.2);
+}
+
+.nav-node.active {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--bg-deep);
+  background: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.15);
+  animation: node-appear 0.4s ease both, node-pulse 3s ease-in-out 0.4s infinite;
+}
+
+.nav-node.completed {
+  opacity: 1;
+  border-color: var(--sql-select);
+  color: var(--sql-select);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.nav-connector {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+  min-width: 6px;
+  transition: all 0.6s;
+}
+
+.nav-connector.active {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+@keyframes node-pulse {
+  0%, 100% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.1); }
+  50% { box-shadow: 0 0 28px rgba(0, 180, 255, 0.5), 0 0 55px rgba(0, 180, 255, 0.2); }
+}
+
+.nav-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 2px 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* (holo-progress replaced by LCARS segments + flow bar) */
+
+/* ===================================================
+   CONTAINER
+   =================================================== */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 92px 28px 140px;
+}
+
+/* ===================================================
+   TITLE SECTION — matter formation
+   =================================================== */
+.title-section {
+  margin-bottom: 72px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--border-subtle);
+  opacity: 0;
+  animation: matter-form 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes matter-form {
+  0% { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(6px); }
+  40% { filter: blur(2px); }
+  70% { filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.title-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-label::before {
+  content: '';
+  width: 32px; height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.title-section h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text-bright);
+  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 40px rgba(0, 180, 255, 0.12);
+}
+
+.title-section .subtitle {
+  font-size: 17px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  line-height: 1.75;
+  max-width: 620px;
+}
+
+.meta-chips {
+  display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap;
+}
+
+.meta-chip {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 16px;
+  border-radius: 20px;
+  background: var(--holo-cyan-dim);
+  color: var(--text-dim);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.4s;
+}
+
+.meta-chip:hover {
+  border-color: var(--border-medium);
+  color: var(--text-secondary);
+  box-shadow: 0 0 12px rgba(0, 180, 255, 0.08);
+}
+
+/* ===================================================
+   SECTIONS — scroll-triggered materialization
+   Bidirectional: elements reverse on scroll-up
+   =================================================== */
+.section {
+  margin-bottom: 88px;
+}
+
+/* Tier 1: CSS scroll-driven animations (Chrome/Edge 115+) — fully bidirectional */
+@supports (animation-timeline: view()) {
+  .section {
+    animation: scroll-materialize both linear;
+    animation-timeline: view();
+    animation-range: entry 0% entry 100%;
+  }
+
+  @keyframes scroll-materialize {
+    0% { opacity: 0; transform: translateY(30px) scale(0.97); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+}
+
+/* Tier 2/3 fallback: Bidirectional Intersection Observer (Firefox/Safari) */
+@supports not (animation-timeline: view()) {
+  .section {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                filter 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    filter: blur(4px);
+  }
+
+  .section.visible {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.section-tag {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bg-deep);
+  padding: 5px 16px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.section-tag.join-t { background: var(--sql-join); box-shadow: 0 0 14px var(--sql-join-glow); }
+.section-tag.on-t { background: var(--sql-on); box-shadow: 0 0 14px var(--sql-on-glow); }
+.section-tag.hub-t { background: var(--hub-color); box-shadow: 0 0 14px var(--hub-glow); }
+.section-tag.sat-t { background: var(--sat-color); box-shadow: 0 0 14px var(--sat-glow); }
+.section-tag.link-t { background: var(--link-color); box-shadow: 0 0 14px var(--link-glow); }
+.section-tag.accent-t { background: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+.section-tag.dv-t { background: linear-gradient(135deg, var(--hub-color), var(--sat-color)); box-shadow: 0 0 14px var(--accent-glow); }
+.section-tag.exercise-t { background: linear-gradient(135deg, var(--sql-select), var(--accent)); box-shadow: 0 0 16px var(--success-glow); }
+.section-tag.late-t { background: linear-gradient(135deg, var(--sql-where), var(--sql-keyword)); }
+
+.section-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border-medium), transparent);
+}
+
+h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-bright);
+  margin-bottom: 22px;
+  letter-spacing: 0.01em;
+}
+
+h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin: 38px 0 14px;
+  letter-spacing: 0.02em;
+}
+
+p { margin-bottom: 16px; }
+strong { font-weight: 600; color: var(--text-bright); }
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  background: var(--accent-dim);
+  color: var(--hub-text);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+/* ===================================================
+   PROGRAMMABLE MATTER PANELS
+   Glass surfaces with adaptive glow
+   =================================================== */
+.pm-panel {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  padding: 26px 30px;
+  margin: 26px 0;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  transition: border-color 0.5s, box-shadow 0.5s, transform 0.5s;
+}
+
+.pm-panel:hover {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 30px rgba(0, 180, 255, 0.06), inset 0 0 40px rgba(0, 180, 255, 0.02);
+  transform: translateY(-1px);
+}
+
+/* Top edge glow — programmable matter charge line */
+.pm-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.35;
+}
+
+/* Pulse animation on the edge */
+.pm-panel::after {
+  content: '';
+  position: absolute;
+  top: -1px; left: 0;
+  width: 60px; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  animation: edge-charge 6s ease-in-out infinite;
+}
+
+@keyframes edge-charge {
+  0% { left: -60px; opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { left: calc(100% + 60px); opacity: 0; }
+}
+
+/* Hook panels — the opening concept hooks */
+.hook {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  padding: 28px 32px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.hook::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+
+.hook::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 50px;
+  pointer-events: none;
+}
+
+.hook-join::before { background: var(--sql-join); box-shadow: 0 0 12px var(--sql-join-glow); }
+.hook-join::after { background: linear-gradient(90deg, rgba(6,182,212,0.06), transparent); }
+.hook-on::before { background: var(--sql-on); box-shadow: 0 0 12px var(--sql-on-glow); }
+.hook-on::after { background: linear-gradient(90deg, rgba(232,121,249,0.06), transparent); }
+.hook-link::before { background: var(--link-color); box-shadow: 0 0 12px var(--link-glow); }
+.hook-link::after { background: linear-gradient(90deg, rgba(245,158,11,0.06), transparent); }
+.hook-default::before { background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.hook-default::after { background: linear-gradient(90deg, rgba(0,180,255,0.06), transparent); }
+.hook-late::before { background: var(--sql-where); box-shadow: 0 0 12px var(--sql-where-glow); }
+.hook-late::after { background: linear-gradient(90deg, rgba(249,115,22,0.06), transparent); }
+
+.hook .hook-text {
+  font-size: 17.5px;
+  font-weight: 400;
+  color: var(--text-bright);
+  line-height: 1.75;
+  margin: 0;
+}
+
+.hook-join .hook-text em { color: var(--sql-join); text-shadow: 0 0 12px var(--sql-join-glow); font-style: normal; }
+.hook-on .hook-text em { color: var(--sql-on); text-shadow: 0 0 12px var(--sql-on-glow); font-style: normal; }
+.hook-link .hook-text em { color: var(--link-text); text-shadow: 0 0 12px var(--link-glow); font-style: normal; }
+.hook-default .hook-text em { color: var(--hub-text); text-shadow: 0 0 12px var(--hub-glow); font-style: normal; }
+.hook-late .hook-text em { color: var(--sql-where); text-shadow: 0 0 12px var(--sql-where-glow); font-style: normal; }
+
+/* ===================================================
+   LANGUAGE BRIDGE — etymology panels
+   =================================================== */
+.language-bridge {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin: 26px 0;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.bridge-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--link-text);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bridge-label::before {
+  content: '';
+  width: 16px; height: 2px;
+  background: var(--link-color);
+  box-shadow: 0 0 6px var(--link-glow);
+}
+
+.language-bridge p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.language-bridge p:last-child { margin-bottom: 0; }
+.bridge-word { color: var(--link-text); font-weight: 600; }
+
+/* ===================================================
+   4-LAYER EXPLANATION — holographic depth reveal
+   =================================================== */
+.four-layers {
+  margin: 30px 0;
+  border: 1px solid var(--border-medium);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--pm-surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.four-layers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px 12px;
+}
+
+.four-layers-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.layer-dots {
+  display: flex; gap: 8px;
+}
+
+.layer-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-subtle);
+  background: transparent;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+}
+
+.layer-dot.l1 { border-color: var(--success-color); }
+.layer-dot.l2 { border-color: var(--hub-color); }
+.layer-dot.l3 { border-color: var(--link-color); }
+.layer-dot.l4 { border-color: var(--sat-color); }
+
+.layer-dot.active { transform: scale(1.4); }
+.layer-dot.l1.active { background: var(--success-color); box-shadow: 0 0 10px var(--success-glow); }
+.layer-dot.l2.active { background: var(--hub-color); box-shadow: 0 0 10px var(--hub-glow); }
+.layer-dot.l3.active { background: var(--link-color); box-shadow: 0 0 10px var(--link-glow); }
+.layer-dot.l4.active { background: var(--sat-color); box-shadow: 0 0 10px var(--sat-glow); }
+
+.layer {
+  border-top: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.layer-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 28px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.4s;
+}
+
+.layer-header:hover { background: rgba(0, 180, 255, 0.03); }
+
+.layer-badge {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 14px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.layer-1 .layer-badge { background: var(--success-color); color: var(--bg-deep); }
+.layer-2 .layer-badge { background: var(--hub-color); color: var(--bg-deep); }
+.layer-3 .layer-badge { background: var(--link-color); color: var(--bg-deep); }
+.layer-4 .layer-badge { background: var(--sat-color); color: var(--bg-deep); }
+
+.layer-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.layer-toggle {
+  font-size: 12px;
+  color: var(--text-dim);
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.layer.open .layer-toggle { transform: rotate(180deg); }
+
+.layer-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.layer.open .layer-content { max-height: 600px; }
+
+.layer-content-inner {
+  padding: 0 28px 22px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  animation: layer-fade 0.5s ease;
+}
+
+@keyframes layer-fade {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.layer-content-inner p { margin-bottom: 10px; font-size: 15px; }
+.layer-content-inner p:last-child { margin-bottom: 0; }
+
+/* ===================================================
+   SQL CODE BLOCKS — holographic terminal
+   =================================================== */
+.sql-block {
+  background: rgba(2, 6, 14, 0.95);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  margin: 24px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.sql-block::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+.sql-block-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(0, 180, 255, 0.02);
+}
+
+.sql-block-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+}
+.sql-block-dot:nth-child(1) { background: #ef4444; box-shadow: 0 0 4px rgba(239,68,68,0.4); }
+.sql-block-dot:nth-child(2) { background: #f59e0b; box-shadow: 0 0 4px rgba(245,158,11,0.4); }
+.sql-block-dot:nth-child(3) { background: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.4); }
+
+.sql-block-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  color: var(--text-dim);
+  margin-left: auto;
+  letter-spacing: 0.1em;
+}
+
+.sql-block pre {
+  padding: 22px 24px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.sql-block pre .kw { color: var(--sql-keyword); font-weight: 600; }
+.sql-block pre .select { color: var(--sql-select); font-weight: 600; text-shadow: 0 0 8px var(--sql-select-glow); }
+.sql-block pre .from { color: var(--sql-from); font-weight: 600; text-shadow: 0 0 8px var(--sql-from-glow); }
+.sql-block pre .where { color: var(--sql-where); font-weight: 600; text-shadow: 0 0 8px var(--sql-where-glow); }
+.sql-block pre .join { color: var(--sql-join); font-weight: 600; text-shadow: 0 0 10px var(--sql-join-glow); }
+.sql-block pre .on { color: var(--sql-on); font-weight: 600; text-shadow: 0 0 8px var(--sql-on-glow); }
+.sql-block pre .as { color: var(--sql-keyword); font-weight: 500; }
+.sql-block pre .str { color: var(--sql-string); }
+.sql-block pre .num { color: var(--sql-number); }
+.sql-block pre .comment { color: var(--sql-comment); font-style: italic; }
+.sql-block pre .col { color: var(--text-primary); }
+.sql-block pre .tbl { color: var(--hub-text); text-shadow: 0 0 6px var(--hub-glow); }
+.sql-block pre .alias { color: var(--text-secondary); font-style: italic; }
+.sql-block pre .op { color: var(--sql-where); }
+
+/* ===================================================
+   DATA TABLES — holographic projections
+   =================================================== */
+.data-panel {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  margin: 26px 0;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+}
+
+.data-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+.data-panel-header {
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-panel-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: dot-glow 3s ease-in-out infinite;
+}
+
+@keyframes dot-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.data-panel-dot.hub { background: var(--hub-color); box-shadow: 0 0 8px var(--hub-color); }
+.data-panel-dot.sat { background: var(--sat-color); box-shadow: 0 0 8px var(--sat-color); }
+.data-panel-dot.link { background: var(--link-color); box-shadow: 0 0 8px var(--link-color); }
+.data-panel-dot.result { background: var(--sql-select); box-shadow: 0 0 8px var(--sql-select); }
+
+.data-panel-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.data-panel-title.hub-title { color: var(--hub-text); }
+.data-panel-title.sat-title { color: var(--sat-text); }
+.data-panel-title.link-title { color: var(--link-text); }
+.data-panel-title.result-title { color: var(--sql-select); }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(0, 180, 255, 0.02);
+}
+
+.data-table td {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(0, 180, 255, 0.04);
+  color: var(--text-secondary);
+  transition: background 0.3s;
+}
+
+.data-table tr:hover td {
+  background: rgba(0, 180, 255, 0.03);
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+
+.data-table td.pk { color: var(--hub-text); font-weight: 500; }
+.data-table td.fk { color: var(--sat-text); font-weight: 500; }
+.data-table td.bk { color: var(--text-bright); font-weight: 500; }
+.data-table td.val { color: var(--text-secondary); }
+.data-table td.link-fk { color: var(--link-text); font-weight: 500; }
+
+/* Row highlight for matched JOIN rows */
+.data-table tr.highlight td {
+  background: rgba(0, 180, 255, 0.06);
+  border-color: rgba(0, 180, 255, 0.1);
+}
+
+.data-table tr.match-a td { background: rgba(6, 182, 212, 0.06); }
+.data-table tr.match-b td { background: rgba(168, 85, 247, 0.06); }
+
+/* ===================================================
+   INTERACTIVE JOIN VISUALIZER
+   =================================================== */
+.join-viz {
+  margin: 32px 0;
+  padding: 0;
+}
+
+.join-viz-tables {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0;
+  align-items: start;
+}
+
+.join-viz-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px 0;
+  gap: 6px;
+}
+
+.join-viz-arrow-line {
+  width: 2px; height: 40px;
+  background: linear-gradient(to bottom, var(--hub-color), var(--sat-color));
+  box-shadow: 0 0 8px var(--accent-glow);
+  border-radius: 2px;
+}
+
+.join-viz-arrow-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sql-join);
+  text-shadow: 0 0 8px var(--sql-join-glow);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+@media (max-width: 700px) {
+  .join-viz-tables {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .join-viz-arrow {
+    flex-direction: row;
+    padding: 0 16px;
+  }
+  .join-viz-arrow-line {
+    width: 40px; height: 2px;
+  }
+  .join-viz-arrow-label {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+}
+
+/* ===================================================
+   CONCEPT CALLOUT
+   =================================================== */
+.concept-callout {
+  background: var(--accent-bg);
+  border: 1px solid rgba(251, 191, 36, 0.12);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 28px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-callout::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent-color);
+  box-shadow: 0 0 8px var(--accent-glow);
+  border-radius: 3px 0 0 3px;
+}
+
+.concept-callout::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 50px;
+  background: linear-gradient(90deg, rgba(251,191,36,0.04), transparent);
+  pointer-events: none;
+}
+
+.concept-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.concept-callout blockquote {
+  font-size: 15px;
+  color: var(--text-bright);
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.75;
+  font-style: italic;
+  border: none;
+  padding: 0;
+}
+
+/* ===================================================
+   EXERCISES — interactive holographic
+   =================================================== */
+.exercise-section {
+  background: var(--pm-surface);
+  border: 2px solid var(--sql-select);
+  border-radius: 18px;
+  padding: 34px;
+  margin: 52px 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 35px var(--sql-select-glow), 0 0 70px rgba(34,197,94,0.04);
+}
+
+.exercise-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sql-select), transparent);
+  animation: exercise-glow 4s ease-in-out infinite;
+}
+
+@keyframes exercise-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+.exercise-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sql-select);
+  margin-bottom: 16px;
+  text-shadow: 0 0 10px var(--sql-select-glow);
+}
+
+.exercise-section h2 {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.exercise-task {
+  background: rgba(2, 6, 14, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 24px 26px;
+  margin: 22px 0;
+  transition: border-color 0.4s;
+}
+
+.exercise-task:hover { border-color: var(--border-medium); }
+
+.exercise-task-number {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sql-select);
+  margin-bottom: 10px;
+}
+
+.exercise-task p { font-size: 15px; color: var(--text-secondary); margin-bottom: 10px; }
+.exercise-task p:last-child { margin-bottom: 0; }
+
+.exercise-input {
+  width: 100%;
+  background: rgba(2, 6, 14, 0.92);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--text-bright);
+  resize: vertical;
+  min-height: 70px;
+  outline: none;
+  transition: border-color 0.4s, box-shadow 0.4s;
+}
+
+.exercise-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(0, 180, 255, 0.12);
+}
+
+.exercise-input::placeholder {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.check-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sql-select);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 10px;
+  padding: 10px 24px;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: all 0.4s;
+}
+
+.check-btn:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 0 20px rgba(34,197,94,0.2);
+}
+
+.reveal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Orbitron', monospace;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: var(--accent-dim);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 18px;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: all 0.4s;
+}
+
+.reveal-btn:hover {
+  color: var(--text-secondary);
+  border-color: var(--border-medium);
+  box-shadow: 0 0 12px rgba(0,180,255,0.1);
+}
+
+.feedback {
+  margin-top: 14px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  display: none;
+  animation: feedback-appear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes feedback-appear {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.feedback.correct {
+  display: block;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: var(--sql-select);
+}
+
+.feedback.incorrect {
+  display: block;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  color: var(--sql-where);
+}
+
+.reveal-area {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal-area.open { max-height: 500px; }
+
+.reveal-area-inner {
+  padding: 16px 0 0;
+  animation: layer-fade 0.4s ease;
+}
+
+/* ===================================================
+   EXPLORE MORE — Apple-style expandable deep-dives
+   Clickable openers that reveal supplementary insight
+   =================================================== */
+.explore-opener {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  margin: 24px 0 0;
+  background: rgba(10, 25, 47, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 180, 255, 0.12);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.35s ease;
+  user-select: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 180, 255, 0.15);
+}
+.explore-opener:hover {
+  background: rgba(10, 25, 47, 0.85);
+  border-color: var(--accent);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 180, 255, 0.1);
+  transform: translateY(-1px);
+}
+.explore-opener .explore-icon {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--accent);
+  flex-shrink: 0;
+  transition: transform 0.35s ease, background 0.35s ease;
+}
+.explore-opener.open .explore-icon {
+  transform: rotate(45deg);
+  background: var(--accent);
+  color: var(--bg-deep);
+}
+.explore-opener .explore-label {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+.explore-opener:hover .explore-label { color: var(--text-primary); }
+.explore-opener .explore-hint {
+  font-family: 'Orbitron', monospace;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  opacity: 0.5;
+  margin-left: auto;
+  transition: opacity 0.3s ease;
+}
+.explore-opener:hover .explore-hint { opacity: 1; }
+
+.explore-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.explore-panel.open { max-height: 800px; }
+.explore-panel-inner {
+  padding: 20px 22px 16px;
+  margin: 6px 0 20px;
+  background: rgba(10, 25, 47, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 180, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 180, 255, 0.1);
+  animation: explore-slide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+@keyframes explore-slide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.explore-panel-inner p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0 0 10px;
+}
+.explore-panel-inner p:last-child { margin: 0; }
+.explore-panel-inner strong { color: var(--text-primary); }
+.explore-panel-inner code {
+  background: rgba(0, 180, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+/* Completion banner */
+.completion-banner {
+  display: none;
+  background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.06));
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin-top: 28px;
+  text-align: center;
+  animation: matter-form 0.8s ease forwards;
+}
+
+.completion-banner h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px;
+  color: var(--sql-select);
+  margin-bottom: 8px;
+  text-shadow: 0 0 15px var(--sql-select-glow);
+}
+
+.completion-banner p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ===================================================
+   FOOTER
+   =================================================== */
+.tutorial-footer {
+  margin-top: 80px;
+  padding: 24px 0;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ===================================================
+   RESPONSIVE
+   =================================================== */
+@media (max-width: 600px) {
+  .container { padding: 88px 18px 100px; }
+  .title-section h1 { font-size: 28px; }
+  h2 { font-size: 20px; }
+  .pm-panel { padding: 20px 22px; }
+  .hook { padding: 22px 24px; }
+  .exercise-section { padding: 24px 20px; }
+  .sql-block pre { font-size: 12px; padding: 16px 18px; }
+}
+
+/* ===================================================
+   LCARS SEGMENTED PROGRESS BAR
+   32nd-century glassmorphic variant — classic elbow wrap
+   =================================================== */
+.lcars-bar {
+  display: flex;
+  align-items: stretch;
+  padding: 6px 24px 4px;
+  gap: 0;
+}
+
+/* Elbow — classic LCARS vertical wrap-down on left */
+.lcars-elbow {
+  width: 18px;
+  flex-shrink: 0;
+  background: var(--accent);
+  border-radius: 0 0 0 14px;
+  opacity: 0.35;
+  position: relative;
+  transition: opacity 0.6s ease;
+}
+.lcars-elbow::after {
+  content: '';
+  position: absolute;
+  bottom: -12px; left: 0;
+  width: 100%; height: 12px;
+  background: var(--accent);
+  border-radius: 0 0 0 8px;
+  opacity: inherit;
+}
+
+.lcars-segments {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+  height: 32px;
+  padding-left: 4px;
+}
+
+.lcars-seg {
+  flex: 1;
+  border-radius: 3px;
+  /* Two-tone: luminous portion (filled) + dim base (unfilled) */
+  background: linear-gradient(90deg,
+    var(--seg-color) 0%,
+    var(--seg-color) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) 100%
+  );
+  font-family: 'Orbitron', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0;
+  animation: seg-appear 0.4s ease both;
+}
+
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; }
+.lcars-seg:nth-child(2) { animation-delay: 0.1s; }
+.lcars-seg:nth-child(3) { animation-delay: 0.15s; }
+.lcars-seg:nth-child(4) { animation-delay: 0.2s; }
+.lcars-seg:nth-child(5) { animation-delay: 0.25s; }
+.lcars-seg:nth-child(6) { animation-delay: 0.3s; }
+.lcars-seg:nth-child(7) { animation-delay: 0.35s; }
+.lcars-seg:nth-child(8) { animation-delay: 0.4s; }
+.lcars-seg:nth-child(9) { animation-delay: 0.45s; }
+
+@keyframes seg-appear {
+  from { opacity: 0; transform: scaleX(0.3); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+
+.lcars-seg.active {
+  box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent),
+              inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent);
+  color: var(--bg-deep);
+}
+
+.lcars-seg.completed {
+  --seg-fill: 100%;
+  filter: brightness(0.7);
+  color: var(--bg-deep);
+}
+
+.lcars-seg:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent);
+}
+
+.lcars-flow {
+  height: 3px;
+  margin: 0 24px;
+  background: rgba(0, 180, 255, 0.06);
+}
+
+.lcars-flow-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--hub-color), var(--accent), var(--sat-color));
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+/* ===================================================
+   AMBIENT COLOR OVERLAY
+   Dynamic section-aware glow that shifts per section
+   =================================================== */
+.ambient-glow {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 1.5s ease;
+  background:
+    radial-gradient(ellipse 600px 400px at 15% 20%, var(--ambient-c1, rgba(0, 180, 255, 0.06)) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 85% 60%, var(--ambient-c2, rgba(168, 85, 247, 0.04)) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 90%, var(--ambient-c3, rgba(245, 158, 11, 0.03)) 0%, transparent 70%);
+}
+
+/* ===================================================
+   PARALLAX DEPTH LAYER
+   Faint geometric blobs drifting at different rates
+   =================================================== */
+.parallax-layer {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.depth-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.04;
+  will-change: transform;
+}
+
+.depth-shape.shape-1 {
+  width: 300px; height: 300px;
+  top: 10%; left: 5%;
+  background: radial-gradient(circle, var(--hub-color), transparent 70%);
+}
+.depth-shape.shape-2 {
+  width: 200px; height: 200px;
+  top: 40%; right: 10%;
+  background: radial-gradient(circle, var(--sat-color), transparent 70%);
+}
+.depth-shape.shape-3 {
+  width: 250px; height: 250px;
+  top: 70%; left: 60%;
+  background: radial-gradient(circle, var(--link-color), transparent 70%);
+}
+.depth-shape.shape-4 {
+  width: 180px; height: 180px;
+  top: 30%; left: 40%;
+  background: radial-gradient(circle, var(--accent), transparent 70%);
+}
+
+/* ===================================================
+   TEXT REVEAL EFFECTS
+   Word-by-word lighting + gradient heading sweep
+   =================================================== */
+
+/* Word-by-word reveal on hook text */
+.hook-text .word {
+  opacity: 0.2;
+  transition: opacity 0.25s ease;
+}
+
+.section.visible .hook-text .word,
+.hook-text .word.lit {
+  opacity: 1;
+}
+
+/* Gradient heading sweep — scroll reveals text left to right */
+@supports (animation-timeline: view()) {
+  .section h2 {
+    background: linear-gradient(90deg,
+      var(--text-bright) 0%,
+      var(--text-bright) 50%,
+      var(--text-dim) 50.5%,
+      var(--text-dim) 100%
+    );
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: heading-sweep both linear;
+    animation-timeline: view();
+    animation-range: entry 10% entry 80%;
+  }
+
+  @keyframes heading-sweep {
+    from { background-position: 100% 0; }
+    to { background-position: 0% 0; }
+  }
+}
+
+/* ===================================================
+   STAGGER REVEALS
+   Grouped elements cascade in with sequential delays
+   =================================================== */
+
+/* Data table rows stagger */
+@supports not (animation-timeline: view()) {
+  .section .data-table tr {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .section.visible .data-table tr { opacity: 1; transform: translateY(0); }
+  .section.visible .data-table tr:nth-child(1) { transition-delay: 0ms; }
+  .section.visible .data-table tr:nth-child(2) { transition-delay: 60ms; }
+  .section.visible .data-table tr:nth-child(3) { transition-delay: 120ms; }
+  .section.visible .data-table tr:nth-child(4) { transition-delay: 180ms; }
+  .section.visible .data-table tr:nth-child(5) { transition-delay: 240ms; }
+  .section.visible .data-table tr:nth-child(6) { transition-delay: 300ms; }
+  .section.visible .data-table tr:nth-child(7) { transition-delay: 360ms; }
+}
+
+@supports (animation-timeline: view()) {
+  .data-table tr {
+    animation: row-materialize 0.5s ease both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 60%;
+  }
+  .data-table tr:nth-child(2) { animation-range: entry 5% entry 65%; }
+  .data-table tr:nth-child(3) { animation-range: entry 10% entry 70%; }
+  .data-table tr:nth-child(4) { animation-range: entry 15% entry 75%; }
+  .data-table tr:nth-child(5) { animation-range: entry 20% entry 80%; }
+  .data-table tr:nth-child(6) { animation-range: entry 25% entry 85%; }
+  .data-table tr:nth-child(7) { animation-range: entry 30% entry 90%; }
+
+  @keyframes row-materialize {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Nav nodes stagger on load */
+.nav-node {
+  opacity: 0;
+  animation: node-appear 0.4s ease both;
+}
+.nav-node:nth-child(1) { animation-delay: 0.1s; }
+.nav-node:nth-child(3) { animation-delay: 0.15s; }
+.nav-node:nth-child(5) { animation-delay: 0.2s; }
+.nav-node:nth-child(7) { animation-delay: 0.25s; }
+.nav-node:nth-child(9) { animation-delay: 0.3s; }
+.nav-node:nth-child(11) { animation-delay: 0.35s; }
+.nav-node:nth-child(13) { animation-delay: 0.4s; }
+.nav-node:nth-child(15) { animation-delay: 0.45s; }
+.nav-node:nth-child(17) { animation-delay: 0.5s; }
+
+@keyframes node-appear {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Exercise tasks stagger */
+@supports not (animation-timeline: view()) {
+  .exercise-task {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .section.visible .exercise-task { opacity: 1; transform: translateY(0); }
+  .section.visible .exercise-task:nth-child(2) { transition-delay: 80ms; }
+  .section.visible .exercise-task:nth-child(3) { transition-delay: 160ms; }
+  .section.visible .exercise-task:nth-child(4) { transition-delay: 240ms; }
+  .section.visible .exercise-task:nth-child(5) { transition-delay: 320ms; }
+}
+
+/* Meta chips stagger on load */
+.meta-chip {
+  opacity: 0;
+  animation: chip-appear 0.5s ease both;
+}
+.meta-chip:nth-child(1) { animation-delay: 0.6s; }
+.meta-chip:nth-child(2) { animation-delay: 0.7s; }
+.meta-chip:nth-child(3) { animation-delay: 0.8s; }
+.meta-chip:nth-child(4) { animation-delay: 0.9s; }
+.meta-chip:nth-child(5) { animation-delay: 1.0s; }
+
+@keyframes chip-appear {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================================================
+   STICKY CONCEPT SECTIONS
+   Pin SQL query while explanation scrolls past
+   =================================================== */
+.sticky-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-left: -120px;
+  margin-right: -120px;
+}
+
+.sticky-left {
+  position: sticky;
+  top: 100px;
+  align-self: start;
+  overflow-x: auto;
+}
+
+.sticky-left .data-table {
+  font-size: 10px;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.sticky-left .data-table th {
+  font-size: 7px;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.sticky-left .data-table td,
+.sticky-left .data-table th {
+  padding: 4px 5px;
+}
+
+.sticky-right {
+  min-height: 0;
+  min-width: 0;
+}
+
+.sticky-right .sql-block pre,
+.sticky-left .sql-block pre {
+  overflow-x: auto;
+}
+
+@media (max-width: 700px) {
+  .sticky-split {
+    grid-template-columns: 1fr;
+  }
+  .sticky-left {
+    position: static;
+  }
+}
+
+/* ===================================================
+   COUNT-UP STATS
+   Animated number counters in Section 8
+   =================================================== */
+.stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  margin: 36px 0;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  display: block;
+  font-family: 'Orbitron', monospace;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.1);
+  line-height: 1;
+}
+
+.stat-label {
+  display: block;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 8px;
+}
+
+/* ===================================================
+   DATA VAULT ASSEMBLY — scroll-driven diagram
+   Hub/Sat/Link assemble as you scroll Section 8
+   =================================================== */
+.dv-assembly {
+  position: relative;
+  display: grid;
+  grid-template-areas:
+    "hub1  sat   hub2"
+    "hub1  link  hub2";
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 16px 32px;
+  min-height: 260px;
+  margin: 32px 0;
+  padding: 24px;
+}
+
+.dv-node {
+  padding: 16px 18px;
+  background: rgba(10, 25, 47, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: opacity 0.1s, transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 1;
+}
+
+/* Stage-driven opacity+transform via --scroll-progress */
+.dv-node.hub-1 {
+  grid-area: hub1;
+  opacity: clamp(0, var(--scroll-progress, 0) * 4, 1);
+  transform: translateX(calc(-30px * clamp(0, 1 - var(--scroll-progress, 0) * 4, 1)));
+  border-color: rgba(6, 182, 212, 0.25);
+  box-shadow: 0 0 18px rgba(6, 182, 212, 0.08), inset 0 0 12px rgba(6, 182, 212, 0.04);
+}
+
+.dv-node.sat {
+  grid-area: sat;
+  opacity: clamp(0, (var(--scroll-progress, 0) - 0.3) * 4, 1);
+  transform: translateX(calc(30px * clamp(0, 1 - (var(--scroll-progress, 0) - 0.3) * 4, 1)));
+  border-color: rgba(168, 85, 247, 0.25);
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.08), inset 0 0 12px rgba(168, 85, 247, 0.04);
+}
+
+.dv-node.link {
+  grid-area: link;
+  opacity: clamp(0, (var(--scroll-progress, 0) - 0.55) * 4, 1);
+  transform: translateY(calc(20px * clamp(0, 1 - (var(--scroll-progress, 0) - 0.55) * 4, 1)));
+  border-color: rgba(245, 158, 11, 0.25);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.08), inset 0 0 12px rgba(245, 158, 11, 0.04);
+}
+
+.dv-node.hub-2 {
+  grid-area: hub2;
+  opacity: clamp(0, (var(--scroll-progress, 0) - 0.55) * 4, 1);
+  transform: translateX(calc(30px * clamp(0, 1 - (var(--scroll-progress, 0) - 0.55) * 4, 1)));
+  border-color: rgba(6, 182, 212, 0.25);
+  box-shadow: 0 0 18px rgba(6, 182, 212, 0.08), inset 0 0 12px rgba(6, 182, 212, 0.04);
+}
+
+.dv-node-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.dv-node.hub-1 .dv-node-label,
+.dv-node.hub-2 .dv-node-label { color: #06b6d4; }
+.dv-node.sat .dv-node-label { color: #a855f7; }
+.dv-node.link .dv-node-label { color: #f59e0b; }
+
+.dv-node-cols {
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* SVG arrows layer */
+.dv-arrows {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dv-arrow {
+  fill: none;
+  stroke-width: 2;
+  stroke-dasharray: 8 4;
+  stroke-linecap: round;
+}
+
+.dv-arrow.hub-sat { stroke: #a855f7; filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.3)); }
+.dv-arrow.hub-link { stroke: #f59e0b; filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.3)); }
+.dv-arrow.link-hub { stroke: #06b6d4; filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.3)); }
+
+.dv-arrow-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 8px;
+  fill: var(--text-dim);
+}
+
+/* ===================================================
+   RESPONSIVE — additional rules for new features
+   =================================================== */
+@media (max-width: 600px) {
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .stats-row { gap: 24px; }
+  .stat-number { font-size: 36px; }
+  .sticky-split { grid-template-columns: 1fr; }
+  .sticky-left { position: static; }
+  .dv-assembly {
+    grid-template-areas: "hub1" "sat" "link" "hub2";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    min-height: auto;
+    gap: 12px;
+  }
+  .dv-arrows { display: none; }
+}
+
+/* ===================================================
+   REDUCED MOTION
+   =================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.1ms !important;
+  }
+  .section { opacity: 1; transform: none; filter: none; }
+  .title-section { opacity: 1; animation: none; }
+  .nav-node { opacity: 1; }
+  .meta-chip { opacity: 1; }
+  .lcars-seg { opacity: 1; }
+  .hook-text .word { opacity: 1; }
+  .data-table tr { opacity: 1; transform: none; }
+  .exercise-task { opacity: 1; transform: none; }
+  .ambient-glow { transition: none; }
+  .dv-node { opacity: 1 !important; transform: none !important; }
+  .dv-arrow { stroke-dashoffset: 0 !important; }
+  .section h2 {
+    -webkit-text-fill-color: var(--text-bright);
+    background: none;
+  }
+}
+
+/* ═══════ Game UI: Inventory + Achievements ═══════ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary, rgba(255,255,255,0.5)); }
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim, rgba(255,255,255,0.3)); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.3));
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright, #fff); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright, #fff); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim, rgba(255,255,255,0.3)); font-family: 'Orbitron', sans-serif; }
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+@media (max-width: 600px) {
+  .inventory-toolbar { bottom: 8px; left: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .inventory-panel { width: calc(100vw - 16px); left: 8px; bottom: 60px; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+
+</style>
+</head>
+<body data-chapter="4" style="padding-top: 52px;">
+
+<!-- Particle field canvas -->
+<canvas id="particle-field"></canvas>
+
+<!-- Scanline + scan bar overlays -->
+<div class="scanline-overlay"></div>
+<div class="scan-bar"></div>
+
+<!-- Dynamic ambient glow — shifts color per section -->
+<div class="ambient-glow" id="ambient-glow"></div>
+
+<!-- Parallax depth shapes — drift at different scroll rates -->
+<div class="parallax-layer" id="parallax-layer">
+  <div class="depth-shape shape-1"></div>
+  <div class="depth-shape shape-2"></div>
+  <div class="depth-shape shape-3"></div>
+  <div class="depth-shape shape-4"></div>
+</div>
+
+<div class="page-content">
+
+<!-- ===================================================
+     NAVIGATION
+     =================================================== -->
+<nav class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('s1')">1</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s2')">2</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s3')">3</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s4')">4</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s5')">5</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s6')">6</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s7')">7</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s8')">8</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s9')">9</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">The Bridge</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: var(--sql-join)" onclick="scrollToSection('s1')">1</div>
+        <div class="lcars-seg" style="--seg-color: var(--accent)" onclick="scrollToSection('s2')">2</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-on)" onclick="scrollToSection('s3')">3</div>
+        <div class="lcars-seg" style="--seg-color: var(--hub-color)" onclick="scrollToSection('s4')">4</div>
+        <div class="lcars-seg" style="--seg-color: var(--link-color)" onclick="scrollToSection('s5')">5</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-join)" onclick="scrollToSection('s6')">6</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-where)" onclick="scrollToSection('s7')">7</div>
+        <div class="lcars-seg" style="--seg-color: var(--sat-color)" onclick="scrollToSection('s8')">8</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-select)" onclick="scrollToSection('s9')">9</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ===================================================
+     TITLE
+     =================================================== -->
+<div class="title-section">
+  <div class="title-label">Chapter 4 &mdash; SQL Part 2</div>
+  <h1>JOINs</h1>
+  <p class="subtitle">The bridge that reunites what normalization separated. Every JOIN follows a foreign key &mdash; and in Data Vault, that means following the hash key from Satellite back to Hub, or through a Link to another Hub.</p>
+  <div class="meta-chips">
+    <span class="meta-chip">Day 4</span>
+    <span class="meta-chip">SQL</span>
+    <span class="meta-chip">Hub &harr; Satellite</span>
+    <span class="meta-chip">Hub &rarr; Link &rarr; Hub</span>
+    <span class="meta-chip">Late Arriving Data</span>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 1 — THE HOOK
+     =================================================== -->
+<div class="section" id="s1" data-label="The Bridge">
+  <div class="section-header">
+    <div class="section-tag join-t">Section 1</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>You Already Found the Problem</h2>
+
+  <div class="hook hook-join">
+    <p class="hook-text">In the last session, you queried <em>Sat_Character_Details</em> and got race, level, faction &mdash; but not the character&rsquo;s name. Because names live in <em>Hub_Character</em>, and you were looking at one table. <em>JOIN</em> is how you look at two tables at once.</p>
+  </div>
+
+  <p>That moment in Day 3 &mdash; when you realized you couldn&rsquo;t get names from the Satellite alone &mdash; is exactly the problem JOINs solve. You separated data into Hubs and Satellites for good reasons (no repetition, parallel loading, auditability). JOIN is the tool that reads it back together.</p>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <blockquote>&ldquo;A JOIN combines data from two tables based on a shared key. In Data Vault, that&rsquo;s typically the hash key &mdash; the Satellite has it as a foreign key pointing back to the Hub. The JOIN follows that link to combine identity with attributes.&rdquo;</blockquote>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 2 — ETYMOLOGY / LANGUAGE BRIDGE
+     =================================================== -->
+<div class="section" id="s2" data-label="Etymology">
+  <div class="section-header">
+    <div class="section-tag accent-t">Section 2</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Why the Word &ldquo;JOIN&rdquo;</h2>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge</div>
+    <p><span class="bridge-word">JOIN</span> &mdash; from Latin <em>jungere</em>: &ldquo;to yoke, to bind, to connect.&rdquo;</p>
+    <p>Same root as <strong>junction</strong> (where roads connect), <strong>conjunction</strong> (in grammar: &ldquo;and,&rdquo; &ldquo;but&rdquo; &mdash; words that connect clauses), and in logic: the AND operator (&and;).</p>
+    <p>This is conjunction from symbolic logic. P &and; Q produces a result only when <em>both</em> P and Q are true. A SQL JOIN produces a result row only when <em>both</em> tables have a matching value. Same structural shape: &ldquo;give me something only when BOTH sides match.&rdquo;</p>
+  </div>
+
+  <div class="four-layers" id="join-layers">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; What a JOIN Is</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('join-layers', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('join-layers', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('join-layers', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('join-layers', 3)"></div>
+      </div>
+    </div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L1</span>
+        <span class="layer-label">Plain language &mdash; for anyone</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>A JOIN combines rows from two tables based on a value they share. Like looking up a character&rsquo;s name on one sheet and their stats on another, then reading both together by matching the character ID.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L2</span>
+        <span class="layer-label">With mechanism &mdash; how it works</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>The shared value is a key &mdash; specifically, a foreign key in one table that points to a primary key in another. The JOIN reads both tables and pairs up rows where the key matches. Rows without a partner get excluded (in the default INNER JOIN).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L3</span>
+        <span class="layer-label">Technical &mdash; full detail</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>A JOIN is a set operation that produces the Cartesian product of two relations, filtered by a join predicate (the ON clause). INNER JOIN returns only rows where the predicate is TRUE. The query optimizer decides the physical execution strategy (nested loop, hash join, merge join) &mdash; the SQL only declares <em>what</em> to match, not <em>how</em>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L4</span>
+        <span class="layer-label">Expert &mdash; nuance &amp; edge cases</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>In Data Vault, JOINs follow a predictable pattern because the model is standardized. Every Satellite JOINs to its parent Hub on the hash key. Every Link JOINs to its participant Hubs. This standardization is why DataVault4dbt can generate JOIN logic automatically &mdash; the foreign key relationships are always in the same place. When you can read a DV JOIN, you can read any query the automation produces.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 3 — THE ON CLAUSE & TABLE ALIASES
+     =================================================== -->
+<div class="section" id="s3" data-label="ON &amp; Aliases">
+  <div class="section-header">
+    <div class="section-tag on-t">Section 3</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>ON &amp; Table Aliases</h2>
+
+  <div class="hook hook-on">
+    <p class="hook-text"><em>ON</em> specifies the condition that must be true for two rows to be joined. It answers: &ldquo;on what basis are these tables connected?&rdquo; The answer is always: <em>on matching keys</em>.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; ON</div>
+    <p><span class="bridge-word">ON</span> &mdash; everyday: &ldquo;based on,&rdquo; &ldquo;conditional upon.&rdquo; <em>&ldquo;I&rsquo;ll go on one condition.&rdquo;</em> In SQL: the condition that must hold for two rows to be paired.</p>
+    <p><strong>ON is to JOIN what WHERE is to the full query.</strong> WHERE filters rows <em>after</em> reading. ON filters which rows get paired <em>during</em> the JOIN. Both are boolean conditions &mdash; they operate at different stages.</p>
+  </div>
+
+  <h3>Table Aliases &mdash; Nicknames</h3>
+
+  <p>When two tables share a column name (like <code>hub_character_hk</code> exists in both Hub_Character and Sat_Character_Details), SQL needs to know which one you mean. Aliases disambiguate:</p>
+
+  <div class="sql-block">
+    <div class="sql-block-header">
+      <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+      <span class="sql-block-label">Table aliases</span>
+    </div>
+    <pre><span class="from">FROM</span> <span class="tbl">Hub_Character</span> <span class="alias">h</span>            <span class="comment">-- h is the alias</span>
+<span class="join">JOIN</span> <span class="tbl">Sat_Character_Details</span> <span class="alias">s</span>  <span class="comment">-- s is the alias</span>
+  <span class="on">ON</span> <span class="alias">h</span>.<span class="col">hub_character_hk</span> = <span class="alias">s</span>.<span class="col">hub_character_hk</span></pre>
+  </div>
+
+  <p><strong>Convention:</strong> <code>h</code> for Hub, <code>s</code> for Satellite, <code>l</code> for Link, <code>hc</code> for Hub_Character, <code>hw</code> for Hub_Weapon. These are nicknames the database doesn&rsquo;t care about &mdash; but humans reading the query do.</p>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">What happens if you forget ON?</span>
+    <span class="explore-hint">EXPLORE</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p>Without <code>ON</code>, the database has no rule for matching rows. Two things can happen:</p>
+      <p><strong>1. An error</strong> &mdash; most databases reject <code>JOIN</code> without <code>ON</code> as a syntax error. The query won&rsquo;t run.</p>
+      <p><strong>2. A Cartesian product</strong> &mdash; if the syntax is technically valid (old-style comma joins), every row from the left table pairs with every row from the right. 5 Hub rows &times; 5 Satellite rows = 25 result rows. Most of them nonsense.</p>
+      <p>This is exactly the bug in Exercise 4 at the end of this tutorial. When you get there, you&rsquo;ll spot it instantly.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 4 — HUB ↔ SATELLITE JOIN
+     =================================================== -->
+<div class="section" id="s4" data-label="Hub &harr; Sat">
+  <div class="section-header">
+    <div class="section-tag hub-t">Section 4</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>The Basic JOIN: Hub &harr; Satellite</h2>
+
+  <p><strong>The question:</strong> &ldquo;Give me each character&rsquo;s name AND their race, level, and faction.&rdquo;</p>
+  <p>Names are in Hub_Character. Race, level, faction are in Sat_Character_Details. These are separate tables. JOIN connects them.</p>
+
+  <div class="sticky-split">
+    <div class="sticky-left">
+      <div class="sql-block">
+        <div class="sql-block-header">
+          <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+          <span class="sql-block-label">Hub &harr; Satellite JOIN</span>
+        </div>
+        <pre><span class="select">SELECT</span> <span class="alias">h</span>.<span class="col">business_key</span> <span class="as">AS</span> <span class="col">character_name</span>,
+       <span class="alias">s</span>.<span class="col">race</span>,
+       <span class="alias">s</span>.<span class="col">level</span>,
+       <span class="alias">s</span>.<span class="col">faction</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span> <span class="alias">h</span>
+<span class="join">JOIN</span> <span class="tbl">Sat_Character_Details</span> <span class="alias">s</span>
+  <span class="on">ON</span> <span class="alias">h</span>.<span class="col">hub_character_hk</span> = <span class="alias">s</span>.<span class="col">hub_character_hk</span>;</pre>
+      </div>
+    </div>
+
+    <div class="sticky-right">
+      <h3>How to Read This Query</h3>
+      <div class="pm-panel">
+        <p><strong>1.</strong> <code>FROM Hub_Character h</code> &mdash; Start with the Hub. This is our &ldquo;left&rdquo; table.</p>
+        <p><strong>2.</strong> <code>JOIN Sat_Character_Details s</code> &mdash; Bring in the Satellite.</p>
+        <p><strong>3.</strong> <code>ON h.hub_character_hk = s.hub_character_hk</code> &mdash; The bridge: pair rows where hash keys match.</p>
+        <p style="margin:0"><strong>4.</strong> <code>SELECT ...</code> &mdash; From the paired result, show name (from Hub), race, level, faction (from Satellite).</p>
+      </div>
+
+      <h3>The Result</h3>
+      <div class="data-panel">
+        <div class="data-panel-header">
+          <div class="data-panel-dot result"></div>
+          <span class="data-panel-title result-title">JOIN Result</span>
+        </div>
+        <table class="data-table">
+          <tr><th>character_name</th><th>race</th><th>level</th><th>faction</th></tr>
+          <tr><td class="bk">Ulfric</td><td class="val">Nord</td><td class="val">30</td><td class="val">Stormcloak</td></tr>
+          <tr><td class="bk">Lydia</td><td class="val">Nord</td><td class="val">25</td><td class="val">Companions</td></tr>
+          <tr><td class="bk">Nazeem</td><td class="val">Redguard</td><td class="val">10</td><td class="val">None</td></tr>
+          <tr><td class="bk">Aela</td><td class="val">Nord</td><td class="val">28</td><td class="val">Companions</td></tr>
+          <tr><td class="bk">Balgruuf</td><td class="val">Nord</td><td class="val">35</td><td class="val">Jarl</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p>This is the query you <em>couldn&rsquo;t</em> write in Day 3. Now you can.</p>
+
+  <h3>Adding WHERE</h3>
+  <p>JOINs and WHERE combine naturally. JOIN pairs the tables, then WHERE filters the paired result:</p>
+
+  <div class="sql-block">
+    <div class="sql-block-header">
+      <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+      <span class="sql-block-label">JOIN + WHERE</span>
+    </div>
+    <pre><span class="select">SELECT</span> <span class="alias">h</span>.<span class="col">business_key</span> <span class="as">AS</span> <span class="col">character_name</span>,
+       <span class="alias">s</span>.<span class="col">race</span>, <span class="alias">s</span>.<span class="col">level</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span> <span class="alias">h</span>
+<span class="join">JOIN</span> <span class="tbl">Sat_Character_Details</span> <span class="alias">s</span>
+  <span class="on">ON</span> <span class="alias">h</span>.<span class="col">hub_character_hk</span> = <span class="alias">s</span>.<span class="col">hub_character_hk</span>
+<span class="where">WHERE</span> <span class="alias">s</span>.<span class="col">faction</span> = <span class="str">'Companions'</span>;</pre>
+  </div>
+
+  <p>Result: Lydia and Aela only. The JOIN paired all characters with their details, then WHERE kept only Companions.</p>
+</div>
+
+
+<!-- ===================================================
+     SECTION 5 — HUB → LINK → HUB CHAIN
+     =================================================== -->
+<div class="section" id="s5" data-label="The Chain">
+  <div class="section-header">
+    <div class="section-tag link-t">Section 5</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>The Chain: Hub &rarr; Link &rarr; Hub</h2>
+
+  <div class="hook hook-link">
+    <p class="hook-text">&ldquo;Which weapons does Ulfric carry?&rdquo; Characters are in one Hub. Weapons are in another. The connection lives in <em>Link_Character_Weapon</em> &mdash; which stores the hash keys of both.</p>
+  </div>
+
+  <div class="sticky-split">
+    <div class="sticky-left">
+      <h3>The Link Table</h3>
+      <div class="data-panel">
+        <div class="data-panel-header">
+          <div class="data-panel-dot link"></div>
+          <span class="data-panel-title link-title">Link_Character_Weapon</span>
+        </div>
+        <table class="data-table">
+          <tr><th>link_character_weapon_hk</th><th>hub_character_hk</th><th>hub_weapon_hk</th><th>load_date</th></tr>
+          <tr><td class="pk">x1y2...</td><td class="link-fk">a3f7...</td><td class="link-fk">w8k2...</td><td class="val">2026-01-01</td></tr>
+          <tr><td class="pk">z3a4...</td><td class="link-fk">a3f7...</td><td class="link-fk">w9m3...</td><td class="val">2026-01-01</td></tr>
+          <tr><td class="pk">b5c6...</td><td class="link-fk">b82c...</td><td class="link-fk">w8k2...</td><td class="val">2026-01-01</td></tr>
+        </table>
+      </div>
+      <p style="font-size:14px;color:var(--text-dim);margin-top:12px;">Each row = one relationship: &ldquo;character X carries weapon Y.&rdquo;</p>
+    </div>
+
+    <div class="sticky-right">
+      <p>The Link stores only hash key references. To get names, we JOIN <em>through</em> the Link to both Hubs.</p>
+
+      <div class="sql-block">
+        <div class="sql-block-header">
+          <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+          <span class="sql-block-label">Chain JOIN &mdash; Hub &rarr; Link &rarr; Hub</span>
+        </div>
+        <pre><span class="select">SELECT</span> <span class="alias">hc</span>.<span class="col">business_key</span> <span class="as">AS</span> <span class="col">character_name</span>,
+       <span class="alias">hw</span>.<span class="col">business_key</span> <span class="as">AS</span> <span class="col">weapon_name</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span> <span class="alias">hc</span>
+<span class="join">JOIN</span> <span class="tbl">Link_Character_Weapon</span> <span class="alias">l</span>
+  <span class="on">ON</span> <span class="alias">hc</span>.<span class="col">hub_character_hk</span> = <span class="alias">l</span>.<span class="col">hub_character_hk</span>
+<span class="join">JOIN</span> <span class="tbl">Hub_Weapon</span> <span class="alias">hw</span>
+  <span class="on">ON</span> <span class="alias">l</span>.<span class="col">hub_weapon_hk</span> = <span class="alias">hw</span>.<span class="col">hub_weapon_hk</span>
+<span class="where">WHERE</span> <span class="alias">hc</span>.<span class="col">business_key</span> = <span class="str">'Ulfric'</span>;</pre>
+      </div>
+
+      <div class="pm-panel">
+        <p><strong>How to read this chain:</strong></p>
+        <p><strong>1.</strong> Start at <code>Hub_Character</code> (aliased <code>hc</code>).</p>
+        <p><strong>2.</strong> Follow the hash key into <code>Link_Character_Weapon</code> (aliased <code>l</code>). Now we have every character&ndash;weapon pair.</p>
+        <p><strong>3.</strong> From the Link, follow the weapon hash key into <code>Hub_Weapon</code> (aliased <code>hw</code>). Now both sides have names.</p>
+        <p style="margin:0"><strong>4.</strong> WHERE filters to Ulfric only.</p>
+      </div>
+
+      <h3>The Result</h3>
+      <div class="data-panel">
+        <div class="data-panel-header">
+          <div class="data-panel-dot result"></div>
+          <span class="data-panel-title result-title">Chain JOIN Result</span>
+        </div>
+        <table class="data-table">
+          <tr><th>character_name</th><th>weapon_name</th></tr>
+          <tr><td class="bk">Ulfric</td><td class="bk">Steel Sword</td></tr>
+          <tr><td class="bk">Ulfric</td><td class="bk">Voice of the Sky</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="pm-panel">
+    <p><strong>The structural insight:</strong> The Link table IS the JOIN table. In relational design, many-to-many relationships always need a junction table. In Data Vault, that&rsquo;s exactly what a Link is &mdash; except it also adds <code>load_date</code> and <code>record_source</code> for auditability.</p>
+    <p style="margin:0">When you built Link_Character_Weapon in Day 1, you were designing the table this query now reads.</p>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">Why does the Link need its own hash key?</span>
+    <span class="explore-hint">EXPLORE</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p>Look at <code>link_character_weapon_hk</code> in the Link table. It&rsquo;s not a foreign key to either Hub &mdash; it&rsquo;s the Link&rsquo;s own primary key, computed from the combination of both participant hash keys.</p>
+      <p><strong>Why?</strong> The same two reasons as Hub hash keys: (1) it gives the Link a single-column primary key for fast lookups, and (2) it&rsquo;s deterministic &mdash; the same character+weapon pair always produces the same Link hash key, regardless of which source system sent it.</p>
+      <p>If Ulfric carrying a Steel Sword arrives from both the Stormcloak roster and the Whiterun armory log, both sources produce the same <code>link_character_weapon_hk</code>. The vault recognizes it as the same relationship. No duplicates.</p>
+      <p>The Link hash key also becomes a foreign key target &mdash; if a Link ever gets its own Satellite (storing attributes of the relationship, like &ldquo;equipped_date&rdquo;), that Satellite would point to the Link&rsquo;s hash key, exactly like a Hub Satellite points to a Hub hash key.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 6 — JOIN TYPES
+     =================================================== -->
+<div class="section" id="s6" data-label="JOIN Types">
+  <div class="section-header">
+    <div class="section-tag join-t">Section 6</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>INNER vs LEFT JOIN</h2>
+
+  <h3>INNER JOIN (the default)</h3>
+  <p><code>JOIN</code> without a qualifier means <code>INNER JOIN</code>. Only rows with a match in <strong>both</strong> tables appear. No match = excluded.</p>
+  <p><strong>Analogy:</strong> A guest list where both the invitation (Hub) AND the RSVP (Satellite) must exist. No RSVP, not on the final list.</p>
+
+  <h3>LEFT JOIN</h3>
+  <p>Returns <strong>all</strong> rows from the left table (FROM), plus matching rows from the right. No match? The right side fills with NULLs.</p>
+
+  <div class="sql-block">
+    <div class="sql-block-header">
+      <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+      <span class="sql-block-label">LEFT JOIN</span>
+    </div>
+    <pre><span class="select">SELECT</span> <span class="alias">h</span>.<span class="col">business_key</span>, <span class="alias">s</span>.<span class="col">race</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span> <span class="alias">h</span>
+<span class="kw">LEFT</span> <span class="join">JOIN</span> <span class="tbl">Sat_Character_Details</span> <span class="alias">s</span>
+  <span class="on">ON</span> <span class="alias">h</span>.<span class="col">hub_character_hk</span> = <span class="alias">s</span>.<span class="col">hub_character_hk</span>;</pre>
+  </div>
+
+  <p>If a character exists in the Hub but has no Satellite data, they still appear &mdash; with <code>race = NULL</code>. This catches entities that exist but don&rsquo;t have details yet.</p>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <blockquote>&ldquo;In a properly loaded Data Vault, INNER JOIN and LEFT JOIN usually give the same result &mdash; Hubs and Satellites load together. But LEFT JOIN is useful during development, testing, or when late-arriving data creates temporary gaps.&rdquo;</blockquote>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">What about RIGHT JOIN and FULL JOIN?</span>
+    <span class="explore-hint">EXPLORE</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p><strong>RIGHT JOIN</strong> &mdash; the mirror image of LEFT JOIN. All rows from the <em>right</em> table (the JOINed one), plus matches from the left. In practice, almost nobody uses it. You can always rewrite a RIGHT JOIN as a LEFT JOIN by swapping the table order. It exists for completeness, not convenience.</p>
+      <p><strong>FULL OUTER JOIN</strong> &mdash; returns all rows from <em>both</em> tables, with NULLs where there&rsquo;s no match on either side. Useful for finding orphans in both directions: &ldquo;show me everything, matched or not.&rdquo;</p>
+      <p><strong>CROSS JOIN</strong> &mdash; the Cartesian product. Every row paired with every other row, no ON clause. Rarely wanted, but sometimes used to generate combinations (e.g., all possible character+weapon pairings for a game matrix).</p>
+      <p>For Data Vault work, you&rsquo;ll use <strong>INNER JOIN</strong> 90% of the time, <strong>LEFT JOIN</strong> for development/debugging. The others are good to know, but not daily tools.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 7 — LATE ARRIVING DATA
+     =================================================== -->
+<div class="section" id="s7" data-label="Late Data">
+  <div class="section-header">
+    <div class="section-tag late-t">Section 7</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Late Arriving Data</h2>
+
+  <div class="hook hook-late">
+    <p class="hook-text">What happens when data arrives <em>out of order</em>? The Stormcloak roster arrives Monday, but Ulfric&rsquo;s character details don&rsquo;t come until Wednesday. On Tuesday, the Hub has his name &mdash; but the Satellite has nothing to JOIN to.</p>
+  </div>
+
+  <p><strong>Late arriving data</strong> = data that arrives after the entity it describes has already been loaded. The Hub row exists, but the Satellite data comes later.</p>
+
+  <h3>Business Date vs. Load Date</h3>
+  <div class="pm-panel">
+    <p><strong>load_date</strong> &mdash; when the data physically arrived in the vault. A system timestamp. &ldquo;When did we receive this?&rdquo;</p>
+    <p style="margin:0"><strong>business date</strong> (or effective date) &mdash; when the data was actually true in the real world. &ldquo;When was this actually the case?&rdquo;</p>
+  </div>
+
+  <p>If Ulfric&rsquo;s level was updated to 30 on January 15 in the source system, but the update didn&rsquo;t arrive until January 18:</p>
+  <ul style="margin: 0 0 16px 24px; color: var(--text-secondary); font-size: 15px;">
+    <li><code>load_date</code> = January 18 (arrival)</li>
+    <li><code>business_date</code> = January 15 (truth)</li>
+  </ul>
+
+  <div class="four-layers" id="late-layers">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; Late Arriving Data</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('late-layers', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('late-layers', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('late-layers', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('late-layers', 3)"></div>
+      </div>
+    </div>
+
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L1</span>
+        <span class="layer-label">Plain language</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Sometimes data arrives late. The vault handles it by recording both when the data was true and when it arrived.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L2</span>
+        <span class="layer-label">With mechanism</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Data Vault separates load_date (arrival time) from business date (when the fact was true). Late data gets its own row with the correct business date, even if it arrived after other data. No overwrites.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L3</span>
+        <span class="layer-label">Technical</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Late data creates a temporal gap between the Hub&rsquo;s load_date and the Satellite&rsquo;s load_date. Standard INNER JOIN on hash key still works, but &ldquo;what did we know at time X?&rdquo; queries need both dates. Point-In-Time (PIT) tables &mdash; pre-computed snapshots &mdash; optimize this pattern in production.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)">
+        <span class="layer-badge">L4</span>
+        <span class="layer-label">Expert nuance</span>
+        <span class="layer-toggle">&darr;</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-content-inner">
+          <p>Late-arriving data is one of the strongest arguments for the Data Vault approach. In 3NF, late data means updating existing rows (destructive). In Star Schema, it means recalculating dimensions. In Data Vault, it&rsquo;s just another INSERT &mdash; the hash key ties it to the right Hub, load_date records arrival, business date records truth. No updates, no lost history.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept &mdash; Late Arriving Data</div>
+    <blockquote>&ldquo;Late arriving data is when information arrives after the entity is already in the vault. Data Vault handles this well because it separates when data was true from when it arrived. A late record becomes another INSERT with the correct dates &mdash; no updates needed, no history lost.&rdquo;</blockquote>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">What are PIT tables?</span>
+    <span class="explore-hint">PREVIEW</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p><strong>Point-In-Time (PIT) tables</strong> solve a performance problem. When a Hub has multiple Satellites that change at different rates, asking &ldquo;what did we know about Ulfric on January 17?&rdquo; requires finding the latest record <em>before</em> that date in <em>each</em> Satellite &mdash; expensive at scale.</p>
+      <p>A PIT table pre-computes this. For every snapshot date, it stores the correct Satellite hash-diff pointer for each Satellite. Instead of complex subqueries, you JOIN once to the PIT table and get the right version of every Satellite instantly.</p>
+      <p>Think of it like a <strong>bookmark table</strong>: &ldquo;on this date, the right row in Sat_Character_Details is <em>this one</em>, and the right row in Sat_Character_Stats is <em>that one</em>.&rdquo;</p>
+      <p>You won&rsquo;t need to build PIT tables yourself &mdash; but knowing they exist and <em>why</em> shows you understand temporal query challenges. ScaleFree has presented on late-arriving data patterns that touch this topic.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 8 — DV CONNECTION MAP
+     =================================================== -->
+<div class="section" id="s8" data-label="DV Map">
+  <div class="section-header">
+    <div class="section-tag dv-t">Section 8</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>How JOINs Map to Data Vault</h2>
+
+  <!-- Data Vault Assembly Animation — scroll-driven -->
+  <div class="dv-assembly" id="dv-assembly">
+    <svg class="dv-arrows" id="dv-arrows" viewBox="0 0 600 260" preserveAspectRatio="none">
+      <!-- Arrow 1: Hub_Character → Sat (hub_character_hk) -->
+      <path class="dv-arrow hub-sat" id="arrow-hub-sat"
+            d="M 160,65 C 220,65 220,65 280,65" />
+      <text class="dv-arrow-label" x="220" y="55">ON hk = hk</text>
+
+      <!-- Arrow 2: Hub_Character → Link -->
+      <path class="dv-arrow hub-link" id="arrow-hub-link"
+            d="M 160,130 C 220,180 220,180 280,195" />
+      <text class="dv-arrow-label" x="195" y="175">JOIN</text>
+
+      <!-- Arrow 3: Link → Hub_Weapon -->
+      <path class="dv-arrow link-hub" id="arrow-link-hub"
+            d="M 320,195 C 380,180 380,180 440,130" />
+      <text class="dv-arrow-label" x="385" y="175">JOIN</text>
+    </svg>
+
+    <div class="dv-node hub-1">
+      <div class="dv-node-label">Hub_Character</div>
+      <div class="dv-node-cols">hub_character_hk<br>business_key</div>
+    </div>
+
+    <div class="dv-node sat">
+      <div class="dv-node-label">Sat_Character_Details</div>
+      <div class="dv-node-cols">hub_character_hk (FK)<br>race, level, faction</div>
+    </div>
+
+    <div class="dv-node link">
+      <div class="dv-node-label">Link_Char_Weapon</div>
+      <div class="dv-node-cols">hub_character_hk (FK)<br>hub_weapon_hk (FK)</div>
+    </div>
+
+    <div class="dv-node hub-2">
+      <div class="dv-node-label">Hub_Weapon</div>
+      <div class="dv-node-cols">hub_weapon_hk<br>business_key</div>
+    </div>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-item">
+      <span class="stat-number" data-count="5">0</span>
+      <span class="stat-label">Characters in Vault</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-number" data-count="3">0</span>
+      <span class="stat-label">DV Table Types</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-number" data-count="2">0</span>
+      <span class="stat-label">JOIN Patterns Learned</span>
+    </div>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot hub"></div>
+      <span class="data-panel-title hub-title">DV Concept &rarr; JOIN Application</span>
+    </div>
+    <table class="data-table">
+      <tr><th>What You Know</th><th>What JOINs Add</th></tr>
+      <tr><td class="bk">Hub stores identity</td><td class="val">JOIN from Sat back to Hub gets the business key (name)</td></tr>
+      <tr><td class="bk">Satellite stores attributes</td><td class="val">JOIN from Hub to Sat enriches identity with attributes</td></tr>
+      <tr><td class="bk">Link connects Hubs</td><td class="val">Chain JOINs through Link connect entities</td></tr>
+      <tr><td class="bk">Hash key = Hub PK</td><td class="val">Hash key is the JOIN column (what ON uses)</td></tr>
+      <tr><td class="bk">FK points to another PK</td><td class="val">JOINs follow those arrows</td></tr>
+      <tr><td class="bk">SQL at every DV layer</td><td class="val">DataVault4dbt generates INSERT...SELECT...JOIN</td></tr>
+    </table>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     SECTION 9 — EXERCISES
+     =================================================== -->
+<div class="section" id="s9" data-label="Exercises">
+  <div class="section-header">
+    <div class="section-tag exercise-t">Section 9</div>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="exercise-section">
+    <div class="exercise-label">Final Exercise &mdash; You Know Enough For This</div>
+    <h2>Read, Write, Chain, Debug</h2>
+    <p style="color:var(--text-secondary);margin-bottom:26px;">Four tasks. Each uses what you just learned. All completable right here.</p>
+
+    <!-- EXERCISE 1: Read a JOIN query -->
+    <div class="exercise-task">
+      <div class="exercise-task-number">Task 1 &mdash; Read This JOIN</div>
+      <p>What does this query return? Describe in plain English.</p>
+      <div class="sql-block" style="margin:12px 0;">
+        <div class="sql-block-header">
+          <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+          <span class="sql-block-label">Read this</span>
+        </div>
+        <pre><span class="select">SELECT</span> <span class="alias">h</span>.<span class="col">business_key</span> <span class="as">AS</span> <span class="col">character_name</span>,
+       <span class="alias">s</span>.<span class="col">level</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span> <span class="alias">h</span>
+<span class="join">JOIN</span> <span class="tbl">Sat_Character_Details</span> <span class="alias">s</span>
+  <span class="on">ON</span> <span class="alias">h</span>.<span class="col">hub_character_hk</span> = <span class="alias">s</span>.<span class="col">hub_character_hk</span>
+<span class="where">WHERE</span> <span class="alias">s</span>.<span class="col">level</span> > <span class="num">25</span>;</pre>
+      </div>
+      <textarea class="exercise-input" id="ex1-input" placeholder="Describe what this query returns..."></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="check-btn" onclick="checkExercise1()">Check Answer</button>
+        <button class="reveal-btn" onclick="toggleReveal('ex1-reveal')">Show Answer</button>
+      </div>
+      <div class="feedback" id="ex1-feedback"></div>
+      <div class="reveal-area" id="ex1-reveal">
+        <div class="reveal-area-inner">
+          <p style="color:var(--text-secondary);font-size:14px;"><strong>Answer:</strong> This query JOINs Hub_Character to Sat_Character_Details on the hash key, then filters to characters above level 25. It returns the character name (from Hub) and level (from Satellite). Result: Ulfric (30), Aela (28), Balgruuf (35).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXERCISE 2: Write a Hub → Sat JOIN -->
+    <div class="exercise-task">
+      <div class="exercise-task-number">Task 2 &mdash; Write a Hub &harr; Sat JOIN</div>
+      <p>Write the SQL to answer: <strong>&ldquo;Give me the name and race of all Nord characters.&rdquo;</strong></p>
+      <p style="font-size:13px;color:var(--text-dim);">You need Hub_Character for the name, Sat_Character_Details for race. Use table aliases.</p>
+      <textarea class="exercise-input" id="ex2-input" placeholder="Write your JOIN query here..." style="min-height:100px;"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="check-btn" onclick="checkExercise2()">Check Answer</button>
+        <button class="reveal-btn" onclick="toggleReveal('ex2-reveal')">Show Answer</button>
+      </div>
+      <div class="feedback" id="ex2-feedback"></div>
+      <div class="reveal-area" id="ex2-reveal">
+        <div class="reveal-area-inner">
+          <div class="sql-block" style="margin:0;">
+            <div class="sql-block-header">
+              <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+              <span class="sql-block-label">Answer</span>
+            </div>
+            <pre><span class="select">SELECT</span> <span class="alias">h</span>.<span class="col">business_key</span> <span class="as">AS</span> <span class="col">character_name</span>,
+       <span class="alias">s</span>.<span class="col">race</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span> <span class="alias">h</span>
+<span class="join">JOIN</span> <span class="tbl">Sat_Character_Details</span> <span class="alias">s</span>
+  <span class="on">ON</span> <span class="alias">h</span>.<span class="col">hub_character_hk</span> = <span class="alias">s</span>.<span class="col">hub_character_hk</span>
+<span class="where">WHERE</span> <span class="alias">s</span>.<span class="col">race</span> = <span class="str">'Nord'</span>;</pre>
+          </div>
+          <p style="color:var(--text-dim);font-size:13px;margin-top:10px;">Key parts: SELECT from both tables, FROM one, JOIN the other, ON the hash key, WHERE the race filter. Aliases are flexible.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXERCISE 3: Write a chain JOIN -->
+    <div class="exercise-task">
+      <div class="exercise-task-number">Task 3 &mdash; Write a Chain JOIN</div>
+      <p>Write the SQL to answer: <strong>&ldquo;Which weapons does Lydia carry?&rdquo;</strong></p>
+      <p style="font-size:13px;color:var(--text-dim);">You need Hub_Character &rarr; Link_Character_Weapon &rarr; Hub_Weapon. Two JOINs.</p>
+      <textarea class="exercise-input" id="ex3-input" placeholder="Write your chain JOIN here..." style="min-height:120px;"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="check-btn" onclick="checkExercise3()">Check Answer</button>
+        <button class="reveal-btn" onclick="toggleReveal('ex3-reveal')">Show Answer</button>
+      </div>
+      <div class="feedback" id="ex3-feedback"></div>
+      <div class="reveal-area" id="ex3-reveal">
+        <div class="reveal-area-inner">
+          <div class="sql-block" style="margin:0;">
+            <div class="sql-block-header">
+              <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+              <span class="sql-block-label">Answer</span>
+            </div>
+            <pre><span class="select">SELECT</span> <span class="alias">hc</span>.<span class="col">business_key</span> <span class="as">AS</span> <span class="col">character_name</span>,
+       <span class="alias">hw</span>.<span class="col">business_key</span> <span class="as">AS</span> <span class="col">weapon_name</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span> <span class="alias">hc</span>
+<span class="join">JOIN</span> <span class="tbl">Link_Character_Weapon</span> <span class="alias">l</span>
+  <span class="on">ON</span> <span class="alias">hc</span>.<span class="col">hub_character_hk</span> = <span class="alias">l</span>.<span class="col">hub_character_hk</span>
+<span class="join">JOIN</span> <span class="tbl">Hub_Weapon</span> <span class="alias">hw</span>
+  <span class="on">ON</span> <span class="alias">l</span>.<span class="col">hub_weapon_hk</span> = <span class="alias">hw</span>.<span class="col">hub_weapon_hk</span>
+<span class="where">WHERE</span> <span class="alias">hc</span>.<span class="col">business_key</span> = <span class="str">'Lydia'</span>;</pre>
+          </div>
+          <p style="color:var(--text-dim);font-size:13px;margin-top:10px;">Three tables, two JOINs, one WHERE. Each JOIN follows a hash key through the Link.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXERCISE 4: Spot the bug -->
+    <div class="exercise-task">
+      <div class="exercise-task-number">Task 4 &mdash; Spot the Bug</div>
+      <p>This query has an error. What&rsquo;s wrong?</p>
+      <div class="sql-block" style="margin:12px 0;">
+        <div class="sql-block-header">
+          <div class="sql-block-dot"></div><div class="sql-block-dot"></div><div class="sql-block-dot"></div>
+          <span class="sql-block-label">Broken query</span>
+        </div>
+        <pre><span class="select">SELECT</span> <span class="alias">h</span>.<span class="col">business_key</span>, <span class="alias">s</span>.<span class="col">race</span>
+<span class="from">FROM</span> <span class="tbl">Hub_Character</span> <span class="alias">h</span>
+<span class="join">JOIN</span> <span class="tbl">Sat_Character_Details</span> <span class="alias">s</span>
+<span class="where">WHERE</span> <span class="alias">s</span>.<span class="col">faction</span> = <span class="str">'Companions'</span>;</pre>
+      </div>
+      <textarea class="exercise-input" id="ex4-input" placeholder="What's the bug?"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="check-btn" onclick="checkExercise4()">Check Answer</button>
+        <button class="reveal-btn" onclick="toggleReveal('ex4-reveal')">Show Answer</button>
+      </div>
+      <div class="feedback" id="ex4-feedback"></div>
+      <div class="reveal-area" id="ex4-reveal">
+        <div class="reveal-area-inner">
+          <p style="color:var(--text-secondary);font-size:14px;"><strong>The bug:</strong> The <code>ON</code> clause is missing. Without <code>ON h.hub_character_hk = s.hub_character_hk</code>, the database doesn&rsquo;t know how to match rows between the two tables. Either it errors, or it produces a Cartesian product (every Hub row paired with every Satellite row).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completion banner -->
+    <div class="completion-banner" id="completion-banner">
+      <h3>All Four Complete</h3>
+      <p>You can read a JOIN, write one, chain through a Link, and debug one. That&rsquo;s SQL Part 2. Next up: Compliance Day &mdash; GDPR, EU AI Act, and why it&rsquo;s your differentiator.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- FOOTER -->
+<div class="tutorial-footer">
+  <span>Chapter 4 &middot; SQL Part 2 &mdash; JOINs</span>
+  <span>Next: Compliance Day 1</span>
+</div>
+
+</div><!-- /container -->
+</div><!-- /page-content -->
+
+
+<!-- ===================================================
+     JAVASCRIPT
+     =================================================== -->
+<script>
+/* ===================================================
+   STAR CONSTELLATION FIELD
+   Connected star chart — Star Trek nav + Data Vault graph
+   Mouse-interactive, thplus.org-inspired density
+   =================================================== */
+(function() {
+  var canvas = document.getElementById('particle-field');
+  var ctx = canvas.getContext('2d');
+  var stars = [];
+  var mouse = { x: -1000, y: -1000, active: false };
+  var w, h;
+  var CONNECT_DIST = 160;
+  var MOUSE_RADIUS = 220;
+  var STAR_COUNT = 110;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* Stars attract ONLY when hovering over empty background (section/page-content divs).
+     Anything else — text, panels, cards, layers — is a "learning zone" where
+     attraction is disabled so the effect doesn't distract from reading. */
+  document.addEventListener('mousemove', function(e) {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    var t = e.target;
+    var isBackground = (
+      t === document.body ||
+      t === document.documentElement ||
+      t.classList.contains('section') ||
+      t.classList.contains('page-content') ||
+      t.classList.contains('parallax-layer') ||
+      t.id === 'particle-field'
+    );
+    mouse.active = isBackground;
+  });
+  document.addEventListener('mouseleave', function() {
+    mouse.active = false;
+    mouse.overContent = false;
+  });
+
+  function createStar() {
+    /* Hub stars (15%) are bigger/brighter — like major star systems or DV Hubs.
+       Regular stars are smaller — like Satellites in the constellation. */
+    var isHub = Math.random() < 0.15;
+    var colors = [
+      { r: 0, g: 180, b: 255 },    // electric blue
+      { r: 6, g: 212, b: 232 },     // bright cyan
+      { r: 140, g: 100, b: 255 },   // soft violet
+      { r: 245, g: 158, b: 11 },    // amber (Link color)
+      { r: 200, g: 130, b: 255 },   // lavender
+    ];
+    var color;
+    if (isHub) {
+      color = Math.random() < 0.6
+        ? colors[1]   // cyan (Hub color)
+        : colors[3];  // amber (Link color)
+    } else {
+      color = colors[Math.floor(Math.random() * colors.length)];
+      if (Math.random() < 0.5) color = colors[Math.floor(Math.random() * 2)];
+    }
+
+    /* Each star has a drift angle that slowly rotates — creates organic wandering.
+       driftSpeed is how fast it moves, driftAngle is current heading,
+       driftTurn is how fast the heading changes (gentle curves, not straight lines). */
+    var driftAngle = Math.random() * Math.PI * 2;
+    var driftSpeed = isHub ? (Math.random() * 0.15 + 0.1) : (Math.random() * 0.25 + 0.12);
+    var driftTurn = (Math.random() - 0.5) * 0.008;
+
+    return {
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: (Math.random() - 0.5) * 0.2,
+      baseSize: isHub ? (Math.random() * 2 + 2.5) : (Math.random() * 1.5 + 0.8),
+      r: color.r, g: color.g, b: color.b,
+      opacity: isHub ? (Math.random() * 0.3 + 0.6) : (Math.random() * 0.35 + 0.2),
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: Math.random() * 0.012 + 0.004,
+      isHub: isHub,
+      driftAngle: driftAngle,
+      driftSpeed: driftSpeed,
+      driftTurn: driftTurn
+    };
+  }
+
+  for (var i = 0; i < STAR_COUNT; i++) {
+    stars.push(createStar());
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    /* --- Update positions --- */
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      p.pulse += p.pulseSpeed;
+
+      /* Autonomous drift — stars wander on their own with slowly curving paths */
+      p.driftAngle += p.driftTurn;
+      /* Occasional random nudge to drift direction (keeps it organic) */
+      if (Math.random() < 0.005) p.driftTurn = (Math.random() - 0.5) * 0.008;
+      p.vx += Math.cos(p.driftAngle) * p.driftSpeed * 0.03;
+      p.vy += Math.sin(p.driftAngle) * p.driftSpeed * 0.03;
+
+      /* Mouse interaction — ATTRACTION toward cursor, but ONLY outside content zones */
+      if (mouse.active) {
+        var mdx = mouse.x - p.x;
+        var mdy = mouse.y - p.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS && mDist > 1) {
+          var strength = (MOUSE_RADIUS - mDist) / MOUSE_RADIUS;
+          var attract = strength * strength * 0.08;
+          p.vx += (mdx / mDist) * attract;
+          p.vy += (mdy / mDist) * attract;
+        }
+      }
+
+      /* Dampen velocity (keeps drift from building up infinitely) */
+      p.vx *= 0.985;
+      p.vy *= 0.985;
+      p.x += p.vx;
+      p.y += p.vy;
+
+      /* Wrap at edges */
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+    }
+
+    /* --- Constellation lines (drawn FIRST, behind stars) --- */
+    ctx.lineWidth = 0.8;
+    for (var i = 0; i < stars.length; i++) {
+      for (var j = i + 1; j < stars.length; j++) {
+        var dx = stars[i].x - stars[j].x;
+        var dy = stars[i].y - stars[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          var fade = 1 - dist / CONNECT_DIST;
+          /* Lines are brighter between Hub stars, dimmer between small stars */
+          var hubBoost = (stars[i].isHub || stars[j].isHub) ? 1.8 : 1;
+          var lineAlpha = fade * fade * 0.15 * hubBoost;
+
+          /* Blend the two star colors for the line */
+          var lr = Math.round((stars[i].r + stars[j].r) / 2);
+          var lg = Math.round((stars[i].g + stars[j].g) / 2);
+          var lb = Math.round((stars[i].b + stars[j].b) / 2);
+
+          ctx.beginPath();
+          ctx.moveTo(stars[i].x, stars[i].y);
+          ctx.lineTo(stars[j].x, stars[j].y);
+          ctx.strokeStyle = 'rgba(' + lr + ',' + lg + ',' + lb + ',' + lineAlpha + ')';
+          ctx.stroke();
+        }
+      }
+    }
+
+    /* --- Mouse connection lines (from cursor to nearby stars) --- */
+    if (mouse.active) {
+      for (var i = 0; i < stars.length; i++) {
+        var mdx = stars[i].x - mouse.x;
+        var mdy = stars[i].y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          var mFade = 1 - mDist / MOUSE_RADIUS;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(stars[i].x, stars[i].y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + (mFade * mFade * 0.2) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    /* --- Draw stars (on top of lines) --- */
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      var pulseVal = 0.6 + 0.4 * Math.sin(p.pulse);
+      var currentOpacity = p.opacity * pulseVal;
+      var currentSize = p.baseSize * (0.85 + 0.15 * Math.sin(p.pulse));
+
+      /* Mouse proximity boost — stars near cursor glow brighter */
+      var proximityBoost = 1;
+      if (mouse.active) {
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          proximityBoost = 1 + (1 - mDist / MOUSE_RADIUS) * 1.5;
+        }
+      }
+
+      var boostedOpacity = Math.min(currentOpacity * proximityBoost, 1);
+
+      /* Outer glow halo */
+      var glowRadius = currentSize * (p.isHub ? 8 : 5);
+      var grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      grd.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.3) + ')');
+      grd.addColorStop(0.4, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.08) + ')');
+      grd.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      /* Bright core */
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + Math.min(p.r + 60, 255) + ',' + Math.min(p.g + 60, 255) + ',' + Math.min(p.b + 60, 255) + ',' + boostedOpacity + ')';
+      ctx.fill();
+
+      /* Center hot pixel (white-ish) for hub stars */
+      if (p.isHub) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, currentSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (boostedOpacity * 0.7) + ')';
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+/* ===================================================
+   SECTION VISIBILITY + NAV (scroll observer)
+   Bidirectional: elements reverse on scroll-up
+   =================================================== */
+var sections = document.querySelectorAll('.section');
+var navNodes = document.querySelectorAll('.nav-node');
+var navConnectors = document.querySelectorAll('.nav-connector');
+var progressFill = document.getElementById('progress-fill');
+var navLabel = document.getElementById('nav-current-label');
+var lcarsSegs = document.querySelectorAll('.lcars-seg');
+var ambientEl = document.getElementById('ambient-glow');
+
+/* Tier 2/3: Bidirectional Intersection Observer (fallback for non-animation-timeline) */
+var usesCSSTimeline = CSS.supports && CSS.supports('animation-timeline', 'view()');
+
+if (!usesCSSTimeline) {
+  var sectionObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      /* Bidirectional: add on enter, remove on exit */
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      } else {
+        entry.target.classList.remove('visible');
+      }
+    });
+  }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' });
+
+  sections.forEach(function(s) { sectionObserver.observe(s); });
+}
+
+/* Ambient color map — one per section */
+var sectionColors = [
+  { r: 6, g: 182, b: 212 },    /* S1: cyan (JOIN) */
+  { r: 0, g: 180, b: 255 },    /* S2: blue (accent) */
+  { r: 232, g: 121, b: 249 },  /* S3: magenta (ON) */
+  { r: 6, g: 182, b: 212 },    /* S4: cyan (Hub) */
+  { r: 245, g: 158, b: 11 },   /* S5: amber (Link) */
+  { r: 6, g: 182, b: 212 },    /* S6: cyan (JOIN) */
+  { r: 249, g: 115, b: 22 },   /* S7: orange (WHERE) */
+  { r: 168, g: 85, b: 247 },   /* S8: purple (Sat) */
+  { r: 34, g: 197, b: 94 },    /* S9: green (SELECT) */
+];
+
+var lastActiveIndex = -1;
+function updateNav() {
+  var activeIdx = 0;
+  var scrollY = window.scrollY + window.innerHeight * 0.35;
+
+  sections.forEach(function(s, i) {
+    if (s.offsetTop <= scrollY) activeIdx = i;
+  });
+
+  if (activeIdx !== lastActiveIndex) {
+    lastActiveIndex = activeIdx;
+
+    /* Nav nodes */
+    navNodes.forEach(function(n, i) {
+      n.classList.remove('active', 'completed');
+      if (i === activeIdx) n.classList.add('active');
+      else if (i < activeIdx) n.classList.add('completed');
+    });
+    navConnectors.forEach(function(c, i) {
+      if (i < activeIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+
+    /* Nav label */
+    var currentSection = sections[activeIdx];
+    if (currentSection) {
+      navLabel.textContent = currentSection.getAttribute('data-label') || '';
+    }
+
+    /* LCARS segments */
+    lcarsSegs.forEach(function(seg, i) {
+      seg.classList.remove('active', 'completed');
+      if (i === activeIdx) seg.classList.add('active');
+      else if (i < activeIdx) seg.classList.add('completed');
+    });
+
+    /* Ambient color transition */
+    var c = sectionColors[activeIdx];
+    if (c && ambientEl) {
+      ambientEl.style.setProperty('--ambient-c1', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.06)');
+      ambientEl.style.setProperty('--ambient-c2', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.03)');
+      ambientEl.style.setProperty('--ambient-c3', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.02)');
+    }
+  }
+
+  /* LCARS segment fill — active segment fills based on scroll through section */
+  var activeSection = sections[lastActiveIndex];
+  var nextSection = sections[lastActiveIndex + 1];
+  if (activeSection) {
+    var secTop = activeSection.offsetTop;
+    var secBottom = nextSection ? nextSection.offsetTop : document.documentElement.scrollHeight;
+    var secHeight = secBottom - secTop;
+    var currentY = window.scrollY + window.innerHeight * 0.35;
+    var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+    fill = Math.max(0, Math.min(100, fill));
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+    lcarsSegs.forEach(function(seg, i) {
+      if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+      else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+      else seg.style.removeProperty('--seg-fill');
+    });
+  }
+
+  /* LCARS flow-fill progress */
+  var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  var scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) scrolled = 100;
+  progressFill.style.width = Math.min(scrolled, 100) + '%';
+}
+
+/* ===================================================
+   SCROLL PROGRESS — continuous 0-1 per section
+   Drives text reveals and word-by-word lighting
+   =================================================== */
+function updateScrollProgress() {
+  var viewH = window.innerHeight;
+  sections.forEach(function(section) {
+    var rect = section.getBoundingClientRect();
+    var progress = 1 - (rect.top / viewH);
+    progress = Math.max(0, Math.min(1, progress));
+    section.style.setProperty('--scroll-progress', progress);
+
+    /* Word-by-word reveal driven by scroll progress */
+    section.querySelectorAll('.hook-text').forEach(function(hook) {
+      var count = parseInt(hook.dataset.wordCount) || 1;
+      var litCount = Math.floor(progress * count * 1.3);
+      hook.querySelectorAll('.word').forEach(function(word, i) {
+        if (i < litCount) word.classList.add('lit');
+        else word.classList.remove('lit');
+      });
+    });
+  });
+}
+
+/* ===================================================
+   DV ASSEMBLY — animate SVG arrow stroke-dashoffset
+   driven by Section 8's --scroll-progress
+   =================================================== */
+var dvArrows = [
+  { el: document.getElementById('arrow-hub-sat'),  start: 0.25, end: 0.45 },
+  { el: document.getElementById('arrow-hub-link'), start: 0.50, end: 0.70 },
+  { el: document.getElementById('arrow-link-hub'), start: 0.60, end: 0.80 }
+];
+
+/* Measure and set initial dasharray/dashoffset for each arrow */
+dvArrows.forEach(function(a) {
+  if (a.el) {
+    var len = a.el.getTotalLength();
+    a.len = len;
+    a.el.style.strokeDasharray = len;
+    a.el.style.strokeDashoffset = len;
+  }
+});
+
+function updateAssembly() {
+  var s8 = document.getElementById('s8');
+  if (!s8) return;
+  var prog = parseFloat(s8.style.getPropertyValue('--scroll-progress')) || 0;
+
+  dvArrows.forEach(function(a) {
+    if (!a.el || !a.len) return;
+    var t = (prog - a.start) / (a.end - a.start);
+    t = Math.max(0, Math.min(1, t));
+    a.el.style.strokeDashoffset = a.len * (1 - t);
+  });
+}
+
+/* ===================================================
+   PARALLAX DEPTH SHAPES
+   =================================================== */
+var depthShapes = document.querySelectorAll('.depth-shape');
+var depthRates = [0.03, 0.05, 0.02, 0.04];
+
+function updateParallax() {
+  var scrollY = window.scrollY;
+  depthShapes.forEach(function(shape, i) {
+    shape.style.transform = 'translateY(' + (-scrollY * depthRates[i]) + 'px)';
+  });
+}
+
+/* ===================================================
+   UNIFIED SCROLL HANDLER — throttled with rAF
+   =================================================== */
+var scrollTicking = false;
+function onScroll() {
+  if (!scrollTicking) {
+    requestAnimationFrame(function() {
+      updateNav();
+      updateScrollProgress();
+      updateAssembly();
+      updateParallax();
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}
+
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('load', function() {
+  updateNav();
+  updateScrollProgress();
+});
+
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    var y = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
+
+
+/* ===================================================
+   4-LAYER TOGGLE
+   =================================================== */
+function toggleLayer(header) {
+  var layer = header.parentElement;
+  layer.classList.toggle('open');
+  var container = layer.closest('.four-layers');
+  if (container) updateLayerDots(container);
+}
+
+function jumpToLayer(containerId, layerIndex) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var layers = container.querySelectorAll('.layer');
+  layers.forEach(function(l, i) {
+    if (i <= layerIndex) l.classList.add('open');
+    else l.classList.remove('open');
+  });
+  updateLayerDots(container);
+}
+
+function updateLayerDots(container) {
+  var layers = container.querySelectorAll('.layer');
+  var dots = container.querySelectorAll('.layer-dot');
+  layers.forEach(function(l, i) {
+    if (dots[i]) {
+      if (l.classList.contains('open')) dots[i].classList.add('active');
+      else dots[i].classList.remove('active');
+    }
+  });
+}
+
+
+/* ===================================================
+   REVEAL TOGGLE
+   =================================================== */
+function toggleReveal(id) {
+  var area = document.getElementById(id);
+  if (area) area.classList.toggle('open');
+}
+
+/* ===================================================
+   EXPLORE MORE TOGGLE
+   =================================================== */
+function toggleExplore(opener) {
+  var panel = opener.nextElementSibling;
+  var isOpen = opener.classList.toggle('open');
+  if (panel) panel.classList.toggle('open', isOpen);
+}
+
+
+/* ===================================================
+   EXERCISE CHECKING
+   =================================================== */
+var exercisesCompleted = { ex1: false, ex2: false, ex3: false, ex4: false };
+
+function setFeedback(elementId, isCorrect, message) {
+  var feedback = document.getElementById(elementId);
+  feedback.className = isCorrect ? 'feedback correct' : 'feedback incorrect';
+  feedback.textContent = message;
+  feedback.style.display = 'block';
+}
+
+function checkExercise1() {
+  var input = document.getElementById('ex1-input').value.toLowerCase().trim();
+  var fid = 'ex1-feedback';
+  if (input.length < 10) { setFeedback(fid, false, 'Write more -- describe what the JOIN does and what the result contains.'); return; }
+
+  var hasJoin = input.indexOf('join') !== -1 || input.indexOf('combin') !== -1 || input.indexOf('connect') !== -1;
+  var hasLevel = input.indexOf('level') !== -1 || input.indexOf('25') !== -1 || input.indexOf('above') !== -1 || input.indexOf('greater') !== -1;
+  var hasName = input.indexOf('name') !== -1 || input.indexOf('business_key') !== -1 || input.indexOf('character') !== -1;
+
+  if (hasJoin && hasLevel && hasName) {
+    setFeedback(fid, true, 'Correct. The query JOINs Hub to Satellite on hash key, filters to level > 25, and returns character names with levels. Result: Ulfric (30), Aela (28), Balgruuf (35).');
+    exercisesCompleted.ex1 = true;
+    checkAllComplete();
+  } else if ((hasJoin && hasLevel) || (hasJoin && hasName) || (hasLevel && hasName)) {
+    setFeedback(fid, false, 'Getting there. Make sure to mention: (1) it JOINs two tables, (2) it filters by level > 25, (3) it returns names and levels.');
+  } else {
+    setFeedback(fid, false, 'Read the query clause by clause: FROM (which table), JOIN (which other table), ON (how they match), WHERE (which filter), SELECT (what to show).');
+  }
+}
+
+function checkExercise2() {
+  var input = document.getElementById('ex2-input').value.trim().toLowerCase();
+  var fid = 'ex2-feedback';
+  if (input.length < 15) { setFeedback(fid, false, 'Write a SELECT ... FROM ... JOIN ... ON ... WHERE query.'); return; }
+
+  var hasSelect = input.indexOf('select') !== -1;
+  var hasJoin = input.indexOf('join') !== -1;
+  var hasOn = input.indexOf(' on ') !== -1 || input.indexOf('\non ') !== -1;
+  var hasHub = input.indexOf('hub_character') !== -1;
+  var hasSat = input.indexOf('sat_character') !== -1 || input.indexOf('character_details') !== -1;
+  var hasNord = input.indexOf("'nord'") !== -1;
+  var hasHashKey = input.indexOf('hub_character_hk') !== -1;
+
+  if (hasSelect && hasJoin && hasOn && hasHub && hasSat && hasNord) {
+    setFeedback(fid, true, 'Correct! SELECT from Hub + Satellite, JOINed ON the hash key, WHERE race = \'Nord\'. Result: Ulfric, Lydia, Aela, Balgruuf.');
+    exercisesCompleted.ex2 = true;
+    checkAllComplete();
+  } else if (hasSelect && hasJoin && !hasOn) {
+    setFeedback(fid, false, 'You have SELECT and JOIN -- but the ON clause is missing. Add ON h.hub_character_hk = s.hub_character_hk to specify how the tables match.');
+  } else if (hasSelect && !hasJoin) {
+    setFeedback(fid, false, 'You need a JOIN to connect Hub_Character and Sat_Character_Details. Add: JOIN Sat_Character_Details s ON h.hub_character_hk = s.hub_character_hk');
+  } else {
+    setFeedback(fid, false, 'Structure: SELECT columns FROM Hub_Character h JOIN Sat_Character_Details s ON h.hub_character_hk = s.hub_character_hk WHERE s.race = \'Nord\'');
+  }
+}
+
+function checkExercise3() {
+  var input = document.getElementById('ex3-input').value.trim().toLowerCase();
+  var fid = 'ex3-feedback';
+  if (input.length < 20) { setFeedback(fid, false, 'This one needs two JOINs -- Hub_Character through Link_Character_Weapon to Hub_Weapon.'); return; }
+
+  var joinCount = (input.match(/join/g) || []).length;
+  var hasLink = input.indexOf('link_character_weapon') !== -1;
+  var hasWeaponHub = input.indexOf('hub_weapon') !== -1;
+  var hasLydia = input.indexOf("'lydia'") !== -1;
+  var hasOn = (input.match(/ on /g) || []).length;
+
+  if (joinCount >= 2 && hasLink && hasWeaponHub && hasLydia && hasOn >= 2) {
+    setFeedback(fid, true, 'Correct! Two JOINs -- Hub_Character through Link to Hub_Weapon, filtered to Lydia. Each JOIN follows a hash key through the Link.');
+    exercisesCompleted.ex3 = true;
+    checkAllComplete();
+  } else if (joinCount >= 2 && hasLink && hasWeaponHub && !hasLydia) {
+    setFeedback(fid, false, 'The chain looks right! Just add WHERE hc.business_key = \'Lydia\' to filter to Lydia.');
+  } else if (joinCount < 2) {
+    setFeedback(fid, false, 'This needs two JOINs: first from Hub_Character to Link_Character_Weapon (on hub_character_hk), then from Link to Hub_Weapon (on hub_weapon_hk).');
+  } else {
+    setFeedback(fid, false, 'Check the chain: FROM Hub_Character -> JOIN Link_Character_Weapon (on character hash key) -> JOIN Hub_Weapon (on weapon hash key) -> WHERE for Lydia.');
+  }
+}
+
+function checkExercise4() {
+  var input = document.getElementById('ex4-input').value.toLowerCase().trim();
+  var fid = 'ex4-feedback';
+  if (input.length < 5) { setFeedback(fid, false, 'Look at the JOIN -- what is missing between JOIN and WHERE?'); return; }
+
+  var hasOnMissing = input.indexOf('on') !== -1 || input.indexOf('missing') !== -1;
+  var hasMatchIssue = input.indexOf('match') !== -1 || input.indexOf('condition') !== -1 || input.indexOf('connect') !== -1 || input.indexOf('link') !== -1 || input.indexOf('key') !== -1;
+  var hasCartesian = input.indexOf('cartesian') !== -1 || input.indexOf('every row') !== -1 || input.indexOf('all rows') !== -1;
+
+  if (hasOnMissing || hasCartesian || hasMatchIssue) {
+    setFeedback(fid, true, 'Correct. The ON clause is missing. Without ON h.hub_character_hk = s.hub_character_hk, the database doesn\'t know how to match rows. It either errors or produces a Cartesian product (every Hub row paired with every Satellite row).');
+    exercisesCompleted.ex4 = true;
+    checkAllComplete();
+  } else {
+    setFeedback(fid, false, 'Look at the space between JOIN and WHERE. What should be there? How does the database know which rows to pair?');
+  }
+}
+
+function checkAllComplete() {
+  if (exercisesCompleted.ex1 && exercisesCompleted.ex2 && exercisesCompleted.ex3 && exercisesCompleted.ex4) {
+    var banner = document.getElementById('completion-banner');
+    banner.style.display = 'block';
+    setTimeout(function() {
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+  }
+}
+
+
+/* ===================================================
+   COUNT-UP ANIMATION (Phase 8)
+   Ease-out cubic from 0 to target over 1.2s
+   Bidirectional: resets to 0 when leaving viewport
+   =================================================== */
+function animateCountUp(el, target) {
+  var duration = 1200;
+  var start = null;
+  function step(ts) {
+    if (!start) start = ts;
+    var elapsed = ts - start;
+    var t = Math.min(elapsed / duration, 1);
+    /* ease-out cubic: 1 - (1-t)^3 */
+    var ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(ease * target);
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+var statsObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    var numbers = entry.target.querySelectorAll('.stat-number');
+    if (entry.isIntersecting) {
+      numbers.forEach(function(n) {
+        var target = parseInt(n.getAttribute('data-count')) || 0;
+        animateCountUp(n, target);
+      });
+    } else {
+      /* Reset on exit — bidirectional */
+      numbers.forEach(function(n) { n.textContent = '0'; });
+    }
+  });
+}, { threshold: 0.3 });
+
+
+/* ===================================================
+   WORD-WRAP UTILITY — safe DOM manipulation
+   Wraps each word/em in hook-text with span.word
+   =================================================== */
+function wrapHookWords(hookEl) {
+  var nodes = Array.prototype.slice.call(hookEl.childNodes);
+  var frag = document.createDocumentFragment();
+
+  nodes.forEach(function(node) {
+    if (node.nodeType === 1 && node.tagName === 'EM') {
+      /* <em> becomes a single word unit */
+      var span = document.createElement('span');
+      span.className = 'word';
+      span.appendChild(node.cloneNode(true));
+      frag.appendChild(span);
+    } else if (node.nodeType === 3) {
+      /* Text node — split on whitespace */
+      var words = node.textContent.split(/(\s+)/);
+      words.forEach(function(w) {
+        if (/^\s+$/.test(w)) {
+          frag.appendChild(document.createTextNode(w));
+        } else if (w.length > 0) {
+          var span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = w;
+          frag.appendChild(span);
+        }
+      });
+    } else {
+      frag.appendChild(node.cloneNode(true));
+    }
+  });
+
+  /* Replace children safely */
+  while (hookEl.firstChild) hookEl.removeChild(hookEl.firstChild);
+  hookEl.appendChild(frag);
+  hookEl.setAttribute('data-word-count', hookEl.querySelectorAll('.word').length);
+}
+
+
+/* ===================================================
+   INIT
+   =================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+  /* Four-layer expand/collapse dots */
+  document.querySelectorAll('.four-layers').forEach(function(container) {
+    updateLayerDots(container);
+  });
+
+  /* Word-wrap hook text for scroll-driven reveal */
+  document.querySelectorAll('.hook-text').forEach(function(hook) {
+    wrapHookWords(hook);
+  });
+
+  /* Count-up stats observer */
+  var statsRow = document.getElementById('stats-row');
+  if (statsRow) statsObserver.observe(statsRow);
+});
+</script>
+
+<script src="../nav-inject.js"></script>
+
+
+<!-- ═══════ Game UI Elements ═══════ -->
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar -->
+<div id="inventory-toolbar" class="inventory-toolbar">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel -->
+<div id="inventory-panel" class="inventory-panel hidden">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script>
+/* ═══════ Game system init + scroll-based item discovery ═══════ */
+document.addEventListener('DOMContentLoaded', function() {
+  /* Initialize game systems */
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+    if (SV.achievements) SV.achievements.init();
+  }
+
+  var items = ['inner-join', 'left-join', 'on-clause', 'alias-assignment', 'dot-notation'];
+  var granted = {};
+
+  /* Restore already-granted items from persistence */
+  if (typeof SV !== 'undefined' && SV.persistence) {
+    var inv = SV.persistence.get('inventory', []);
+    for (var i = 0; i < inv.length; i++) { granted[inv[i].id] = true; }
+  }
+
+  function getScrollPct() {
+    var h = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    return window.scrollY / h;
+  }
+
+  function checkScroll() {
+    var pct = getScrollPct();
+    for (var i = 0; i < items.length; i++) {
+      var threshold = (i + 0.5) / items.length;
+      if (pct >= threshold && !granted[items[i]]) {
+        granted[items[i]] = true;
+        if (typeof SV !== 'undefined' && SV.inventory && SV.inventory.addItem) {
+          SV.inventory.addItem(items[i]);
+        }
+      }
+    }
+  }
+
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  setTimeout(checkScroll, 1500);
+});
+</script>
+
+</body>
+</html>

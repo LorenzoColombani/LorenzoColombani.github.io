@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="author" content="Lorenzo Colombani">
+    <meta name="description" content="Assistant iPhone pour seniors : gestes tactiles, envoi d'emails, messagerie, reconnaître le phishing et les arnaques, et dépannage de base.">
+    <title>Assistant iPhone Seniors</title>
+    <!-- Apple SF Symbols style icons via Ionicons -->
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            font-size: 18px;
+        }
+
+        .ios-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            font-size: 32px;
+            color: white;
+        }
+
+        .ios-icon.phone {
+            background: linear-gradient(135deg, #4CD964, #5AC8FA);
+        }
+
+        .ios-icon.messages {
+            background: linear-gradient(135deg, #5AC8FA, #007AFF);
+        }
+
+        .ios-icon.whatsapp {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+        }
+
+        .ios-icon.mail {
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+        }
+
+        .ios-icon.camera {
+            background: linear-gradient(135deg, #8E8E93, #636366);
+        }
+
+        .ios-icon.photos {
+            background: linear-gradient(135deg, #FF9500, #FF3B30, #FF2D55, #AF52DE, #5856D6, #007AFF, #5AC8FA, #34C759, #FFCC00);
+        }
+
+        .ios-icon.facetime {
+            background: linear-gradient(135deg, #4CD964, #5AC8FA);
+        }
+
+        .ios-icon.safari {
+            background: linear-gradient(135deg, #007AFF, #5AC8FA);
+        }
+
+        .ios-icon.settings {
+            background: linear-gradient(135deg, #8E8E93, #636366);
+        }
+
+        ion-icon {
+            font-size: 32px;
+            color: white;
+        }
+
+        .container {
+            max-width: 430px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.95;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-btn:active {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .main-menu {
+            padding: 20px;
+        }
+
+        .help-button {
+            background: #ff4757;
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            font-size: 22px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(255,71,87,0.3);
+            transition: transform 0.2s;
+        }
+
+        .help-button:active {
+            transform: scale(0.98);
+        }
+
+        .menu-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-left: 5px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .menu-item {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-item:active {
+            background: #e9ecef;
+            transform: scale(0.98);
+        }
+
+        .menu-item-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-item-icon svg {
+            width: 26px;
+            height: 26px;
+        }
+
+        .menu-item-icon.icon-launcher {
+            background: linear-gradient(135deg, #007AFF, #5AC8FA);
+        }
+
+        .menu-item-icon.icon-photo {
+            background: linear-gradient(135deg, #FF9500, #FF3B30, #FF2D55, #AF52DE);
+        }
+
+        .menu-item-icon.icon-message {
+            background: linear-gradient(135deg, #5AC8FA, #007AFF);
+        }
+
+        .menu-item-icon.icon-mail {
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+        }
+
+        .menu-item-icon.icon-error {
+            background: linear-gradient(135deg, #FF3B30, #FF9500);
+        }
+
+        .menu-item-icon.icon-settings {
+            background: linear-gradient(135deg, #8E8E93, #636366);
+        }
+
+        .menu-item-icon.icon-password {
+            background: linear-gradient(135deg, #FF9500, #FFCC00);
+        }
+
+        .menu-item-icon.icon-gesture {
+            background: linear-gradient(135deg, #AF52DE, #5856D6);
+        }
+
+        .menu-item-text {
+            flex: 1;
+        }
+
+        .menu-item-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .menu-item-desc {
+            font-size: 16px;
+            color: #7f8c8d;
+        }
+
+        .screen {
+            display: none;
+            padding: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .guide-step {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .step-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .step-content {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #34495e;
+        }
+
+        .visual-demo {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .visual-demo-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .tip-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .tip-box strong {
+            color: #e65100;
+        }
+
+        .warning-box {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .warning-box strong {
+            color: #c62828;
+        }
+
+        .action-button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 18px 30px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+
+        .action-button:active {
+            background: #45a049;
+        }
+
+        .launcher-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 20px 0;
+        }
+
+        .launcher-app {
+            background: white;
+            border: 3px solid #e9ecef;
+            border-radius: 20px;
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .launcher-app:active {
+            background: #f8f9fa;
+            transform: scale(0.95);
+        }
+
+        .launcher-app .ios-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+        }
+
+        .launcher-app .ios-icon svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        .launcher-app-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .text-size-control {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .text-size-btn {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .text-size-btn:active {
+            background: #667eea;
+            color: white;
+        }
+
+        .emergency-btn {
+            background: #ff4757;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(255,71,87,0.3);
+        }
+
+        .emergency-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">←</button>
+            <div style="display: inline-flex; align-items: center; gap: 12px;">
+                <div style="width: 50px; height: 50px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <svg fill="#667eea" viewBox="0 0 24 24" width="30" height="30">
+                        <path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1>Assistant iPhone</h1>
+                    <p>Pour Seniors - iOS 26</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Principal -->
+        <div id="mainMenu" class="main-menu screen active">
+            <button class="help-button" onclick="showScreen('emergency')">
+                🆘 AIDE URGENTE
+            </button>
+
+            <div class="menu-section">
+                <div class="section-title">🏠 Lanceur Simplifié</div>
+                <div class="menu-grid">
+                    <div class="menu-item" onclick="showScreen('launcher')">
+                        <div class="menu-item-icon icon-launcher">
+                            <svg fill="white" viewBox="0 0 24 24">
+                                <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
+                            </svg>
+                        </div>
+                        <div class="menu-item-text">
+                            <div class="menu-item-title">Ouvrir Apps Simplifiées</div>
+                            <div class="menu-item-desc">Gros boutons faciles</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <div class="section-title">📚 Tâches Quotidiennes</div>
+                <div class="menu-grid">
+                    <div class="menu-item" onclick="showScreen('sendPhoto')">
+                        <div class="menu-item-icon icon-photo">
+                            <svg fill="white" viewBox="0 0 24 24">
+                                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                            </svg>
+                        </div>
+                        <div class="menu-item-text">
+                            <div class="menu-item-title">Envoyer une Photo</div>
+                            <div class="menu-item-desc">Par message, WhatsApp ou email</div>
+                        </div>
+                    </div>
+                    <div class="menu-item" onclick="showScreen('messaging')">
+                        <div class="menu-item-icon icon-message">
+                            <svg fill="white" viewBox="0 0 24 24">
+                                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="menu-item-text">
+                            <div class="menu-item-title">Messages vs WhatsApp</div>
+                            <div class="menu-item-desc">Comprendre la différence</div>
+                        </div>
+                    </div>
+                    <div class="menu-item" onclick="showScreen('email')">
+                        <div class="menu-item-icon icon-mail">
+                            <svg fill="white" viewBox="0 0 24 24">
+                                <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                        </div>
+                        <div class="menu-item-text">
+                            <div class="menu-item-title">Consulter mes Courriels</div>
+                            <div class="menu-item-desc">Et reconnaître les arnaques</div>
+                        </div>
+                    </div>
+                    <div class="menu-item" onclick="showScreen('findPhotos')">
+                        <div class="menu-item-icon icon-photo">
+                            <svg fill="white" viewBox="0 0 24 24">
+                                <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4zm12 16H6l3-3.86 2.14 2.58 3-3.86L18 20z"/>
+                            </svg>
+                        </div>
+                        <div class="menu-item-text">
+                            <div class="menu-item-title">Retrouver mes Photos</div>
+                            <div class="menu-item-desc">Dans la photothèque</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <div class="section-title">🔧 Résoudre Problèmes</div>
+                <div class="menu-grid">
+                    <div class="menu-item" onclick="showScreen('errors')">
+                        <div class="menu-item-icon icon-error">
+                            <svg fill="white" viewBox="0 0 24 24">
+                                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                            </svg>
+                        </div>
+                        <div class="menu-item-text">
+                            <div class="menu-item-title">Messages d'Erreur</div>
+                            <div class="menu-item-desc">Comprendre et résoudre</div>
+                        </div>
+                    </div>
+                    <div class="menu-item" onclick="showScreen('settings')">
+                        <div class="menu-item-icon icon-settings">
+                            <svg fill="white" viewBox="0 0 24 24">
+                                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                            </svg>
+                        </div>
+                        <div class="menu-item-text">
+                            <div class="menu-item-title">Quelque Chose a Changé</div>
+                            <div class="menu-item-desc">Vérifier les réglages</div>
+                        </div>
+                    </div>
+                    <div class="menu-item" onclick="showScreen('passwords')">
+                        <div class="menu-item-icon icon-password">
+                            <svg fill="white" viewBox="0 0 24 24">
+                                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                            </svg>
+                        </div>
+                        <div class="menu-item-text">
+                            <div class="menu-item-title">Mots de Passe</div>
+                            <div class="menu-item-desc">Retrouver et gérer</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <div class="section-title">👆 Apprendre les Gestes</div>
+                <div class="menu-grid">
+                    <div class="menu-item" onclick="showScreen('gestures')">
+                        <div class="menu-item-icon icon-gesture">
+                            <svg fill="white" viewBox="0 0 24 24">
+                                <path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/>
+                            </svg>
+                        </div>
+                        <div class="menu-item-text">
+                            <div class="menu-item-title">Gestes iOS 26</div>
+                            <div class="menu-item-desc">Balayer, toucher, pincer</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-size-control">
+                <span style="font-weight: 600;">Taille du texte:</span>
+                <div style="display: flex; gap: 10px;">
+                    <button class="text-size-btn" onclick="changeTextSize(-1)">A-</button>
+                    <button class="text-size-btn" onclick="changeTextSize(1)">A+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lanceur Simplifié -->
+        <div id="launcher" class="screen">
+            <div class="launcher-grid">
+                <div class="launcher-app">
+                    <div class="ios-icon phone">
+                        <svg fill="white" viewBox="0 0 24 24">
+                            <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
+                        </svg>
+                    </div>
+                    <div class="launcher-app-name">Téléphone</div>
+                </div>
+                <div class="launcher-app">
+                    <div class="ios-icon messages">
+                        <svg fill="white" viewBox="0 0 24 24">
+                            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                        </svg>
+                    </div>
+                    <div class="launcher-app-name">Messages</div>
+                </div>
+                <div class="launcher-app">
+                    <div class="ios-icon whatsapp">
+                        <svg fill="white" viewBox="0 0 24 24">
+                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.83c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.39-4.19-1.15l-.3-.18-.31.08-1.26.33.33-1.19.09-.34-.2-.32a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24M8.53 7.33c-.16 0-.43.06-.66.31-.22.25-.87.86-.87 2.07 0 1.22.89 2.39 1 2.56.12.17 1.76 2.67 4.25 3.73.59.27 1.05.42 1.41.53.59.19 1.13.16 1.56.1.48-.07 1.46-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.07-.1-.23-.16-.48-.27-.25-.14-1.47-.74-1.69-.82-.23-.08-.37-.12-.56.12-.16.25-.64.81-.78.97-.15.17-.29.19-.53.07-.26-.13-1.06-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.12-.24-.01-.39.11-.5.11-.11.27-.29.37-.44.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.11-.56-1.35-.77-1.84-.2-.48-.4-.42-.56-.43-.14 0-.3-.01-.47-.01z"/>
+                        </svg>
+                    </div>
+                    <div class="launcher-app-name">WhatsApp</div>
+                </div>
+                <div class="launcher-app">
+                    <div class="ios-icon mail">
+                        <svg fill="white" viewBox="0 0 24 24">
+                            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
+                    </div>
+                    <div class="launcher-app-name">Mail</div>
+                </div>
+                <div class="launcher-app">
+                    <div class="ios-icon camera">
+                        <svg fill="white" viewBox="0 0 24 24">
+                            <path d="M12 15.2c1.74 0 3.15-1.41 3.15-3.15S13.74 8.9 12 8.9s-3.15 1.41-3.15 3.15 1.41 3.15 3.15 3.15zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                        </svg>
+                    </div>
+                    <div class="launcher-app-name">Appareil Photo</div>
+                </div>
+                <div class="launcher-app">
+                    <div class="ios-icon photos">
+                        <svg fill="white" viewBox="0 0 24 24">
+                            <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4zm12 16H6l3-3.86 2.14 2.58 3-3.86L18 20z"/>
+                        </svg>
+                    </div>
+                    <div class="launcher-app-name">Photos</div>
+                </div>
+                <div class="launcher-app">
+                    <div class="ios-icon facetime">
+                        <svg fill="white" viewBox="0 0 24 24">
+                            <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                        </svg>
+                    </div>
+                    <div class="launcher-app-name">FaceTime</div>
+                </div>
+                <div class="launcher-app">
+                    <div class="ios-icon safari">
+                        <svg fill="white" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.19 17.98c-3.43-.49-6.19-3.29-6.61-6.73h2.14c.32 1.8 1.38 3.31 2.88 4.17l1.59 2.56zm2.38 0l1.59-2.56c1.5-.86 2.56-2.37 2.88-4.17h2.14c-.42 3.44-3.18 6.24-6.61 6.73zm6.61-8.73h-2.14c-.32-1.8-1.38-3.31-2.88-4.17L13.19 4.02c3.43.49 6.19 3.29 6.61 6.73zM10.81 4.02L9.22 6.58C7.72 7.44 6.66 8.95 6.34 10.75H4.2c.42-3.44 3.18-6.24 6.61-6.73zM12 8c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4z"/>
+                        </svg>
+                    </div>
+                    <div class="launcher-app-name">Safari</div>
+                </div>
+            </div>
+            <button class="emergency-btn">📞 Appeler la Famille</button>
+        </div>
+
+        <!-- Envoyer une Photo -->
+        <div id="sendPhoto" class="screen">
+            <div class="guide-step">
+                <div class="step-number">1</div>
+                <div class="step-title">Ouvrir l'app Photos</div>
+                <div class="step-content">
+                    Trouvez l'icône Photos 🖼️ sur votre écran d'accueil. 
+                    C'est une fleur multicolore.
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">2</div>
+                <div class="step-title">Choisir votre photo</div>
+                <div class="step-content">
+                    Touchez la photo que vous voulez envoyer pour l'ouvrir en grand.
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">3</div>
+                <div class="step-title">Toucher le bouton Partager</div>
+                <div class="step-content">
+                    En bas à gauche, touchez le carré avec une flèche vers le haut ↑
+                </div>
+            </div>
+
+            <div class="visual-demo">
+                <div class="visual-demo-icon">⬆️</div>
+                <div>Ce bouton ouvre le menu de partage</div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">4</div>
+                <div class="step-title">Choisir comment envoyer</div>
+                <div class="step-content">
+                    <strong>Messages</strong> (icône verte 💬) - Pour iPhone<br>
+                    <strong>WhatsApp</strong> (icône verte 💚) - Pour tous<br>
+                    <strong>Mail</strong> (icône bleue 📧) - Pour email
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <strong>💡 Astuce:</strong> Si la personne a un iPhone, utilisez Messages. Sinon, utilisez WhatsApp.
+            </div>
+        </div>
+
+        <!-- Messages vs WhatsApp -->
+        <div id="messaging" class="screen">
+            <div class="guide-step">
+                <div class="step-number">💬</div>
+                <div class="step-title">Messages (iMessage)</div>
+                <div class="step-content">
+                    <strong>Icône:</strong> Bulle verte sur fond blanc<br>
+                    <strong>Pour:</strong> Autres iPhone uniquement<br>
+                    <strong>Bulles bleues:</strong> Message envoyé à un iPhone<br>
+                    <strong>Bulles vertes:</strong> SMS normal (payant)<br>
+                    <strong>Gratuit:</strong> Oui, avec WiFi ou données
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">💚</div>
+                <div class="step-title">WhatsApp</div>
+                <div class="step-content">
+                    <strong>Icône:</strong> Téléphone blanc sur fond vert<br>
+                    <strong>Pour:</strong> Tous les téléphones<br>
+                    <strong>Bulles vertes:</strong> Vos messages<br>
+                    <strong>Bulles blanches:</strong> Messages reçus<br>
+                    <strong>Gratuit:</strong> Oui, avec WiFi ou données
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Attention:</strong> Les deux apps se ressemblent mais sont complètement séparées. Un message envoyé dans Messages n'apparaît pas dans WhatsApp et vice-versa.
+            </div>
+
+            <div class="tip-box">
+                <strong>💡 Comment savoir laquelle utiliser?</strong><br>
+                Demandez à la personne: "Tu préfères Messages ou WhatsApp?" La plupart des gens ont une préférence.
+            </div>
+        </div>
+
+        <!-- Email et Arnaques -->
+        <div id="email" class="screen">
+            <div class="guide-step">
+                <div class="step-number">1</div>
+                <div class="step-title">Ouvrir Mail</div>
+                <div class="step-content">
+                    Touchez l'icône Mail 📧 (enveloppe bleue et blanche)
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>🚨 Signes d'une ARNAQUE:</strong><br>
+                • Demande urgente d'argent<br>
+                • Menaces (compte bloqué, amende...)<br>
+                • Fautes d'orthographe<br>
+                • Adresse email bizarre (xyz123@...)<br>
+                • Liens suspects<br>
+                • "Félicitations, vous avez gagné!"
+            </div>
+
+            <div class="tip-box">
+                <strong>✅ Email LÉGITIME:</strong><br>
+                • Adresse officielle (ex: service@laposte.fr)<br>
+                • Pas de demande d'argent surprise<br>
+                • Français correct<br>
+                • Vous attendiez ce message
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">⚠️</div>
+                <div class="step-title">En cas de doute</div>
+                <div class="step-content">
+                    <strong>NE CLIQUEZ PAS sur les liens!</strong><br>
+                    1. Faites une capture d'écran<br>
+                    2. Envoyez-la à un proche de confiance<br>
+                    3. Supprimez le message suspect
+                </div>
+            </div>
+        </div>
+
+        <!-- Retrouver Photos -->
+        <div id="findPhotos" class="screen">
+            <div class="guide-step">
+                <div class="step-number">1</div>
+                <div class="step-title">Ouvrir Photos</div>
+                <div class="step-content">
+                    Touchez l'icône Photos 🖼️ (fleur multicolore)
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">2</div>
+                <div class="step-title">Naviguer dans vos photos</div>
+                <div class="step-content">
+                    <strong>Photothèque:</strong> Toutes vos photos<br>
+                    <strong>Pour vous:</strong> Photos du jour<br>
+                    <strong>Albums:</strong> Photos organisées<br>
+                    <strong>Rechercher:</strong> Loupe en haut 🔍
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <strong>💡 Recherche magique:</strong><br>
+                Touchez la loupe et tapez:<br>
+                • "Plage" pour photos de plage<br>
+                • "2024" pour photos de cette année<br>
+                • "Jean" pour photos de Jean<br>
+                iOS 26 reconnaît le contenu!
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">3</div>
+                <div class="step-title">Photos récemment supprimées</div>
+                <div class="step-content">
+                    Albums → Tout en bas → "Supprimés récemment"<br>
+                    Les photos y restent 30 jours avant suppression définitive.
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages d'Erreur -->
+        <div id="errors" class="screen">
+            <div class="guide-step">
+                <div class="step-number">❌</div>
+                <div class="step-title">"Stockage iPhone presque plein"</div>
+                <div class="step-content">
+                    <strong>Solution:</strong><br>
+                    1. Réglages → Général → Stockage iPhone<br>
+                    2. Touchez "Photos"<br>
+                    3. "Optimiser le stockage iPhone"<br>
+                    4. Supprimer anciennes conversations Messages
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">❌</div>
+                <div class="step-title">"Aucune connexion Internet"</div>
+                <div class="step-content">
+                    <strong>Solution:</strong><br>
+                    1. Vérifiez le WiFi (Réglages → Wi-Fi)<br>
+                    2. Est-ce que c'est activé (vert)?<br>
+                    3. Êtes-vous connecté à votre réseau?<br>
+                    4. Sinon: éteignez/rallumez le WiFi
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">❌</div>
+                <div class="step-title">"Identifiant Apple - Vérification requise"</div>
+                <div class="step-content">
+                    <strong>Solution:</strong><br>
+                    1. C'est normal après mise à jour<br>
+                    2. Entrez votre mot de passe Apple<br>
+                    3. Si oublié: "Mot de passe oublié?"<br>
+                    4. Suivez les instructions
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ IMPORTANT:</strong> Si un message demande votre mot de passe par email ou SMS, c'est une ARNAQUE! Apple ne demande jamais ça.
+            </div>
+        </div>
+
+        <!-- Réglages Changés -->
+        <div id="settings" class="screen">
+            <div class="guide-step">
+                <div class="step-number">1</div>
+                <div class="step-title">Son disparu?</div>
+                <div class="step-content">
+                    • Boutons volume sur le côté gauche<br>
+                    • Appuyez sur celui du haut (+)<br>
+                    • Vérifiez l'interrupteur silence (au-dessus des boutons)
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">2</div>
+                <div class="step-title">Écran trop sombre/clair?</div>
+                <div class="step-content">
+                    • Balayez du haut-droite vers le bas<br>
+                    • Ajustez la barre de luminosité ☀️<br>
+                    • Ou: Réglages → Luminosité et affichage
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">3</div>
+                <div class="step-title">Texte trop petit?</div>
+                <div class="step-content">
+                    Réglages → Affichage et luminosité → Taille du texte<br>
+                    Glissez le curseur vers la droite pour agrandir
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">4</div>
+                <div class="step-title">Apps disparues?</div>
+                <div class="step-content">
+                    • Balayez vers le bas sur l'écran d'accueil<br>
+                    • Tapez le nom de l'app dans la recherche<br>
+                    • Elle est peut-être dans la Bibliothèque d'apps (balayez tout à gauche)
+                </div>
+            </div>
+        </div>
+
+        <!-- Mots de Passe -->
+        <div id="passwords" class="screen">
+            <div class="guide-step">
+                <div class="step-number">1</div>
+                <div class="step-title">Retrouver un mot de passe</div>
+                <div class="step-content">
+                    Réglages → Mots de passe<br>
+                    • Utilisez Face ID ou votre code<br>
+                    • Recherchez le site/app<br>
+                    • Touchez pour voir le mot de passe
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <strong>💡 Remplissage automatique:</strong><br>
+                iOS 26 peut remplir vos mots de passe automatiquement. Quand vous voyez "Remplir le mot de passe" au-dessus du clavier, touchez-le!
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">2</div>
+                <div class="step-title">Mot de passe oublié?</div>
+                <div class="step-content">
+                    Sur la plupart des sites:<br>
+                    1. Touchez "Mot de passe oublié?"<br>
+                    2. Entrez votre email<br>
+                    3. Vérifiez vos emails<br>
+                    4. Suivez le lien pour réinitialiser
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>🔐 Sécurité:</strong><br>
+                • Ne donnez JAMAIS vos mots de passe par téléphone<br>
+                • Personne de légitime ne les demandera<br>
+                • Même pas Apple ou votre banque!
+            </div>
+        </div>
+
+        <!-- Gestes iOS -->
+        <div id="gestures" class="screen">
+            <div class="guide-step">
+                <div class="step-number">👆</div>
+                <div class="step-title">Toucher</div>
+                <div class="step-content">
+                    Tapez légèrement avec un doigt pour ouvrir une app ou sélectionner
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">👆</div>
+                <div class="step-title">Appui long</div>
+                <div class="step-content">
+                    Gardez le doigt appuyé 2 secondes pour plus d'options
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">👆</div>
+                <div class="step-title">Balayer (Swipe)</div>
+                <div class="step-content">
+                    • Vers le haut/bas: faire défiler<br>
+                    • Vers la gauche/droite: naviguer<br>
+                    • Du bas vers le haut: retour accueil
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-number">🤏</div>
+                <div class="step-title">Pincer pour zoomer</div>
+                <div class="step-content">
+                    Deux doigts:<br>
+                    • Écarter: agrandir<br>
+                    • Rapprocher: réduire
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <strong>💡 Annuler une action:</strong><br>
+                Secouez votre iPhone et touchez "Annuler"!
+            </div>
+
+            <div class="visual-demo">
+                <div class="visual-demo-icon">📱</div>
+                <div>Pratiquez ces gestes lentement.<br>L'iPhone est patient!</div>
+            </div>
+        </div>
+
+        <!-- Aide Urgente -->
+        <div id="emergency" class="screen">
+            <div class="warning-box" style="background: #ff4757; color: white; font-size: 22px;">
+                <strong>🆘 AIDE IMMÉDIATE</strong>
+            </div>
+
+            <button class="emergency-btn" onclick="alert('Fonction d\'appel - À configurer avec le numéro de la famille')">
+                📞 APPELER LA FAMILLE MAINTENANT
+            </button>
+
+            <div class="guide-step" style="margin-top: 30px;">
+                <div class="step-title">Options d'aide rapide:</div>
+                <div class="step-content">
+                    <strong>1. Appeler quelqu'un:</strong><br>
+                    Ouvrez Téléphone → Favoris → Touchez le nom<br><br>
+                    
+                    <strong>2. Envoyer votre position:</strong><br>
+                    Messages → Contact → Touchez ⓘ → "Envoyer ma position actuelle"<br><br>
+                    
+                    <strong>3. Urgence médicale:</strong><br>
+                    Appuyez 5 fois rapidement sur le bouton latéral → Appel d'urgence
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <strong>💡 Conseil:</strong> Gardez les numéros importants dans vos Favoris (Téléphone → Favoris → +)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentScreen = 'mainMenu';
+        let fontSize = 18;
+        
+        function showScreen(screenId) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Show selected screen
+            document.getElementById(screenId).classList.add('active');
+            
+            // Update back button visibility
+            const backBtn = document.querySelector('.back-btn');
+            if (screenId === 'mainMenu') {
+                backBtn.style.display = 'none';
+            } else {
+                backBtn.style.display = 'flex';
+                currentScreen = screenId;
+            }
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+        
+        function goBack() {
+            showScreen('mainMenu');
+        }
+        
+        function changeTextSize(delta) {
+            fontSize += delta * 2;
+            fontSize = Math.max(16, Math.min(28, fontSize));
+            document.body.style.fontSize = fontSize + 'px';
+            
+            // Adjust other elements proportionally
+            document.querySelectorAll('.menu-item-title').forEach(el => {
+                el.style.fontSize = (fontSize + 2) + 'px';
+            });
+            document.querySelectorAll('.step-title').forEach(el => {
+                el.style.fontSize = (fontSize + 2) + 'px';
+            });
+            document.querySelectorAll('.help-button').forEach(el => {
+                el.style.fontSize = (fontSize + 4) + 'px';
+            });
+        }
+        
+        // Prevent zooming on double tap for better senior experience
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
+    </script>
+</body>
+</html>

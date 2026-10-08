@@ -1,0 +1,3045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 11: SQL Practice and dbt — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #030810;
+  --bg-void: #010409;
+  --pm-surface: rgba(8, 20, 42, 0.82);
+  --pm-surface-hover: rgba(12, 28, 54, 0.88);
+  --pm-glass: rgba(0, 180, 255, 0.06);
+  --pm-glass-edge: rgba(0, 180, 255, 0.12);
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+  /* Tools color palette */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --accent-dim: rgba(0, 180, 255, 0.06);
+  --accent-color: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --accent-bg: rgba(251, 191, 36, 0.04);
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.3);
+  --sql-select: #22c55e;
+  --sql-select-dim: rgba(34, 197, 94, 0.08);
+  --sql-select-glow: rgba(34, 197, 94, 0.25);
+  --border-subtle: rgba(0, 180, 255, 0.08);
+  --border-medium: rgba(0, 180, 255, 0.15);
+  --border-glow: rgba(0, 180, 255, 0.3);
+  --border-active: rgba(0, 180, 255, 0.45);
+  --holo-cyan: #0ef;
+  --holo-cyan-dim: rgba(0, 238, 255, 0.04);
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Exo 2', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#particle-field {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.scanline-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 238, 255, 0.007) 2px, rgba(0, 238, 255, 0.007) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.scan-bar {
+  position: fixed;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 238, 255, 0.08), transparent);
+  animation: scan-sweep 12s linear infinite;
+  pointer-events: none;
+  z-index: 9997;
+}
+
+@keyframes scan-sweep {
+  0% { top: -3px; }
+  100% { top: 100vh; }
+}
+
+.page-content { position: relative; z-index: 2; }
+
+/* NAVIGATION */
+.holo-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(3, 8, 16, 0.9);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.nav-nodes { display: flex; align-items: center; gap: 4px; padding: 12px 0 8px; }
+.nav-node {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--accent-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+  opacity: 0;
+  animation: node-appear 0.4s ease both;
+}
+.nav-node:hover { border-color: var(--accent); color: var(--hub-text); background: rgba(0, 180, 255, 0.1); box-shadow: 0 0 18px rgba(0, 180, 255, 0.2); }
+.nav-node.active { opacity: 1; border-color: var(--accent); color: var(--bg-deep); background: var(--accent); box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.15); animation: node-appear 0.4s ease both, node-pulse 3s ease-in-out 0.4s infinite; }
+.nav-node.completed { opacity: 1; border-color: var(--sql-select); color: var(--sql-select); background: rgba(34, 197, 94, 0.08); }
+.nav-connector { flex: 1; height: 1px; background: var(--border-subtle); min-width: 6px; transition: all 0.6s; }
+.nav-connector.active { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+@keyframes node-pulse { 0%, 100% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.1); } 50% { box-shadow: 0 0 28px rgba(0, 180, 255, 0.5), 0 0 55px rgba(0, 180, 255, 0.2); } }
+@keyframes node-appear { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+.nav-node:nth-child(1) { animation-delay: 0.1s; }
+.nav-node:nth-child(3) { animation-delay: 0.15s; }
+.nav-node:nth-child(5) { animation-delay: 0.2s; }
+.nav-node:nth-child(7) { animation-delay: 0.25s; }
+.nav-node:nth-child(9) { animation-delay: 0.3s; }
+.nav-node:nth-child(11) { animation-delay: 0.35s; }
+.nav-node:nth-child(13) { animation-delay: 0.4s; }
+.nav-node:nth-child(15) { animation-delay: 0.45s; }
+.nav-node:nth-child(17) { animation-delay: 0.5s; }
+.nav-label { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); text-align: center; padding: 2px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* LCARS SEGMENTED PROGRESS BAR */
+.lcars-bar { display: flex; align-items: stretch; padding: 6px 24px 4px; gap: 0; }
+.lcars-elbow { width: 18px; flex-shrink: 0; background: var(--accent); border-radius: 0 0 0 14px; opacity: 0.35; position: relative; transition: opacity 0.6s ease; }
+.lcars-elbow::after { content: ''; position: absolute; bottom: -12px; left: 0; width: 100%; height: 12px; background: var(--accent); border-radius: 0 0 0 8px; opacity: inherit; }
+.lcars-segments { display: flex; gap: 3px; flex: 1; height: 32px; padding-left: 4px; }
+.lcars-seg {
+  flex: 1; border-radius: 3px;
+  background: linear-gradient(90deg, var(--seg-color) 0%, var(--seg-color) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) 100%);
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255, 255, 255, 0.5); cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0; animation: seg-appear 0.4s ease both;
+}
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; } .lcars-seg:nth-child(2) { animation-delay: 0.1s; } .lcars-seg:nth-child(3) { animation-delay: 0.15s; } .lcars-seg:nth-child(4) { animation-delay: 0.2s; } .lcars-seg:nth-child(5) { animation-delay: 0.25s; } .lcars-seg:nth-child(6) { animation-delay: 0.3s; } .lcars-seg:nth-child(7) { animation-delay: 0.35s; } .lcars-seg:nth-child(8) { animation-delay: 0.4s; } .lcars-seg:nth-child(9) { animation-delay: 0.45s; }
+@keyframes seg-appear { from { opacity: 0; transform: scaleX(0.3); } to { opacity: 1; transform: scaleX(1); } }
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+.lcars-seg.active { box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent), inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent); color: var(--bg-deep); }
+.lcars-seg.completed { --seg-fill: 100%; filter: brightness(0.7); color: var(--bg-deep); }
+.lcars-seg:hover { filter: brightness(1.2); box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent); }
+.lcars-flow { height: 3px; margin: 0 24px; background: rgba(0, 180, 255, 0.06); }
+.lcars-flow-fill { height: 100%; background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); width: 0%; transition: width 0.5s ease; }
+/* CONTAINER */
+.container { max-width: 1100px; margin: 0 auto; padding: 92px 28px 140px; }
+
+/* TITLE */
+.title-section { margin-bottom: 72px; padding-bottom: 48px; border-bottom: 1px solid var(--border-subtle); opacity: 0; animation: matter-form 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+@keyframes matter-form { 0% { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(6px); } 40% { filter: blur(2px); } 70% { filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+.title-label { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; display: flex; align-items: center; gap: 12px; }
+.title-label::before { content: ''; width: 32px; height: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.title-section h1 { font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.15; color: var(--text-bright); margin-bottom: 18px; letter-spacing: 0.02em; text-shadow: 0 0 40px rgba(16, 185, 129, 0.12); }
+.title-section .subtitle { font-size: 17px; color: var(--text-secondary); font-weight: 400; line-height: 1.75; max-width: 800px; }
+.meta-chips { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.meta-chip { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; background: var(--holo-cyan-dim); color: var(--text-dim); border: 1px solid var(--border-subtle); transition: all 0.4s; opacity: 0; animation: chip-appear 0.5s ease both; }
+.meta-chip:hover { border-color: var(--border-medium); color: var(--text-secondary); box-shadow: 0 0 12px rgba(0, 180, 255, 0.08); }
+.meta-chip:nth-child(1) { animation-delay: 0.6s; } .meta-chip:nth-child(2) { animation-delay: 0.7s; } .meta-chip:nth-child(3) { animation-delay: 0.8s; } .meta-chip:nth-child(4) { animation-delay: 0.9s; } .meta-chip:nth-child(5) { animation-delay: 1.0s; } .meta-chip:nth-child(6) { animation-delay: 1.1s; } .meta-chip:nth-child(7) { animation-delay: 1.2s; }
+@keyframes chip-appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* SECTIONS */
+.section { margin-bottom: 88px; }
+@supports (animation-timeline: view()) {
+  .section { animation: scroll-materialize both linear; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+  @keyframes scroll-materialize { 0% { opacity: 0; transform: translateY(30px) scale(0.97); filter: blur(4px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+}
+@supports not (animation-timeline: view()) {
+  .section { opacity: 0; transform: translateY(30px); transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94); filter: blur(4px); }
+  .section.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+.section-tag { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bg-deep); padding: 5px 16px; border-radius: 4px; white-space: nowrap; }
+.section-tag.accent-t { background: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+.section-tag.exercise-t { background: linear-gradient(135deg, var(--sql-select), var(--accent)); box-shadow: 0 0 16px var(--success-glow); }
+.section-tag.hub-t { background: var(--hub-color); box-shadow: 0 0 14px var(--hub-glow); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+h2 { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 600; line-height: 1.3; color: var(--text-bright); margin-bottom: 22px; letter-spacing: 0.01em; }
+h3 { font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 600; color: var(--text-bright); margin: 38px 0 14px; letter-spacing: 0.02em; }
+p { margin-bottom: 16px; }
+strong { font-weight: 600; color: var(--text-bright); }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; background: var(--accent-dim); color: var(--hub-text); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-subtle); }
+/* TIER BADGES */
+.tier-badge { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 10px; border-radius: 10px; margin-left: 12px; vertical-align: middle; }
+.tier-core { background: var(--hub-dim); color: var(--hub-text); border: 1px solid rgba(6, 182, 212, 0.2); }
+.tier-important { background: var(--etl-dim); color: var(--etl-text); border: 1px solid rgba(245, 158, 11, 0.2); }
+.tier-bonus { background: var(--sat-dim); color: var(--sat-text); border: 1px solid rgba(168, 85, 247, 0.15); opacity: 0.8; }
+
+/* PM PANELS */
+.pm-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 26px 30px; margin: 26px 0; position: relative; overflow: hidden; backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); transition: border-color 0.5s, box-shadow 0.5s, transform 0.5s; }
+.pm-panel:hover { border-color: var(--border-glow); box-shadow: 0 0 30px rgba(0, 180, 255, 0.06), inset 0 0 40px rgba(0, 180, 255, 0.02); transform: translateY(-1px); }
+.pm-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.35; }
+.pm-panel::after { content: ''; position: absolute; top: -1px; left: 0; width: 60px; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; animation: edge-charge 6s ease-in-out infinite; }
+@keyframes edge-charge { 0% { left: -60px; opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { left: calc(100% + 60px); opacity: 0; } }
+
+/* HOOK PANELS */
+.hook { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.hook::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+.hook::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 20px; pointer-events: none; opacity: 0.5; }
+.hook-default::before { background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.hook-default::after { background: linear-gradient(90deg, rgba(0,180,255,0.06), transparent); }
+.hook .hook-text { font-size: 17.5px; font-weight: 400; color: var(--text-bright); line-height: 1.75; margin: 0; }
+.hook-default .hook-text em { color: var(--hub-text); text-shadow: 0 0 12px var(--hub-glow); font-style: normal; }
+
+/* LANGUAGE BRIDGE */
+.language-bridge { background: var(--pm-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 24px 28px; margin: 26px 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.bridge-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--link-text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.bridge-label::before { content: ''; width: 16px; height: 2px; background: var(--link-color); box-shadow: 0 0 6px var(--link-glow); }
+.language-bridge p { font-size: 15px; color: var(--text-secondary); margin-bottom: 10px; }
+.language-bridge p:last-child { margin-bottom: 0; }
+.bridge-word { color: var(--link-text); font-weight: 600; }
+/* 4-LAYER EXPLANATION */
+.four-layers { margin: 30px 0; border: 1px solid var(--border-medium); border-radius: 16px; overflow: hidden; background: var(--pm-surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.four-layers-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px 12px; }
+.four-layers-title { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); }
+.layer-dots { display: flex; gap: 8px; }
+.layer-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--border-subtle); background: transparent; transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); cursor: pointer; }
+.layer-dot.l1 { border-color: var(--success-color); } .layer-dot.l2 { border-color: var(--hub-color); } .layer-dot.l3 { border-color: var(--link-color); } .layer-dot.l4 { border-color: var(--sat-color); }
+.layer-dot.active { transform: scale(1.4); }
+.layer-dot.l1.active { background: var(--success-color); box-shadow: 0 0 10px var(--success-glow); }
+.layer-dot.l2.active { background: var(--hub-color); box-shadow: 0 0 10px var(--hub-glow); }
+.layer-dot.l3.active { background: var(--link-color); box-shadow: 0 0 10px var(--link-glow); }
+.layer-dot.l4.active { background: var(--sat-color); box-shadow: 0 0 10px var(--sat-glow); }
+.layer { border-top: 1px solid var(--border-subtle); overflow: hidden; }
+.layer-header { display: flex; align-items: center; gap: 14px; padding: 14px 28px; cursor: pointer; user-select: none; transition: background 0.4s; }
+.layer-header:hover { background: rgba(0, 180, 255, 0.03); }
+.layer-badge { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 14px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.layer-1 .layer-badge { background: var(--success-color); color: var(--bg-deep); }
+.layer-2 .layer-badge { background: var(--hub-color); color: var(--bg-deep); }
+.layer-3 .layer-badge { background: var(--link-color); color: var(--bg-deep); }
+.layer-4 .layer-badge { background: var(--sat-color); color: var(--bg-deep); }
+.layer-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); flex: 1; }
+.layer-toggle { font-size: 12px; color: var(--text-dim); transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.layer.open .layer-toggle { transform: rotate(180deg); }
+.layer-content { max-height: 0; overflow: hidden; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.layer.open .layer-content { max-height: 600px; }
+.layer-content-inner { padding: 0 28px 22px; font-size: 15px; line-height: 1.8; color: var(--text-secondary); animation: layer-fade 0.5s ease; }
+@keyframes layer-fade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.layer-content-inner p { margin-bottom: 10px; font-size: 15px; }
+.layer-content-inner p:last-child { margin-bottom: 0; }
+/* DATA TABLES */
+.data-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; margin: 26px 0; overflow: hidden; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; }
+.data-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3; }
+.data-panel-header { padding: 12px 24px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); }
+.data-panel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; animation: dot-glow 3s ease-in-out infinite; }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+.data-panel-dot.hub { background: var(--hub-color); box-shadow: 0 0 8px var(--hub-color); }
+.data-panel-dot.result { background: var(--sql-select); box-shadow: 0 0 8px var(--sql-select); }
+.data-panel-title { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; flex: 1; }
+.data-panel-title.snow-title { color: var(--snow-text); }
+.data-panel-title.result-title { color: var(--sql-select); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.data-table td { font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 10px 16px; border-bottom: 1px solid rgba(0, 180, 255, 0.04); color: var(--text-secondary); transition: background 0.3s; }
+.data-table tr:hover td { background: rgba(0, 180, 255, 0.03); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table td.pk { color: var(--hub-text); font-weight: 500; }
+.data-table td.dbt-val { color: var(--dbt-text); font-weight: 500; }
+.data-table td.etl-val { color: var(--etl-text); font-weight: 500; }
+.data-table td.val { color: var(--text-secondary); }
+/* CONCEPT CALLOUT */
+.concept-callout { background: var(--accent-bg); border: 1px solid rgba(251, 191, 36, 0.12); border-radius: 14px; padding: 22px 26px; margin: 28px 0; position: relative; overflow: hidden; }
+.concept-callout::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent-color); box-shadow: 0 0 8px var(--accent-glow); border-radius: 3px 0 0 3px; }
+.concept-callout::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50px; background: linear-gradient(90deg, rgba(251,191,36,0.04), transparent); pointer-events: none; }
+.concept-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-color); margin-bottom: 10px; text-shadow: 0 0 10px var(--accent-glow); }
+.concept-callout blockquote { font-size: 15px; color: var(--text-bright); font-weight: 400; margin: 0; line-height: 1.75; font-style: italic; border: none; padding: 0; }
+
+/* CONTRASTIVE PANEL */
+.contrast-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 26px 0; border: 1px solid var(--border-medium); border-radius: 14px; overflow: hidden; background: var(--pm-surface); }
+.contrast-side { padding: 24px 26px; }
+.contrast-side:first-child { border-right: 1px solid var(--border-subtle); }
+.contrast-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+.contrast-side p { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+.contrast-side p:last-child { margin-bottom: 0; }
+
+/* DISAMBIGUATION PANEL */
+.disambig-panel { border: 2px solid rgba(245, 158, 11, 0.2); border-radius: 16px; padding: 28px 30px; margin: 30px 0; background: var(--pm-surface); position: relative; overflow: hidden; }
+.disambig-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, var(--etl-color), transparent); opacity: 0.4; }
+.disambig-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--etl-text); margin-bottom: 16px; text-shadow: 0 0 10px var(--etl-glow); }
+.disambig-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; }
+.disambig-item { padding: 16px 18px; border-radius: 10px; }
+.disambig-item h4 { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.disambig-item p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+/* CODE BLOCKS */
+.code-panel { background: rgba(2, 6, 14, 0.9); border: 1px solid var(--border-subtle); border-radius: 12px; margin: 22px 0; overflow: hidden; }
+.code-header { padding: 8px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.code-dot { width: 7px; height: 7px; border-radius: 50%; }
+.code-dot.r { background: #ef4444; } .code-dot.y { background: #f59e0b; } .code-dot.g { background: #22c55e; }
+.code-filename { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); margin-left: 8px; }
+.code-body { padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; color: var(--text-secondary); white-space: pre-wrap; }
+
+/* EXPLORE MORE */
+.explore-opener { display: flex; align-items: center; gap: 10px; padding: 12px 18px; margin: 24px 0 0; background: rgba(10, 25, 47, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.12); border-radius: 12px; cursor: pointer; transition: all 0.35s ease; user-select: none; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 180, 255, 0.15); }
+.explore-opener:hover { background: rgba(10, 25, 47, 0.85); border-color: var(--accent); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 180, 255, 0.1); transform: translateY(-1px); }
+.explore-opener .explore-icon { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--accent); flex-shrink: 0; transition: transform 0.35s ease, background 0.35s ease; }
+.explore-opener.open .explore-icon { transform: rotate(45deg); background: var(--accent); color: var(--bg-deep); }
+.explore-opener .explore-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: color 0.3s ease; }
+.explore-opener:hover .explore-label { color: var(--text-primary); }
+.explore-opener .explore-hint { font-family: 'Orbitron', monospace; font-size: 7px; font-weight: 600; letter-spacing: 0.12em; color: var(--accent); opacity: 0.5; margin-left: auto; transition: opacity 0.3s ease; }
+.explore-opener:hover .explore-hint { opacity: 1; }
+.explore-panel { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.explore-panel.open { max-height: 800px; }
+.explore-panel-inner { padding: 20px 22px 16px; margin: 6px 0 20px; background: rgba(10, 25, 47, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.08); border-radius: 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 180, 255, 0.1); animation: explore-slide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes explore-slide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.explore-panel-inner p { font-size: 14px; line-height: 1.65; color: var(--text-secondary); margin: 0 0 10px; }
+.explore-panel-inner p:last-child { margin: 0; }
+.explore-panel-inner strong { color: var(--text-primary); }
+/* EXERCISE */
+.exercise-section { background: var(--pm-surface); border: 2px solid var(--sql-select); border-radius: 18px; padding: 34px; margin: 52px 0; position: relative; overflow: hidden; box-shadow: 0 0 35px var(--sql-select-glow), 0 0 70px rgba(34,197,94,0.04); }
+.exercise-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--sql-select), transparent); animation: exercise-glow 4s ease-in-out infinite; }
+@keyframes exercise-glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+.exercise-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sql-select); margin-bottom: 16px; text-shadow: 0 0 10px var(--sql-select-glow); }
+.exercise-section h2 { font-size: 22px; margin-bottom: 10px; }
+.match-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 1px solid var(--border-subtle); border-radius: 10px; margin: 8px 0; }
+.match-label { font-size: 14px; color: var(--text-bright); min-width: 180px; flex-shrink: 0; }
+.match-select { flex: 1; font-family: 'Exo 2', sans-serif; font-size: 13px; background: rgba(2, 6, 14, 0.8); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 8px 12px; color: var(--text-primary); outline: none; cursor: pointer; transition: border-color 0.3s; }
+.match-select:focus { border-color: var(--accent); }
+.match-select option { background: var(--bg-deep); color: var(--text-primary); }
+.match-feedback { font-size: 12px; min-width: 20px; text-align: center; }
+.check-btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sql-select); background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 10px; padding: 10px 24px; cursor: pointer; margin-top: 14px; transition: all 0.4s; }
+.check-btn:hover { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.45); box-shadow: 0 0 20px rgba(34,197,94,0.2); }
+.feedback { margin-top: 14px; padding: 16px 20px; border-radius: 12px; font-size: 14px; display: none; animation: feedback-appear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes feedback-appear { from { opacity: 0; transform: translateY(-10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.feedback.correct { display: block; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); color: var(--sql-select); }
+.feedback.incorrect { display: block; background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); color: #f97316; }
+
+/* PIPELINE FLOW */
+.pipeline-flow { display: flex; align-items: center; gap: 0; margin: 30px 0; padding: 20px; overflow-x: auto; }
+.pipeline-node { padding: 12px 16px; border-radius: 10px; font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; text-align: center; white-space: nowrap; min-width: 80px; border: 1px solid; }
+.pipeline-arrow { font-size: 16px; color: var(--text-dim); padding: 0 4px; flex-shrink: 0; }
+
+/* COMPLETION */
+.completion-banner { display: none; background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.06)); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 14px; padding: 24px 28px; margin-top: 28px; text-align: center; animation: matter-form 0.8s ease forwards; }
+.completion-banner h3 { font-family: 'Orbitron', sans-serif; font-size: 18px; color: var(--sql-select); margin-bottom: 8px; text-shadow: 0 0 15px var(--sql-select-glow); }
+.completion-banner p { font-size: 14px; color: var(--text-secondary); margin: 0; }
+
+/* CHUNK MILESTONE */
+.chunk-milestone { margin: 3rem auto; padding: 1.5rem 2rem; max-width: 600px; text-align: center; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.chunk-milestone .milestone-accomplished { font-family: 'Exo 2', sans-serif; font-size: 1.1rem; color: var(--text-bright); margin: 0 0 0.5rem 0; }
+.chunk-milestone .milestone-permission { font-family: 'Exo 2', sans-serif; font-size: 0.85rem; color: var(--text-dim); margin: 0; font-style: italic; }
+.chunk-milestone .milestone-progress { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 0.75rem; }
+
+/* QUERY BUILDER */
+.query-builder { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+.query-step { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); }
+.query-step:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.query-step-label { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem; }
+.query-step-prompt { font-family: 'Exo 2', sans-serif; color: var(--text-secondary); margin-bottom: 0.75rem; }
+.query-accumulated { background: rgba(0, 0, 0, 0.3); border-left: 2px solid var(--accent); padding: 0.75rem 1rem; margin-bottom: 0.75rem; font-family: 'JetBrains Mono', 'Share Tech Mono', monospace; font-size: 0.85rem; color: var(--text-dim); white-space: pre-wrap; border-radius: 0 8px 8px 0; }
+.query-accumulated:empty { display: none; }
+
+.tutorial-footer { margin-top: 80px; padding: 24px 0; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+
+/* AMBIENT + PARALLAX */
+.ambient-glow { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 0; transition: background 1.5s ease; background: radial-gradient(ellipse 600px 400px at 15% 20%, var(--ambient-c1, rgba(16, 185, 129, 0.06)) 0%, transparent 70%), radial-gradient(ellipse 500px 500px at 85% 60%, var(--ambient-c2, rgba(139, 92, 246, 0.04)) 0%, transparent 70%), radial-gradient(ellipse 400px 300px at 50% 90%, var(--ambient-c3, rgba(245, 158, 11, 0.03)) 0%, transparent 70%); }
+.parallax-layer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape.shape-1 { width: 300px; height: 300px; top: 10%; left: 5%; }
+.depth-shape.shape-2 { width: 200px; height: 200px; top: 40%; right: 10%; }
+.depth-shape.shape-3 { width: 250px; height: 250px; top: 70%; left: 60%; }
+.depth-shape.shape-4 { width: 180px; height: 180px; top: 30%; left: 40%; }
+/* WORD REVEAL */
+.hook-text .word { opacity: 0.2; transition: opacity 0.25s ease; }
+.section.visible .hook-text .word, .hook-text .word.lit { opacity: 1; }
+@supports (animation-timeline: view()) {
+  .section h2 { background: linear-gradient(90deg, var(--text-bright) 0%, var(--text-bright) 50%, var(--text-dim) 50.5%, var(--text-dim) 100%); background-size: 200% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: heading-sweep both linear; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+  @keyframes heading-sweep { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+}
+
+@supports not (animation-timeline: view()) {
+  .section .data-table tr { opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  .section.visible .data-table tr { opacity: 1; transform: translateY(0); }
+  .section.visible .data-table tr:nth-child(1) { transition-delay: 0ms; } .section.visible .data-table tr:nth-child(2) { transition-delay: 60ms; } .section.visible .data-table tr:nth-child(3) { transition-delay: 120ms; } .section.visible .data-table tr:nth-child(4) { transition-delay: 180ms; } .section.visible .data-table tr:nth-child(5) { transition-delay: 240ms; } .section.visible .data-table tr:nth-child(6) { transition-delay: 300ms; }
+}
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .container { padding: 88px 18px 100px; }
+  .title-section h1 { font-size: 28px; }
+  h2 { font-size: 20px; }
+  .pm-panel { padding: 20px 22px; }
+  .hook { padding: 22px 24px; }
+  .exercise-section { padding: 24px 20px; }
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .contrast-panel { grid-template-columns: 1fr; }
+  .contrast-side:first-child { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+  .disambig-grid { grid-template-columns: 1fr; }
+  .disambig-vs { padding: 8px 0; }
+  .pipeline-flow { flex-wrap: wrap; justify-content: center; }
+  .match-row { flex-wrap: wrap; }
+  .match-label { min-width: 140px; }
+  .quest-log { width: 160px; top: 60px; right: 8px; font-size: 0.8rem; }
+  .inventory-toolbar { gap: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .scroll-zone { grid-template-columns: 1fr !important; display: block !important; }
+  .scroll-zone > .pin-spacer { display: block !important; width: 100% !important; position: relative !important; }
+  .scroll-zone-visual { position: relative !important; top: auto !important; width: 100% !important; }
+  .scroll-zone-content { width: 100% !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.1ms !important; }
+  .section { opacity: 1; transform: none; filter: none; }
+  .title-section { opacity: 1; animation: none; }
+  .nav-node { opacity: 1; }
+  .meta-chip { opacity: 1; }
+  .lcars-seg { opacity: 1; }
+  .hook-text .word { opacity: 1; }
+  .data-table tr { opacity: 1; transform: none; }
+  .ambient-glow { transition: none; }
+  .section h2 { -webkit-text-fill-color: var(--text-bright); background: none; }
+}
+/* Layout compensation removed — panels are draggable, no fixed offset needed */
+/* ═══ DRAGGABLE PANELS ═══ */
+.draggable-panel { cursor: grab; user-select: none; }
+.draggable-panel.dragging { cursor: grabbing; transition: none !important; z-index: 200 !important; }
+.drag-handle { cursor: grab; }
+.dragging .drag-handle { cursor: grabbing; }
+
+/* ═══ QUEST LOG (floating panel, top-right) ═══ */
+.quest-log {
+  position: fixed; top: 126px; right: 12px; z-index: 90;
+  width: 200px; max-height: 400px;
+  background: rgba(10,22,40,0.85); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 12px;
+  font-family: 'Exo 2', sans-serif; transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.quest-log-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; cursor: pointer;
+  border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.quest-log-icon { font-size: 1.2em; }
+.quest-log-title { flex: 1; color: var(--text-bright); font-weight: 600; font-size: 0.9rem; }
+.quest-log-progress { color: var(--accent); font-family: 'Orbitron', sans-serif; font-size: 0.8rem; }
+.quest-log-toggle { color: var(--text-dim); transition: transform 0.3s; }
+.quest-log.collapsed .quest-log-toggle { transform: rotate(-90deg); }
+.quest-log-body { overflow: hidden; transition: max-height 0.4s ease; max-height: 400px; }
+.quest-log.collapsed .quest-log-body { max-height: 0; }
+.quest-log-list { list-style: none; padding: 8px 12px; margin: 0; }
+.quest-log-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; margin: 2px 0; border-radius: 6px;
+  cursor: pointer; transition: background 0.2s;
+  font-size: 0.85rem; color: var(--text-secondary);
+  border-left: 2px solid transparent;
+}
+.quest-log-hint {
+  margin: 0; padding: 4px 12px 2px; font-size: 0.65rem; color: var(--text-dim);
+  font-style: italic; opacity: 0.7;
+}
+.quest-log-item:hover { background: rgba(0,180,255,0.08); }
+.quest-log-item.active { border-left-color: var(--accent); color: var(--text-bright); }
+.quest-log-item.completed { opacity: 0.5; text-decoration: line-through; }
+@keyframes quest-check-flash {
+  0% { background: rgba(48,209,88,0.3); }
+  100% { background: transparent; }
+}
+.quest-log-item.just-completed { animation: quest-check-flash 1.5s ease-out; }
+.quest-check { font-size: 0.9em; width: 20px; text-align: center; }
+
+/* ═══ ACHIEVEMENT TOAST (slide-in from right) ═══ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* ═══ INVENTORY TOOLBAR (bottom fixed) ═══ */
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim); font-family: 'Orbitron', sans-serif; }
+
+/* Achievements button + panel */
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+.achievement-slot .slot-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;
+}
+
+/* Loot drop toast */
+.loot-toast {
+  position: fixed; bottom: 80px; left: 16px;
+  z-index: 200; padding: 12px 24px; border-radius: 10px;
+  background: rgba(10,22,40,0.9); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.3);
+  display: flex; align-items: center; gap: 10px;
+  opacity: 0; transition: all 0.4s ease; pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0,180,255,0.2);
+}
+.loot-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.loot-icon { font-size: 1.2em; }
+.loot-text { font-size: 0.85rem; color: var(--text-bright); }
+
+/* ═══ SCROLL ZONE (sticky visual + scrolling text) ═══ */
+.scroll-zone {
+  display: grid; grid-template-columns: 42% 1fr; gap: 1.5rem;
+  padding: 2rem 0; min-height: 80vh; position: relative;
+}
+.scroll-zone-visual {
+  position: sticky; top: 160px;
+  height: fit-content; align-self: start;
+  min-width: 0; overflow: visible;
+  z-index: 10;
+}
+/* GSAP pin-spacer wraps the visual — force it into the grid column */
+.scroll-zone > .pin-spacer {
+  grid-column: 1; min-width: 0 !important;
+  flex: none !important; width: 100% !important;
+}
+.scroll-zone-visual-frame {
+  position: absolute; top: 0; left: 0; width: 100%; opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.scroll-zone-visual-frame:first-child { position: relative; opacity: 1; }
+.scroll-zone-content { grid-column: 2; min-width: 0; }
+.scroll-zone-step {
+  min-height: 40vh; padding: 2rem 0;
+  opacity: 0.4; transition: opacity 0.4s ease;
+}
+.scroll-zone-step.active { opacity: 1; }
+
+/* ═══ APPLE ACCORDION ═══ */
+.apple-accordion { margin: 1.5rem 0; }
+.apple-accordion-item {
+  border-radius: 12px; margin-bottom: 8px; overflow: hidden;
+  background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);
+  transition: border-color 0.3s;
+}
+.apple-accordion-item.open { border-color: rgba(0,180,255,0.2); }
+.apple-accordion-trigger {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px; cursor: pointer; width: 100%;
+  background: none; border: none; color: var(--text-bright);
+  font-family: 'Exo 2', sans-serif; font-size: 0.95rem; font-weight: 500;
+  text-align: left;
+}
+.apple-accordion-trigger:hover { background: rgba(0,180,255,0.05); }
+.apple-accordion-icon {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 1.5px solid var(--text-dim); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 0.8rem; color: var(--text-dim); transition: all 0.3s;
+  flex-shrink: 0;
+}
+.apple-accordion-item.open .apple-accordion-icon {
+  border-color: var(--accent); color: var(--accent); transform: rotate(45deg);
+}
+.apple-accordion-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 18px;
+}
+.apple-accordion-item.open .apple-accordion-body { padding: 0 18px 18px; }
+
+/* ═══ WIPE REVEAL ═══ */
+.wipe-reveal {
+  clip-path: inset(0 0 100% 0);
+}
+@supports (animation-timeline: view()) {
+  .wipe-reveal {
+    animation: wipeIn linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 80%;
+  }
+}
+@keyframes wipeIn {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0% 0); }
+}
+
+/* ═══ HERO ZOOM ═══ */
+.hero-zoom {
+  height: 100vh; display: flex; align-items: center; justify-content: center;
+  overflow: visible; position: relative;
+}
+.hero-zoom-text {
+  font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 6vw, 5rem);
+  font-weight: 800; text-align: center;
+  background: linear-gradient(135deg, var(--accent), #00E5FF);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  will-change: transform, opacity;
+}
+
+/* ═══ MILESTONE ZOOM (crystallize settle) ═══ */
+.milestone-zoom {
+  height: 100vh; display: flex; align-items: center; justify-content: center;
+  overflow: visible; position: relative;
+}
+
+/* ═══ TIPPY.JS DARK THEME ═══ */
+.tippy-box[data-theme~='sv-dark'] {
+  background: rgba(10,22,40,0.95); backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 8px;
+  color: var(--text-secondary); font-family: 'Exo 2', sans-serif;
+  font-size: 0.8rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.tippy-box[data-theme~='sv-dark'] .tippy-arrow { color: rgba(10,22,40,0.95); }
+
+/* Chapter 11: SQL Practice + dbt Output — Tutorial-Specific CSS */
+:root {
+  --sql-practice-green: #22c55e;
+  --sql-practice-green-rgb: 34, 197, 94;
+  --sql-practice-green-glow: rgba(34, 197, 94, 0.25);
+  --sql-practice-green-dim: rgba(34, 197, 94, 0.08);
+
+  --dv-cyan: #06b6d4;
+  --dv-cyan-rgb: 6, 182, 212;
+  --dv-cyan-glow: rgba(6, 182, 212, 0.25);
+  --dv-cyan-dim: rgba(6, 182, 212, 0.08);
+
+  --dbt-gold: #f59e0b;
+  --dbt-gold-rgb: 245, 158, 11;
+  --dbt-gold-glow: rgba(245, 158, 11, 0.25);
+  --dbt-gold-dim: rgba(245, 158, 11, 0.08);
+
+  --symbol-orange: #f97316;
+  --symbol-orange-rgb: 249, 115, 22;
+  --symbol-orange-glow: rgba(249, 115, 22, 0.25);
+  --symbol-orange-dim: rgba(249, 115, 22, 0.08);
+
+  --sat-purple: #a855f7;
+  --sat-purple-rgb: 168, 85, 247;
+  --sat-purple-glow: rgba(168, 85, 247, 0.25);
+  --sat-purple-dim: rgba(168, 85, 247, 0.08);
+
+  --link-amber: #f59e0b;
+  --link-amber-rgb: 245, 158, 11;
+  --link-amber-glow: rgba(245, 158, 11, 0.25);
+  --link-amber-dim: rgba(245, 158, 11, 0.08);
+
+  --topic-glow: var(--sql-practice-green-rgb);
+}
+
+body::before {
+  background:
+    radial-gradient(ellipse at 20% 30%, var(--symbol-orange-dim) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 60%, var(--dv-cyan-dim) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 90%, var(--sql-practice-green-dim) 0%, transparent 60%);
+}
+
+.lcars-flow-fill {
+  background: linear-gradient(90deg,
+    var(--symbol-orange) 0%,
+    var(--dv-cyan) 20%,
+    var(--link-amber) 40%,
+    var(--sat-purple) 55%,
+    var(--dbt-gold) 75%,
+    var(--sql-practice-green) 100%
+  );
+}
+
+/* === SECTION TAG VARIANTS === */
+.section-tag.symbol-t { background: var(--symbol-orange-dim); color: var(--symbol-orange); border: 1px solid rgba(249, 115, 22, 0.2); }
+.section-tag.create-t { background: var(--sql-practice-green-dim); color: var(--sql-practice-green); border: 1px solid rgba(34, 197, 94, 0.2); }
+.section-tag.hub-t { background: var(--dv-cyan-dim); color: var(--dv-cyan); border: 1px solid rgba(6, 182, 212, 0.2); }
+.section-tag.link-t { background: var(--link-amber-dim); color: var(--link-amber); border: 1px solid rgba(245, 158, 11, 0.2); }
+.section-tag.sat-t { background: var(--sat-purple-dim); color: var(--sat-purple); border: 1px solid rgba(168, 85, 247, 0.2); }
+.section-tag.dbt-t { background: var(--dbt-gold-dim); color: var(--dbt-gold); border: 1px solid rgba(245, 158, 11, 0.2); }
+
+/* === HOOK VARIANTS === */
+.hook-symbol::before { background: var(--symbol-orange); box-shadow: 0 0 8px var(--symbol-orange-glow); }
+.hook-symbol::after { background: linear-gradient(90deg, var(--symbol-orange-glow), transparent); }
+.hook-symbol .hook-text em { color: var(--symbol-orange); text-shadow: 0 0 12px var(--symbol-orange-glow); }
+
+.hook-create::before { background: var(--sql-practice-green); box-shadow: 0 0 8px var(--sql-practice-green-glow); }
+.hook-create::after { background: linear-gradient(90deg, var(--sql-practice-green-glow), transparent); }
+.hook-create .hook-text em { color: var(--sql-practice-green); text-shadow: 0 0 12px var(--sql-practice-green-glow); }
+
+.hook-hub::before { background: var(--dv-cyan); box-shadow: 0 0 8px var(--dv-cyan-glow); }
+.hook-hub::after { background: linear-gradient(90deg, var(--dv-cyan-glow), transparent); }
+.hook-hub .hook-text em { color: var(--dv-cyan); text-shadow: 0 0 12px var(--dv-cyan-glow); }
+
+.hook-link::before { background: var(--link-amber); box-shadow: 0 0 8px var(--link-amber-glow); }
+.hook-link::after { background: linear-gradient(90deg, var(--link-amber-glow), transparent); }
+.hook-link .hook-text em { color: var(--link-amber); text-shadow: 0 0 12px var(--link-amber-glow); }
+
+.hook-sat::before { background: var(--sat-purple); box-shadow: 0 0 8px var(--sat-purple-glow); }
+.hook-sat::after { background: linear-gradient(90deg, var(--sat-purple-glow), transparent); }
+.hook-sat .hook-text em { color: var(--sat-purple); text-shadow: 0 0 12px var(--sat-purple-glow); }
+
+.hook-dbt::before { background: var(--dbt-gold); box-shadow: 0 0 8px var(--dbt-gold-glow); }
+.hook-dbt::after { background: linear-gradient(90deg, var(--dbt-gold-glow), transparent); }
+.hook-dbt .hook-text em { color: var(--dbt-gold); text-shadow: 0 0 12px var(--dbt-gold-glow); }
+
+/* === DATA PANEL DOT VARIANTS === */
+.data-panel-dot.symbol-dot { background: var(--symbol-orange); box-shadow: 0 0 6px var(--symbol-orange-glow); }
+.data-panel-dot.hub-dot { background: var(--dv-cyan); box-shadow: 0 0 6px var(--dv-cyan-glow); }
+.data-panel-dot.link-dot { background: var(--link-amber); box-shadow: 0 0 6px var(--link-amber-glow); }
+.data-panel-dot.sat-dot { background: var(--sat-purple); box-shadow: 0 0 6px var(--sat-purple-glow); }
+.data-panel-dot.dbt-dot { background: var(--dbt-gold); box-shadow: 0 0 6px var(--dbt-gold-glow); }
+
+.data-panel-title.symbol-title { color: var(--symbol-orange); }
+.data-panel-title.hub-title { color: var(--dv-cyan); }
+.data-panel-title.link-title { color: var(--link-amber); }
+.data-panel-title.sat-title { color: var(--sat-purple); }
+.data-panel-title.dbt-title { color: var(--dbt-gold); }
+
+/* === PARALLAX DEPTH SHAPES === */
+.depth-shape.shape-1 { background: radial-gradient(circle, var(--symbol-orange), transparent 70%); }
+.depth-shape.shape-2 { background: radial-gradient(circle, var(--dv-cyan), transparent 70%); }
+.depth-shape.shape-3 { background: radial-gradient(circle, var(--sat-purple), transparent 70%); }
+
+/* === IS / IS NOT BLOCK (DOET Anti-Affordance) === */
+.is-isnot {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.is-isnot-header {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.is-item {
+  padding: 0.4rem 0 0.4rem 0.75rem;
+  border-left: 2px solid;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.is-item.is-yes { border-left-color: rgba(48, 209, 88, 0.6); }
+.is-item.is-no { border-left-color: rgba(255, 59, 48, 0.5); }
+.is-item strong {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  font-weight: 700;
+  margin-right: 0.3rem;
+}
+.is-item.is-yes strong { color: #30d158; }
+.is-item.is-no strong { color: #ff3b30; }
+
+/* === WORKED EXAMPLE PANEL (DOET Bridge) === */
+.worked-example {
+  background: rgba(255, 214, 10, 0.03);
+  border: 1px solid rgba(255, 214, 10, 0.12);
+  border-left: 3px solid rgba(255, 214, 10, 0.5);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.worked-example-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255, 214, 10, 0.7);
+  margin-bottom: 1rem;
+}
+.worked-example p {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+.worked-example .scenario {
+  font-style: italic;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+.worked-example .answer { color: rgba(255, 214, 10, 0.9); font-weight: 600; }
+.worked-example .reasoning {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  padding-left: 1rem;
+  border-left: 1px solid rgba(255, 214, 10, 0.15);
+  margin-top: 0.5rem;
+}
+
+/* === ROW-LEVEL SPECIFIC FEEDBACK (DOET) === */
+.row-feedback {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 0.4rem 0.75rem;
+  margin-top: 0.4rem;
+  border-radius: 6px;
+  display: none;
+}
+.row-feedback.feedback-correct {
+  display: block;
+  background: rgba(48, 209, 88, 0.06);
+  color: rgba(48, 209, 88, 0.85);
+  border-left: 2px solid rgba(48, 209, 88, 0.4);
+}
+.row-feedback.feedback-incorrect {
+  display: block;
+  background: rgba(255, 59, 48, 0.06);
+  color: rgba(255, 149, 128, 0.9);
+  border-left: 2px solid rgba(255, 59, 48, 0.4);
+}
+
+/* Match label override for long code labels — stack layout */
+.match-row { flex-direction: column; align-items: stretch; gap: 8px; }
+.match-label { flex: none; min-width: 0; }
+.match-label code { white-space: normal; overflow-wrap: break-word; }
+.match-select { flex: none; width: 100%; }
+
+/* === SCROLL-ZONE VISUAL OVERRIDES === */
+.scroll-zone-visual .pm-panel { overflow: hidden; padding: 16px 14px; }
+.scroll-zone-visual .sql-block { font-size: 0.65rem; padding: 0.5rem 0.6rem; line-height: 1.5; }
+
+/* === SQL CODE BLOCK === */
+.sql-block {
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+.sql-block .kw { color: var(--sql-practice-green); font-weight: 500; }
+.sql-block .type { color: var(--dv-cyan); }
+.sql-block .constraint { color: var(--dbt-gold); }
+.sql-block .name { color: var(--dv-cyan); }
+.sql-block .comment { color: #64748b; font-style: italic; }
+.sql-block .str { color: var(--symbol-orange); }
+.sql-block .func { color: var(--sat-purple); }
+
+/* SQL syntax highlighting in pre code */
+.sql-keyword { color: var(--sql-practice-green); font-weight: 500; }
+.sql-type { color: var(--dv-cyan); }
+.sql-constraint { color: var(--dbt-gold); }
+.sql-comment { color: #64748b; font-style: italic; }
+
+/* === WRITE EXERCISE COMPONENTS === */
+.write-exercise {
+  margin: 24px 0 8px;
+}
+.write-exercise h4 {
+  font-family: 'Orbitron', 'Exo 2', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sql-practice-green);
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.write-exercise > p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.sql-input {
+  width: 100%;
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  background: rgba(0, 10, 20, 0.6);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 16px;
+  resize: vertical;
+  tab-size: 4;
+}
+.sql-input:focus {
+  border-color: var(--sql-practice-green);
+  outline: none;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.12);
+}
+.sql-input::placeholder { color: var(--text-dim); font-size: 13px; }
+.write-answer {
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(48, 209, 88, 0.06);
+  border: 1px solid rgba(48, 209, 88, 0.25);
+  border-radius: 6px;
+}
+.write-answer-label {
+  font-family: 'Orbitron', 'Exo 2', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--success-color);
+  margin-bottom: 8px;
+}
+.sql-answer {
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  margin: 0;
+}
+.sql-answer .kw { color: var(--sql-practice-green); font-weight: 500; }
+.sql-answer .name { color: var(--dv-cyan); }
+.sql-answer .str { color: var(--symbol-orange); }
+.sql-answer .type { color: var(--dv-cyan); }
+.sql-answer .constraint { color: var(--dbt-gold); }
+.reveal-btn {
+  margin-top: 10px;
+}
+
+/* === SCALEFREE NOTE === */
+.scalefree-note {
+  background: rgba(255, 176, 0, 0.04);
+  border: 1px solid rgba(255, 176, 0, 0.15);
+  border-left: 3px solid rgba(255, 176, 0, 0.4);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+.scalefree-note-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255, 176, 0, 0.7);
+  margin-bottom: 0.5rem;
+}
+.scalefree-note p {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* === JINJA/DBT CODE BLOCK === */
+.dbt-block {
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  border-left: 3px solid rgba(245, 158, 11, 0.4);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+.dbt-block .jinja { color: var(--dbt-gold); }
+.dbt-block .yaml-key { color: var(--dv-cyan); }
+.dbt-block .yaml-val { color: var(--symbol-orange); }
+.dbt-block .comment { color: #64748b; font-style: italic; }
+
+@media (max-width: 600px) {
+  .is-isnot { padding: 1rem; }
+  .worked-example { padding: 1rem; }
+  .sql-input { font-size: 13px; padding: 12px; }
+  .sql-block { font-size: 0.78rem; }
+  .sql-answer { font-size: 13px; }
+  .dbt-block { font-size: 0.78rem; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+</style>
+</head>
+<body data-chapter="11" style="padding-top: 52px;">
+<canvas id="particle-field"></canvas>
+<div class="scanline-overlay"></div>
+<div class="scan-bar"></div>
+<div class="ambient-glow" id="ambient-glow"></div>
+<div class="parallax-layer" id="parallax-layer">
+  <div class="depth-shape shape-1"></div>
+  <div class="depth-shape shape-2"></div>
+  <div class="depth-shape shape-3"></div>
+  <div class="depth-shape shape-4"></div>
+</div>
+
+<div class="page-content">
+
+<!-- Chapter 11: SQL Practice + dbt Output — Content -->
+
+<nav class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('s1')">1</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s2')">2</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s3')">3</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s4')">4</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s5')">5</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s6')">6</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s7')">EX</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">Symbols</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: #f97316" onclick="scrollToSection('s1')">1</div>
+        <div class="lcars-seg" style="--seg-color: #06b6d4" onclick="scrollToSection('s2')">2</div>
+        <div class="lcars-seg" style="--seg-color: #f59e0b" onclick="scrollToSection('s3')">3</div>
+        <div class="lcars-seg" style="--seg-color: #a855f7" onclick="scrollToSection('s4')">4</div>
+        <div class="lcars-seg" style="--seg-color: #f59e0b" onclick="scrollToSection('s5')">5</div>
+        <div class="lcars-seg" style="--seg-color: #22c55e" onclick="scrollToSection('s6')">6</div>
+        <div class="lcars-seg" style="--seg-color: #64ff64" onclick="scrollToSection('s7')">EX</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</nav>
+
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="title-section">
+  <div class="title-label">CHAPTER 11 // SQL PRACTICE</div>
+  <h1>From Knowing<br>to Producing</h1>
+  <p class="subtitle">No new concepts. Just you, the SQL, and the schemas you already understand.</p>
+  <div class="meta-chips">
+    <span class="meta-chip">SQL Drills</span>
+    <span class="meta-chip">CREATE TABLE</span>
+    <span class="meta-chip">dbt Output</span>
+    <span class="meta-chip">Reps Only</span>
+  </div>
+</div>
+
+
+<!-- ═══ HERO ZOOM ═══ -->
+<div class="hero-zoom">
+  <div class="hero-zoom-text">From Knowing to Producing</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 1 — SYMBOL CONTRASTIVE DRILLS
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s1" data-label="Symbols" data-color="249,115,22">
+  <div class="section-header">
+    <div class="section-tag symbol-t">SYMBOL DRILLS</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-symbol">
+    <p class="hook-text">The difference between <em>*</em> and <em>%</em> is tiny on a keyboard. In SQL, it&rsquo;s the difference between <em>seeing everything</em> and <em>searching for a pattern</em>.</p>
+  </div>
+
+  <div class="scroll-zone">
+    <div class="scroll-zone-visual">
+      <div class="scroll-zone-visual-frame">
+        <div class="pm-panel">
+          <div class="pm-panel-header">SYMBOL COMPARISON</div>
+          <div class="pm-panel-body">
+            <div style="overflow-x: auto; max-width: 100%;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Where</th>
+                    <th>Meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>*</code></td>
+                    <td>SELECT</td>
+                    <td>All columns</td>
+                  </tr>
+                  <tr>
+                    <td><code>%</code></td>
+                    <td>LIKE</td>
+                    <td>Any characters (wildcard)</td>
+                  </tr>
+                  <tr>
+                    <td><code>.</code></td>
+                    <td>table.column</td>
+                    <td>Possessive (owner.property)</td>
+                  </tr>
+                  <tr>
+                    <td><code>_</code></td>
+                    <td>LIKE</td>
+                    <td>Exactly one character</td>
+                  </tr>
+                  <tr>
+                    <td><code>'text'</code></td>
+                    <td>WHERE</td>
+                    <td>String value (data)</td>
+                  </tr>
+                  <tr>
+                    <td><code>"name"</code></td>
+                    <td>FROM/SELECT</td>
+                    <td>Identifier (schema name)</td>
+                  </tr>
+                  <tr>
+                    <td><code>!=</code></td>
+                    <td>WHERE</td>
+                    <td>Not equal (same as &lt;&gt;)</td>
+                  </tr>
+                  <tr>
+                    <td><code>AS</code></td>
+                    <td>SELECT / FROM</td>
+                    <td>Rename (column or table)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-zone-content">
+      <div class="scroll-zone-step active">
+        <h3><code>*</code> vs <code>%</code> &mdash; Column Selector vs String Wildcard</h3>
+        <p><code>SELECT * FROM Hub_Character</code> &mdash; the asterisk means &ldquo;give me every column.&rdquo; It lives in SELECT and has nothing to do with string matching.</p>
+        <p><code>WHERE business_key LIKE 'Ulfric%'</code> &mdash; the percent sign means &ldquo;any characters after this point&rdquo; inside a LIKE pattern. It lives in WHERE and has nothing to do with columns.</p>
+        <p>They look similar on a keyboard. In SQL, they live in completely different clauses and do completely different jobs.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>.</code> vs <code>_</code> &mdash; Possessive vs Single-Char Wildcard</h3>
+        <p><code>h.business_key</code> &mdash; the dot is the possessive operator. Read it as &ldquo;h&rsquo;s business_key.&rdquo; It separates an owner (table or alias) from a property (column).</p>
+        <p><code>WHERE name LIKE 'Ulfi_c'</code> &mdash; the underscore matches exactly one character. &ldquo;Ulfric&rdquo; matches. So does &ldquo;Ulficc.&rdquo; It is a pattern wildcard, not a structural separator.</p>
+        <p>One is syntax structure. The other is pattern matching. No overlap.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>'value'</code> vs <code>"identifier"</code> &mdash; Data vs Schema Names</h3>
+        <p><code>WHERE record_source = 'Skyrim_NPC_DB'</code> &mdash; single quotes wrap string values. This is data you&rsquo;re comparing against.</p>
+        <p><code>SELECT "my column" FROM "weird table"</code> &mdash; double quotes wrap identifiers (column or table names) that need quoting because they have spaces or conflict with reserved words.</p>
+        <p>In practice: single quotes almost always. Double quotes almost never unless a name is unusual.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>!=</code> vs <code>&lt;&gt;</code> &mdash; Two Ways to Say Not Equal</h3>
+        <p>Both are valid in Snowflake. <code>WHERE record_source != 'Skyrim_NPC_DB'</code> and <code>WHERE record_source &lt;&gt; 'Skyrim_NPC_DB'</code> do the same thing.</p>
+        <p>No trick here. Either form is valid and both are widely used.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>AS</code> &mdash; Two Grammatical Roles, Same Keyword</h3>
+        <p><code>SELECT h.business_key AS customer_name</code> &mdash; after a column in SELECT, AS renames the output column.</p>
+        <p><code>FROM Hub_Character AS h</code> &mdash; after a table in FROM, AS gives the table a shorthand name for this query.</p>
+        <p>Same keyword, two positions, two meanings. The position tells you which role it plays.</p>
+      </div>
+
+      <!-- IS / IS NOT -->
+  <div class="is-isnot">
+    <div class="is-isnot-header">IS / IS NOT &mdash; Symbol Domains</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> <code>*</code> is a column selector in SELECT &mdash; &ldquo;all columns.&rdquo;</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> <code>*</code> is NOT a wildcard for string patterns. That is <code>%</code> in LIKE.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> <code>.</code> is a possessive separator between owner and property (<code>table.column</code>).</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> <code>_</code> is NOT a separator. It is a single-character wildcard inside LIKE patterns.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> <code>'single quotes'</code> wrap string data values.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> <code>"double quotes"</code> do NOT wrap data. They wrap identifiers (column/table names).</div>
+    </div>
+  </div>
+
+  <!-- Worked Example -->
+  <div class="worked-example">
+    <div class="worked-example-label">WORKED EXAMPLE</div>
+    <p class="scenario">&ldquo;You want all characters from Hub_Character (alias: h) whose name starts with &lsquo;Dragonborn&rsquo; from the source &lsquo;Skyrim_DB&rsquo;. Write the query.&rdquo;</p>
+    <p class="answer"><code>SELECT * FROM Hub_Character AS h WHERE h.business_key LIKE 'Dragonborn%' AND h.record_source = 'Skyrim_DB'</code></p>
+    <p class="reasoning"><code>*</code> in SELECT = all columns. <code>AS h</code> in FROM = alias. <code>h.business_key</code> = dot is possessive (h&rsquo;s business_key). <code>LIKE 'Dragonborn%'</code> = % is the string wildcard. <code>= 'Skyrim_DB'</code> = single quotes around the data value. Every symbol in its correct domain.</p>
+  </div>
+
+  <!-- Exercise 1: Symbol Matching -->
+  <div class="exercise-section" id="exercise-1">
+    <h3>Exercise 1 &mdash; Symbol Discrimination</h3>
+    <p>Match each scenario to the correct symbol or syntax.</p>
+
+    <div class="match-row" data-correct="* (asterisk in SELECT)">
+      <div class="match-label">You want every column from Hub_Character</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="* (asterisk in SELECT)">* (asterisk in SELECT)</option>
+        <option value="% (percent in LIKE)">% (percent in LIKE)</option>
+        <option value=". (dot notation)">. (dot notation)</option>
+        <option value="_ (underscore in LIKE)">_ (underscore in LIKE)</option>
+        <option value="'single quotes'">'single quotes'</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="% (percent in LIKE)">
+      <div class="match-label">You want names starting with &ldquo;Ulfric&rdquo;</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="* (asterisk in SELECT)">* (asterisk in SELECT)</option>
+        <option value="% (percent in LIKE)">% (percent in LIKE)</option>
+        <option value=". (dot notation)">. (dot notation)</option>
+        <option value="_ (underscore in LIKE)">_ (underscore in LIKE)</option>
+        <option value="'single quotes'">'single quotes'</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct=". (dot notation)">
+      <div class="match-label">You reference h&rsquo;s business_key column</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="* (asterisk in SELECT)">* (asterisk in SELECT)</option>
+        <option value="% (percent in LIKE)">% (percent in LIKE)</option>
+        <option value=". (dot notation)">. (dot notation)</option>
+        <option value="_ (underscore in LIKE)">_ (underscore in LIKE)</option>
+        <option value="'single quotes'">'single quotes'</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="_ (underscore in LIKE)">
+      <div class="match-label">You match names where the 4th character can be anything</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="* (asterisk in SELECT)">* (asterisk in SELECT)</option>
+        <option value="% (percent in LIKE)">% (percent in LIKE)</option>
+        <option value=". (dot notation)">. (dot notation)</option>
+        <option value="_ (underscore in LIKE)">_ (underscore in LIKE)</option>
+        <option value="'single quotes'">'single quotes'</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="'single quotes'">
+      <div class="match-label">You compare record_source to a text value like Skyrim_NPC_DB</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="* (asterisk in SELECT)">* (asterisk in SELECT)</option>
+        <option value="% (percent in LIKE)">% (percent in LIKE)</option>
+        <option value=". (dot notation)">. (dot notation)</option>
+        <option value="_ (underscore in LIKE)">_ (underscore in LIKE)</option>
+        <option value="'single quotes'">'single quotes'</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise1()">CHECK ANSWERS</button>
+    <div class="feedback" id="feedback-1"></div>
+  </div>
+    </div>
+  </div>
+</div><!-- /section s1 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 2 — HUB CREATE TABLE
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s2" data-label="Hub" data-color="6,182,212">
+  <div class="section-header">
+    <div class="section-tag hub-t">HUB CREATE TABLE</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-hub">
+    <p class="hook-text">A Hub has exactly <em>4 columns</em>. You know all of them. Can you write them from <em>memory</em>?</p>
+  </div>
+
+  <div class="scroll-zone">
+    <div class="scroll-zone-visual">
+      <div class="scroll-zone-visual-frame">
+        <div class="pm-panel">
+          <div class="pm-panel-header">HUB SCHEMA &mdash; 4 COLUMNS</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">CREATE TABLE</span> <span class="name">Hub_Character</span> (
+  <span class="name">hub_character_hk</span> <span class="type">CHAR(64)</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">load_date</span> <span class="type">TIMESTAMP</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">record_source</span> <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">business_key</span> <span class="type">VARCHAR(255)</span> <span class="constraint">NOT NULL</span>,
+  <span class="kw">PRIMARY KEY</span> (<span class="name">hub_character_hk</span>)
+);</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-zone-content">
+      <div class="scroll-zone-step active">
+        <h3><code>hub_character_hk</code> &mdash; CHAR(64) NOT NULL</h3>
+        <p>The hash key. SHA-256 always produces exactly 64 hex characters &mdash; never shorter, never longer. Fixed length means CHAR, not VARCHAR. This is the primary key: one hash per unique business key, forever.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>load_date</code> &mdash; TIMESTAMP NOT NULL</h3>
+        <p>When this entity was first loaded into the vault. TIMESTAMP gives you date AND time precision. This is metadata &mdash; the Hub records when it learned about each entity.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>record_source</code> &mdash; VARCHAR(100) NOT NULL</h3>
+        <p>Which source system this entity came from. &ldquo;Skyrim_NPC_Database&rdquo; or &ldquo;Elder_Scrolls_Online_API&rdquo; &mdash; lengths vary, so VARCHAR. Data provenance: where did this come from?</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>business_key</code> &mdash; VARCHAR(255) NOT NULL</h3>
+        <p>The original identifier from the source system. &ldquo;Ulfric&rdquo; is 6 characters; &ldquo;Archmage Savos Aren&rdquo; is 19. Names vary in length, so VARCHAR stretches to fit. The hash key is derived from this, but we keep the original too.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3>All NOT NULL &mdash; Every Column Required</h3>
+        <p>A Hub row without any of these four values is meaningless. No hash key? Can&rsquo;t identify it. No business key? Don&rsquo;t know what it represents. No load date? Don&rsquo;t know when it arrived. No source? Don&rsquo;t know where it came from. Every column is structurally essential.</p>
+      </div>
+
+      <!-- IS / IS NOT -->
+      <div class="is-isnot">
+        <div class="is-isnot-header">IS / IS NOT &mdash; Hub</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> The entity registry &mdash; one row per unique business key, forever. Insert-only.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> Where entity attributes live. Names, levels, guilds go in the Satellite, not the Hub.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> 4 columns, all NOT NULL, single-column PK on the hash key.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> A table with descriptive or changeable data. Hub rows never change after insertion.</div>
+    </div>
+  </div>
+
+  <!-- Worked Example -->
+  <div class="worked-example">
+    <div class="worked-example-label">WORKED EXAMPLE</div>
+    <p class="scenario">&ldquo;Write CREATE TABLE for Hub_Faction &mdash; a Hub tracking faction entities (Stormcloaks, Companions, etc.).&rdquo;</p>
+    <p class="answer"><code>CREATE TABLE Hub_Faction (hub_faction_hk CHAR(64) NOT NULL, load_date TIMESTAMP NOT NULL, record_source VARCHAR(100) NOT NULL, business_key VARCHAR(255) NOT NULL, PRIMARY KEY (hub_faction_hk));</code></p>
+    <p class="reasoning">Same 4-column pattern as Hub_Character. Only two things change: the table name and the hash key column name. The structure is always the same for every Hub.</p>
+  </div>
+
+  <!-- Write Exercise 1: Hub from memory -->
+  <div class="write-exercise" id="write-1">
+    <h4>WRITE FROM MEMORY &mdash; Hub_Character</h4>
+    <p>Write the complete CREATE TABLE for Hub_Character. All 4 columns, correct types, correct constraints, PRIMARY KEY declaration.</p>
+    <textarea class="sql-input" rows="8" placeholder="CREATE TABLE Hub_Character (&#10;    ...&#10;);"></textarea>
+    <button class="check-btn reveal-btn" onclick="showAnswer('write-1')">REVEAL ANSWER</button>
+    <div class="write-answer" id="write-1-answer" style="display:none;">
+      <div class="write-answer-label">REFERENCE ANSWER</div>
+      <pre class="sql-answer"><span class="kw">CREATE TABLE</span> <span class="name">Hub_Character</span> (
+    <span class="name">hub_character_hk</span>    <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">load_date</span>           <span class="type">TIMESTAMP</span>    <span class="constraint">NOT NULL</span>,
+    <span class="name">record_source</span>       <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+    <span class="name">business_key</span>        <span class="type">VARCHAR(255)</span> <span class="constraint">NOT NULL</span>,
+    <span class="constraint">PRIMARY KEY</span> (<span class="name">hub_character_hk</span>)
+);</pre>
+    </div>
+  </div>
+    </div>
+  </div>
+</div><!-- /section s2 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 3 — LINK CREATE TABLE
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s3" data-label="Link" data-color="245,158,11">
+  <div class="section-header">
+    <div class="section-tag link-t">LINK CREATE TABLE</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-link">
+    <p class="hook-text">Links connect Hubs. They have their own hash key <em>plus</em> the hash keys of every Hub they connect.</p>
+  </div>
+
+  <div class="scroll-zone">
+    <div class="scroll-zone-visual">
+      <div class="scroll-zone-visual-frame">
+        <div class="pm-panel">
+          <div class="pm-panel-header">LINK SCHEMA &mdash; 5 COLUMNS</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">CREATE TABLE</span> <span class="name">Link_Character_Faction</span> (
+  <span class="name">link_character_faction_hk</span> <span class="type">CHAR(64)</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">load_date</span> <span class="type">TIMESTAMP</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">record_source</span> <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">hub_character_hk</span> <span class="type">CHAR(64)</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">hub_faction_hk</span> <span class="type">CHAR(64)</span> <span class="constraint">NOT NULL</span>,
+  <span class="kw">PRIMARY KEY</span> (<span class="name">link_character_faction_hk</span>)
+);</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-zone-content">
+      <div class="scroll-zone-step active">
+        <h3><code>link_character_faction_hk</code> &mdash; The Link&rsquo;s Own Hash Key</h3>
+        <p>Every Link has its own hash key, derived from the combination of the foreign hash keys it connects. CHAR(64) &mdash; same as any hash key. This is the PK.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>load_date</code> + <code>record_source</code> &mdash; Same Metadata</h3>
+        <p>Same pattern as the Hub: when was this relationship recorded, and where did it come from? TIMESTAMP and VARCHAR(100), both NOT NULL. Metadata always comes right after the hash key.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>hub_character_hk</code> + <code>hub_faction_hk</code> &mdash; Foreign Hash Keys</h3>
+        <p>These reference the PKs of Hub_Character and Hub_Faction. They are both CHAR(64) because they ARE hash keys &mdash; the same hash keys stored in the corresponding Hubs. This is how the Link &ldquo;points to&rdquo; two entities.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3>No business_key. No descriptive columns.</h3>
+        <p>A Link is purely structural. It records that a relationship exists between two entities. It does not store names, levels, or any attributes. Those belong in Satellites (specifically, Effectivity Satellites for relationship attributes).</p>
+      </div>
+
+      <!-- IS / IS NOT -->
+      <div class="is-isnot">
+        <div class="is-isnot-header">IS / IS NOT &mdash; Link</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> A relationship record between entities &mdash; pure structure, only hash keys.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> A table with descriptive data. No names, no attributes &mdash; just hash keys and metadata.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> 5 columns for a 2-Hub Link: own HK + 2 foreign HKs + load_date + record_source.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> The same as a Hub. A Hub has a business_key; a Link does not. A Link has foreign hash keys; a Hub does not.</div>
+    </div>
+  </div>
+
+  <!-- Worked Example -->
+  <div class="worked-example">
+    <div class="worked-example-label">WORKED EXAMPLE</div>
+    <p class="scenario">&ldquo;Write a Link connecting Hub_Character and Hub_Weapon. What columns does it have?&rdquo;</p>
+    <p class="answer">5 columns: <code>link_character_weapon_hk</code> (own HK), <code>load_date</code>, <code>record_source</code>, <code>hub_character_hk</code> (FK), <code>hub_weapon_hk</code> (FK). All CHAR(64) for hash keys, TIMESTAMP for date, VARCHAR(100) for source. All NOT NULL.</p>
+    <p class="reasoning">Pattern is identical to Link_Character_Faction. Only the table name, the Link&rsquo;s own hash key name, and the second foreign hash key name change. The structure never varies.</p>
+  </div>
+
+  <!-- Write Exercise 2: Link from memory -->
+  <div class="write-exercise" id="write-2">
+    <h4>WRITE FROM MEMORY &mdash; Link_Character_Faction</h4>
+    <p>Write the complete CREATE TABLE for Link_Character_Faction. 5 columns: own hash key, load_date, record_source, two foreign hash keys. Correct types and constraints.</p>
+    <textarea class="sql-input" rows="9" placeholder="CREATE TABLE Link_Character_Faction (&#10;    ...&#10;);"></textarea>
+    <button class="check-btn reveal-btn" onclick="showAnswer('write-2')">REVEAL ANSWER</button>
+    <div class="write-answer" id="write-2-answer" style="display:none;">
+      <div class="write-answer-label">REFERENCE ANSWER</div>
+      <pre class="sql-answer"><span class="kw">CREATE TABLE</span> <span class="name">Link_Character_Faction</span> (
+    <span class="name">link_character_faction_hk</span>  <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">load_date</span>                  <span class="type">TIMESTAMP</span>    <span class="constraint">NOT NULL</span>,
+    <span class="name">record_source</span>              <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+    <span class="name">hub_character_hk</span>           <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">hub_faction_hk</span>             <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="constraint">PRIMARY KEY</span> (<span class="name">link_character_faction_hk</span>)
+);</pre>
+    </div>
+  </div>
+    </div>
+  </div>
+</div><!-- /section s3 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 4 — SATELLITE CREATE TABLE
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s4" data-label="Satellite" data-color="168,85,247">
+  <div class="section-header">
+    <div class="section-tag sat-t">SATELLITE CREATE TABLE</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-sat">
+    <p class="hook-text">Satellites track <em>change</em>. Their secret weapon: a <em>composite primary key</em> that says who changed AND when.</p>
+  </div>
+
+  <div class="scroll-zone">
+    <div class="scroll-zone-visual">
+      <div class="scroll-zone-visual-frame">
+        <div class="pm-panel">
+          <div class="pm-panel-header">SATELLITE SCHEMA &mdash; COMPOSITE PK</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">CREATE TABLE</span> <span class="name">Sat_Character_Details</span> (
+  <span class="name">hub_character_hk</span> <span class="type">CHAR(64)</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">load_date</span> <span class="type">TIMESTAMP</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">record_source</span> <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">hash_diff</span> <span class="type">CHAR(64)</span> <span class="constraint">NOT NULL</span>,
+  <span class="name">character_name</span> <span class="type">VARCHAR(255)</span>,
+  <span class="name">guild</span> <span class="type">VARCHAR(100)</span>,
+  <span class="name">level</span> <span class="type">INTEGER</span>,
+  <span class="kw">PRIMARY KEY</span> (<span class="name">hub_character_hk</span>, <span class="name">load_date</span>)
+);</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-zone-content">
+      <div class="scroll-zone-step active">
+        <h3>Composite PK: <code>(hub_character_hk, load_date)</code></h3>
+        <p>The same character can have multiple rows as their attributes change over time. The combination of WHO (hash key) and WHEN (load date) uniquely identifies each version. This is why it&rsquo;s a composite key &mdash; neither column alone is sufficient.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>hash_diff</code> &mdash; CHAR(64) NOT NULL</h3>
+        <p>A fingerprint of all descriptive columns. If the incoming hash_diff matches the last known one for this entity, nothing changed &mdash; don&rsquo;t insert. If it differs, something changed &mdash; insert a new row. Change detection without comparing columns one by one.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3>Descriptive Columns ARE Nullable</h3>
+        <p><code>character_name VARCHAR(255)</code>, <code>guild VARCHAR(100)</code>, <code>level INTEGER</code> &mdash; notice no NOT NULL. You might receive a record where only some attributes are populated. NULL is a valid state for descriptive data. This is a key contrast: Hub/Link columns are all NOT NULL. Satellite descriptive columns are nullable.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3>No <code>load_end_date</code> in v0</h3>
+        <p>In the ScaleFree/datavault4dbt implementation, the physical (v0) Satellite table does NOT have a load_end_date column. The v1 VIEW computes it virtually using the LEAD() window function. If you add load_end_date to the v0 CREATE TABLE, it&rsquo;s incorrect for the ScaleFree pattern.</p>
+      </div>
+
+      <!-- ScaleFree Note -->
+  <div class="scalefree-note">
+    <div class="scalefree-note-label">SCALEFREE / DATAVAULT4DBT</div>
+    <p>v0 Satellite = the physical table you write with CREATE TABLE (no load_end_date). v1 Satellite = a VIEW on top of v0 that computes load_end_date using LEAD(). The key point about load_end_date: it exists as a computed value, not a stored column.</p>
+  </div>
+
+  <!-- IS / IS NOT -->
+  <div class="is-isnot">
+    <div class="is-isnot-header">IS / IS NOT &mdash; Satellite</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> PK is a composite of (hash_key, load_date) &mdash; two columns together.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> PK is NOT just the hash key alone. That&rsquo;s the Hub PK pattern.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> Descriptive columns (name, guild, level) ARE nullable.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> Hub and Link columns are NOT nullable. Every structural column must be present.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> Where attributes and change history live &mdash; multiple rows per entity over time.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> A table with its own hash key. The Satellite references the Hub&rsquo;s hash key; it does not generate a new one.</div>
+    </div>
+  </div>
+
+  <!-- Worked Example -->
+  <div class="worked-example">
+    <div class="worked-example-label">WORKED EXAMPLE</div>
+    <p class="scenario">&ldquo;Write a Satellite tracking a faction&rsquo;s description and member_count, attached to Hub_Faction.&rdquo;</p>
+    <p class="answer"><code>Sat_Faction_Details</code> with: <code>hub_faction_hk CHAR(64) NOT NULL</code>, <code>load_date TIMESTAMP NOT NULL</code>, <code>record_source VARCHAR(100) NOT NULL</code>, <code>hash_diff CHAR(64) NOT NULL</code>, <code>description VARCHAR(500)</code> (nullable), <code>member_count INTEGER</code> (nullable), <code>PRIMARY KEY (hub_faction_hk, load_date)</code>.</p>
+    <p class="reasoning">Same structural pattern as Sat_Character_Details. The structural columns (hash key, load_date, hash_diff, record_source) are always the same and always NOT NULL. Only the descriptive columns change between Satellites &mdash; and they&rsquo;re always nullable.</p>
+  </div>
+
+  <!-- Write Exercise 3: Satellite from memory -->
+  <div class="write-exercise" id="write-3">
+    <h4>WRITE FROM MEMORY &mdash; Sat_Character_Details</h4>
+    <p>Write the complete CREATE TABLE for Sat_Character_Details. Structural columns (hub_character_hk, load_date, record_source, hash_diff) + descriptive columns (character_name, guild, level). Correct constraints. Composite PK.</p>
+    <textarea class="sql-input" rows="11" placeholder="CREATE TABLE Sat_Character_Details (&#10;    ...&#10;);"></textarea>
+    <button class="check-btn reveal-btn" onclick="showAnswer('write-3')">REVEAL ANSWER</button>
+    <div class="write-answer" id="write-3-answer" style="display:none;">
+      <div class="write-answer-label">REFERENCE ANSWER</div>
+      <pre class="sql-answer"><span class="kw">CREATE TABLE</span> <span class="name">Sat_Character_Details</span> (
+    <span class="name">hub_character_hk</span>    <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">load_date</span>           <span class="type">TIMESTAMP</span>    <span class="constraint">NOT NULL</span>,
+    <span class="name">record_source</span>       <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+    <span class="name">hash_diff</span>           <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">character_name</span>      <span class="type">VARCHAR(255)</span>,
+    <span class="name">guild</span>               <span class="type">VARCHAR(100)</span>,
+    <span class="name">level</span>               <span class="type">INTEGER</span>,
+    <span class="constraint">PRIMARY KEY</span> (<span class="name">hub_character_hk</span>, <span class="name">load_date</span>)
+);</pre>
+    </div>
+  </div>
+    </div>
+  </div>
+</div><!-- /section s4 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 5 — dbt MODEL READING
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s5" data-label="dbt Model" data-color="245,158,11">
+  <div class="section-header">
+    <div class="section-tag dbt-t">dbt MODEL</div>
+    <span class="tier-badge tier-important">Important</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-dbt">
+    <p class="hook-text">You wrote a Hub from scratch in <em>7 lines of SQL</em>. datavault4dbt writes it from <em>7 lines of Jinja</em>.</p>
+  </div>
+
+  <div class="scroll-zone">
+    <div class="scroll-zone-visual">
+      <div class="scroll-zone-visual-frame">
+        <div class="pm-panel">
+          <div class="pm-panel-header">HUB MODEL FILE &mdash; hub_character.sql</div>
+          <div class="pm-panel-body">
+            <div class="dbt-block"><span class="comment">-- models/raw_vault/hub_character.sql</span>
+
+<span class="jinja">{{ config(materialized='incremental') }}</span>
+
+<span class="jinja">{%- set yaml_metadata -%}</span>
+<span class="yaml-key">hashkey:</span> <span class="yaml-val">'hub_character_hk'</span>
+<span class="yaml-key">business_keys:</span>
+  - <span class="yaml-val">character_name</span>
+<span class="yaml-key">source_models:</span> <span class="yaml-val">stage_character</span>
+<span class="jinja">{%- endset -%}</span>
+
+<span class="jinja">{{ datavault4dbt.hub(yaml_metadata=yaml_metadata) }}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-zone-content">
+      <div class="scroll-zone-step active">
+        <h3><code>config(materialized='incremental')</code></h3>
+        <p>Tells dbt to create this as an incremental table &mdash; only process new records on each run, not reload everything. This matches the DV insert-only pattern: never delete old rows, only add new ones.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>set yaml_metadata</code> &mdash; Your Configuration</h3>
+        <p>This block tells the macro what YOUR data looks like. It&rsquo;s a YAML-formatted variable: the hash key name, which columns form the business key, and which staging model to read from. This is the only thing that changes between Hub model files.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>hashkey</code> + <code>business_keys</code> + <code>source_models</code></h3>
+        <p><strong>hashkey</strong> = the output hash key column name. <strong>business_keys</strong> = the column(s) from staging that get hashed. <strong>source_models</strong> = which upstream model to read from. Three config values &mdash; the macro handles everything else.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>datavault4dbt.hub()</code> &mdash; The Macro Call</h3>
+        <p>This single line expands into ~50+ lines of SQL. The macro knows the DV loading pattern &mdash; insert-only, deduplication, hash key matching &mdash; and generates all of it. You specify the &ldquo;what&rdquo; (3 config values). The macro handles the &ldquo;how&rdquo; (the full SQL).</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3>Where are load_date and record_source?</h3>
+        <p>You only specify the business_key. The macro adds load_date and record_source automatically using dbt&rsquo;s standard metadata columns (LDTS and RSRC from the staging model). The macro knows DV conventions &mdash; you only tell it what&rsquo;s specific to your entity.</p>
+      </div>
+
+      <!-- Apple Accordion for optional deep-dives -->
+  <div class="apple-accordion">
+    <div class="apple-accordion-item">
+      <div class="apple-accordion-trigger">What is Jinja?<span class="apple-accordion-icon">+</span></div>
+      <div class="apple-accordion-body">
+        <p>Jinja is a templating language (originally from Python). In dbt, it lets you write SQL templates with variables, loops, and macros. The <code>{{ }}</code> syntax wraps Jinja expressions. The <code>{%- -%}</code> syntax wraps Jinja statements (like setting variables). dbt compiles these templates into plain SQL before running them against the database.</p>
+      </div>
+    </div>
+    <div class="apple-accordion-item">
+      <div class="apple-accordion-trigger">What does &ldquo;incremental&rdquo; mean?<span class="apple-accordion-icon">+</span></div>
+      <div class="apple-accordion-body">
+        <p>An incremental model only processes NEW rows since the last run. On first run, it loads everything. On subsequent runs, it checks what&rsquo;s new in the staging model and only inserts those rows. This is efficient for large datasets &mdash; you don&rsquo;t re-process data you&rsquo;ve already loaded. It aligns perfectly with DV&rsquo;s insert-only pattern.</p>
+      </div>
+    </div>
+    <div class="apple-accordion-item">
+      <div class="apple-accordion-trigger">Where do load_date and record_source come from?<span class="apple-accordion-icon">+</span></div>
+      <div class="apple-accordion-body">
+        <p>The staging model (<code>stage_character</code>) has columns named LDTS (load date timestamp) and RSRC (record source). The macro maps these to <code>load_date</code> and <code>record_source</code> in the Hub table. These column names are configured globally in the dbt project settings, so every model uses the same convention without repeating it.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 3: dbt Model Matching -->
+  <div class="exercise-section" id="exercise-3">
+    <h3>Exercise 3 &mdash; dbt Model Components</h3>
+    <p>Match each dbt model component to what it does.</p>
+
+    <div class="match-row" data-correct="Sets the table to only process new data each run">
+      <div class="match-label"><code>config(materialized='incremental')</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Names the output hash key column">
+      <div class="match-label"><code>hashkey: 'hub_character_hk'</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Specifies which source columns get hashed">
+      <div class="match-label"><code>business_keys: - character_name</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Tells the macro which staging model to read from">
+      <div class="match-label"><code>source_models: stage_character</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Calls the macro that generates the full SQL">
+      <div class="match-label"><code>datavault4dbt.hub(yaml_metadata=...)</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise3()">CHECK ANSWERS</button>
+    <div class="feedback" id="feedback-3"></div>
+  </div>
+    </div>
+  </div>
+</div><!-- /section s5 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 6 — COMPILED SQL
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s6" data-label="Compiled SQL" data-color="34,197,94">
+  <div class="section-header">
+    <div class="section-tag create-t">COMPILED SQL</div>
+    <span class="tier-badge tier-important">Important</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-create">
+    <p class="hook-text">This is the SQL your 7-line model file actually <em>generates</em>. Every line maps to something you <em>already know</em>.</p>
+  </div>
+
+  <div class="scroll-zone">
+    <div class="scroll-zone-visual">
+      <div class="scroll-zone-visual-frame">
+        <div class="pm-panel">
+          <div class="pm-panel-header">COMPILED INSERT SQL</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">INSERT INTO</span> <span class="name">hub_character</span> (
+    <span class="name">hub_character_hk</span>,
+    <span class="name">character_name</span>,
+    <span class="name">load_date</span>,
+    <span class="name">record_source</span>
+)
+<span class="kw">SELECT DISTINCT</span>
+    <span class="func">SHA2</span>(<span class="func">UPPER</span>(<span class="func">TRIM</span>(<span class="name">stage.character_name</span>)), 256)
+        <span class="kw">AS</span> <span class="name">hub_character_hk</span>,
+    <span class="name">stage.character_name</span>,
+    <span class="name">stage.load_date</span>,
+    <span class="name">stage.record_source</span>
+<span class="kw">FROM</span> <span class="name">stage_character</span> <span class="kw">AS</span> <span class="name">stage</span>
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="kw">SELECT</span> 1
+    <span class="kw">FROM</span> <span class="name">hub_character</span> <span class="kw">AS</span> <span class="name">existing</span>
+    <span class="kw">WHERE</span> <span class="name">existing.hub_character_hk</span> =
+        <span class="func">SHA2</span>(<span class="func">UPPER</span>(<span class="func">TRIM</span>(<span class="name">stage.character_name</span>)), 256)
+);</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-zone-content">
+      <div class="scroll-zone-step active">
+        <h3><code>INSERT INTO hub_character (...)</code></h3>
+        <p>DML &mdash; adds rows to an existing table. The table was already created by CREATE TABLE (which ran at deployment time). This is the load operation that runs on each dbt execution.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>SELECT DISTINCT</code></h3>
+        <p>Deduplication. The staging area might contain the same character_name multiple times from multiple loads. DISTINCT collapses duplicates before inserting &mdash; each character enters the Hub exactly once per run.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>SHA2(UPPER(TRIM(...)), 256)</code> &mdash; Hash Key Computation</h3>
+        <p>TRIM removes whitespace. UPPER normalizes case (&ldquo;Ulfric&rdquo; and &ldquo;ULFRIC&rdquo; hash the same). SHA2(..., 256) is Snowflake&rsquo;s SHA-256 function &mdash; it hashes the result to a 64-character hex string, matching the CHAR(64) column. This is where the hash key is actually computed &mdash; in the INSERT SQL, not in the CREATE TABLE.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3><code>WHERE NOT EXISTS (...)</code> &mdash; The Insert-Only Guard</h3>
+        <p>Only insert a row if that hash key doesn&rsquo;t already exist in the Hub. If it does, the entity was already registered &mdash; do nothing. This enforces the DV principle: a business key enters the Hub exactly once, ever. No updates. No deletes.</p>
+      </div>
+
+      <div class="scroll-zone-step">
+        <h3>Why No UPDATE Statement?</h3>
+        <p>Data Vault is insert-only. Hub rows never change. If a character already exists in Hub_Character, you don&rsquo;t update anything. Changes in attributes go into Satellites, not Hubs. The WHERE NOT EXISTS clause is the enforcement mechanism.</p>
+      </div>
+
+      <!-- IS / IS NOT -->
+      <div class="is-isnot">
+        <div class="is-isnot-header">IS / IS NOT &mdash; WHERE NOT EXISTS</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> The insert-only guard &mdash; prevents duplicate hash keys from entering the Hub.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> A filter on the data itself. It does not change what data looks like &mdash; it checks whether the row already exists.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> How the DV insert-only principle is enforced in SQL.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> The same as WHERE with a simple comparison. NOT EXISTS uses a subquery to check another table.</div>
+    </div>
+  </div>
+
+  <!-- Apple Accordion -->
+  <div class="apple-accordion">
+    <div class="apple-accordion-item">
+      <div class="apple-accordion-trigger">Why DISTINCT?<span class="apple-accordion-icon">+</span></div>
+      <div class="apple-accordion-body">
+        <p>The staging table might have the same character loaded twice (from two different batch loads, or from two source files). Without DISTINCT, both rows would pass the NOT EXISTS check (since neither is in the Hub yet) and you&rsquo;d insert duplicates. DISTINCT collapses them to one row before the insert.</p>
+      </div>
+    </div>
+    <div class="apple-accordion-item">
+      <div class="apple-accordion-trigger">Why SHA2(..., 256)?<span class="apple-accordion-icon">+</span></div>
+      <div class="apple-accordion-body">
+        <p>SHA2 is Snowflake&rsquo;s name for the SHA-256 function. The second argument (256) specifies the bit length &mdash; SHA-256 produces a 256-bit hash, which encodes to a 64-character hex string. That&rsquo;s why hash key columns are CHAR(64). MD5 only produces 32 hex characters and has known collision weaknesses. datavault4dbt uses SHA-256 by default. The hash function is configured globally in the dbt project &mdash; you set it once and every model uses it.</p>
+      </div>
+    </div>
+    <div class="apple-accordion-item">
+      <div class="apple-accordion-trigger">What about Satellites?<span class="apple-accordion-icon">+</span></div>
+      <div class="apple-accordion-body">
+        <p>Satellite compiled SQL is similar but more complex. Instead of WHERE NOT EXISTS checking the hash key, it compares the hash_diff &mdash; only insert a new row if the descriptive data actually changed. The macro handles all of this. The important thing is: same pattern (INSERT with a guard), different guard logic (hash_diff comparison instead of hash_key existence).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 4: Compiled SQL Matching -->
+  <div class="exercise-section" id="exercise-4">
+    <h3>Exercise 4 &mdash; Compiled SQL Components</h3>
+    <p>Match each SQL component to its purpose in the compiled Hub INSERT.</p>
+
+    <div class="match-row" data-correct="Adds new rows to the existing Hub table">
+      <div class="match-label"><code>INSERT INTO hub_character</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Adds new rows to the existing Hub table">Adds new rows to the existing Hub table</option>
+        <option value="Removes duplicate business keys before inserting">Removes duplicate business keys before inserting</option>
+        <option value="Computes the hash key from the business key">Computes the hash key from the business key</option>
+        <option value="Prevents inserting a hash key that already exists">Prevents inserting a hash key that already exists</option>
+        <option value="Reads data from the staging model">Reads data from the staging model</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Removes duplicate business keys before inserting">
+      <div class="match-label"><code>SELECT DISTINCT</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Adds new rows to the existing Hub table">Adds new rows to the existing Hub table</option>
+        <option value="Removes duplicate business keys before inserting">Removes duplicate business keys before inserting</option>
+        <option value="Computes the hash key from the business key">Computes the hash key from the business key</option>
+        <option value="Prevents inserting a hash key that already exists">Prevents inserting a hash key that already exists</option>
+        <option value="Reads data from the staging model">Reads data from the staging model</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Computes the hash key from the business key">
+      <div class="match-label"><code>SHA2(UPPER(TRIM(stage.character_name)), 256)</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Adds new rows to the existing Hub table">Adds new rows to the existing Hub table</option>
+        <option value="Removes duplicate business keys before inserting">Removes duplicate business keys before inserting</option>
+        <option value="Computes the hash key from the business key">Computes the hash key from the business key</option>
+        <option value="Prevents inserting a hash key that already exists">Prevents inserting a hash key that already exists</option>
+        <option value="Reads data from the staging model">Reads data from the staging model</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Prevents inserting a hash key that already exists">
+      <div class="match-label"><code>WHERE NOT EXISTS (SELECT 1 FROM hub_character ...)</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Adds new rows to the existing Hub table">Adds new rows to the existing Hub table</option>
+        <option value="Removes duplicate business keys before inserting">Removes duplicate business keys before inserting</option>
+        <option value="Computes the hash key from the business key">Computes the hash key from the business key</option>
+        <option value="Prevents inserting a hash key that already exists">Prevents inserting a hash key that already exists</option>
+        <option value="Reads data from the staging model">Reads data from the staging model</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Reads data from the staging model">
+      <div class="match-label"><code>FROM stage_character AS stage</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Adds new rows to the existing Hub table">Adds new rows to the existing Hub table</option>
+        <option value="Removes duplicate business keys before inserting">Removes duplicate business keys before inserting</option>
+        <option value="Computes the hash key from the business key">Computes the hash key from the business key</option>
+        <option value="Prevents inserting a hash key that already exists">Prevents inserting a hash key that already exists</option>
+        <option value="Reads data from the staging model">Reads data from the staging model</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise4()">CHECK ANSWERS</button>
+    <div class="feedback" id="feedback-4"></div>
+  </div>
+    </div>
+  </div>
+</div><!-- /section s6 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 7 — SUMMARY + CLOSING
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s7" data-label="Summary" data-color="0,180,255">
+  <div class="section-header">
+    <div class="section-tag create-t">SUMMARY</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="pm-panel">
+    <div class="pm-panel-header">WHAT YOU PRACTICED</div>
+    <div class="pm-panel-body">
+      <p><strong>Symbol Discrimination:</strong> <code>*</code> vs <code>%</code>, <code>.</code> vs <code>_</code>, <code>'value'</code> vs <code>"identifier"</code>, <code>!=</code> vs <code>&lt;&gt;</code>, <code>AS</code> in two positions. No more mix-ups under pressure.</p>
+      <p><strong>Hub CREATE TABLE:</strong> 4 columns, all NOT NULL, single-column PK on hash key. Written from memory.</p>
+      <p><strong>Link CREATE TABLE:</strong> 5 columns (own HK + 2 foreign HKs + metadata), all NOT NULL, no business_key, no descriptive columns.</p>
+      <p><strong>Satellite CREATE TABLE:</strong> Composite PK (hash_key, load_date), hash_diff for change detection, nullable descriptive columns, no load_end_date in v0.</p>
+      <p><strong>dbt Model Reading:</strong> 7-line model file &rarr; ~50 lines of compiled SQL. Config, metadata, macro call. You specify the &ldquo;what&rdquo;; the macro generates the &ldquo;how.&rdquo;</p>
+      <p><strong>Compiled SQL:</strong> INSERT INTO + SELECT DISTINCT + hash computation + WHERE NOT EXISTS. The insert-only pattern enforced in code.</p>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-callout-label">KEY CONCEPT</div>
+    <p>&ldquo;After this chapter, you can write Hub, Link, and Satellite CREATE TABLE statements from memory and read datavault4dbt model files &mdash; understanding both the SQL the automation generates and why each component exists.&rdquo;</p>
+  </div>
+
+  <div class="pm-panel">
+    <div class="pm-panel-header">CONNECTION TABLE</div>
+    <div class="pm-panel-body">
+      <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>What you wrote by hand</th>
+              <th>What datavault4dbt automates</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>CREATE TABLE Hub_Character (...)</td>
+              <td>Generated via dbt-core run + schema YAML</td>
+            </tr>
+            <tr>
+              <td>Hash key is CHAR(64)</td>
+              <td>SHA2(UPPER(TRIM(business_key)), 256) &mdash; 64-char hex</td>
+            </tr>
+            <tr>
+              <td>NOT NULL on all Hub columns</td>
+              <td>INSERT only succeeds if staging provides all values</td>
+            </tr>
+            <tr>
+              <td>Insert-only pattern</td>
+              <td>WHERE NOT EXISTS enforces no duplicates</td>
+            </tr>
+            <tr>
+              <td>load_date = when it arrived</td>
+              <td>Captured automatically from staging LDTS column</td>
+            </tr>
+            <tr>
+              <td>record_source = where it came from</td>
+              <td>Captured automatically from staging RSRC column</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-callout-label">BRIDGE TO CHAPTER 12</div>
+    <p>Next session: <strong>Integration Day</strong>. We build a mini Data Vault end to end &mdash; CREATE TABLE for Hubs, Links, and Satellites, INSERT sample data, then JOIN queries across them. Everything you&rsquo;ve done converges.</p>
+  </div>
+</div><!-- /section s7 -->
+
+
+<!-- ═══ COMPLETION BANNER ═══ -->
+<div class="completion-banner" id="completion-banner">
+  All exercises complete! Chapter 11 finished. You&rsquo;ve gone from knowing to producing.
+</div>
+
+
+<!-- ═══ FOOTER ═══ -->
+<div class="tutorial-footer">
+  <div class="footer-label">CHAPTER 11 // SQL PRACTICE AND DBT</div>
+  <div class="footer-subtitle">From Knowing to Producing</div>
+  <div class="footer-next">Next: <a href="12-integration-day.html">Chapter 12 &mdash; Integration Day</a></div>
+</div>
+
+</div><!-- /container -->
+
+</div><!-- /page-content -->
+
+<!-- ═══ GAME SYSTEM CONTAINERS ═══ -->
+
+<!-- Quest Log (top-right floating panel) -->
+<div id="quest-log" class="quest-log collapsed draggable-panel">
+  <div class="quest-log-header" onclick="SV.questLog && SV.questLog.toggle()">
+    <span class="quest-log-icon">📜</span>
+    <span class="quest-log-title">Objectives</span>
+    <span class="quest-log-progress"></span>
+    <span class="quest-log-toggle">▼</span>
+  </div>
+  <div class="quest-log-body">
+    <p class="quest-log-hint">Complete exercises to check off objectives</p>
+    <ul class="quest-log-list"></ul>
+  </div>
+</div>
+
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar (bottom fixed) -->
+<div id="inventory-toolbar" class="inventory-toolbar draggable-panel">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel (slides up from toolbar) -->
+<div id="inventory-panel" class="inventory-panel hidden draggable-panel">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+
+<script>
+/* ===================================================
+   STAR CONSTELLATION PARTICLE FIELD
+   =================================================== */
+(function() {
+  var canvas = document.getElementById('particle-field');
+  var ctx = canvas.getContext('2d');
+  var w, h;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var STAR_COUNT = 110;
+  var HUB_FRACTION = 0.15;
+  var CONNECT_DIST = 140;
+  var MOUSE_RADIUS = 200;
+  var MOUSE_STRENGTH = 0.015;
+
+  var starColors = [
+    { r: 16, g: 185, b: 129 },
+    { r: 59, g: 130, b: 246 },
+    { r: 245, g: 158, b: 11 },
+    { r: 0, g: 180, b: 255 },
+    { r: 6, g: 182, b: 212 },
+    { r: 139, g: 92, b: 246 },
+    { r: 168, g: 85, b: 247 }
+  ];
+
+  var stars = [];
+  for (var i = 0; i < STAR_COUNT; i++) {
+    var isHub = Math.random() < HUB_FRACTION;
+    var col = starColors[Math.floor(Math.random() * starColors.length)];
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      baseSize: isHub ? (2.5 + Math.random() * 2) : (0.8 + Math.random() * 1.2),
+      opacity: isHub ? (0.6 + Math.random() * 0.4) : (0.25 + Math.random() * 0.35),
+      r: col.r, g: col.g, b: col.b,
+      isHub: isHub,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.008 + Math.random() * 0.012,
+      driftAngle: Math.random() * Math.PI * 2,
+      driftSpeed: 0.08 + Math.random() * 0.15,
+      driftTurn: (Math.random() - 0.5) * 0.005
+    });
+  }
+
+  var mouse = { x: 0, y: 0, active: false };
+
+  function isOverContent(el) {
+    if (!el) return false;
+    /* If the mouse target itself is a text-level or interactive element,
+       block particles — the user is hovering over actual content. */
+    var tag = el.tagName;
+    if (tag === 'P' || tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'H4' ||
+        tag === 'H5' || tag === 'H6' || tag === 'SPAN' || tag === 'CODE' || tag === 'PRE' ||
+        tag === 'STRONG' || tag === 'EM' || tag === 'A' || tag === 'LI' || tag === 'UL' ||
+        tag === 'OL' || tag === 'LABEL' || tag === 'TD' || tag === 'TH' || tag === 'TR' ||
+        tag === 'BLOCKQUOTE' || tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' ||
+        tag === 'TEXTAREA' || tag === 'IMG' || tag === 'TABLE' || tag === 'THEAD' ||
+        tag === 'TBODY' || tag === 'NAV') {
+      return true;
+    }
+    /* Walk up ancestors: only block for elements with visible backgrounds,
+       not transparent layout wrappers like .section, .container, .scroll-zone-step */
+    while (el) {
+      if (el.classList) {
+        if (el.classList.contains('hero-zoom') || el.classList.contains('milestone-zoom') ||
+            el.classList.contains('holo-nav') || el.classList.contains('pm-panel') ||
+            el.classList.contains('hook') || el.classList.contains('four-layers') ||
+            el.classList.contains('data-panel') || el.classList.contains('exercise-section') ||
+            el.classList.contains('concept-callout') || el.classList.contains('language-bridge') ||
+            el.classList.contains('contrast-panel') || el.classList.contains('disambig-panel') ||
+            el.classList.contains('code-panel') || el.classList.contains('explore-panel') ||
+            el.classList.contains('pipeline-flow') || el.classList.contains('is-isnot') ||
+            el.classList.contains('worked-example') ||
+            el.classList.contains('apple-accordion') || el.classList.contains('sql-block') ||
+            el.classList.contains('completion-banner') ||
+            el.classList.contains('chunk-milestone') ||
+            el.classList.contains('query-builder') ||
+            el.classList.contains('write-exercise')) {
+          return true;
+        }
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = !isOverContent(e.target);
+  });
+  document.addEventListener('mouseleave', function() { mouse.active = false; });
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      p.pulse += p.pulseSpeed;
+      p.driftAngle += p.driftTurn;
+      p.x += Math.cos(p.driftAngle) * p.driftSpeed;
+      p.y += Math.sin(p.driftAngle) * p.driftSpeed;
+
+      if (mouse.active) {
+        var dx = mouse.x - p.x;
+        var dy = mouse.y - p.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS && dist > 1) {
+          var force = (1 - dist / MOUSE_RADIUS) * MOUSE_STRENGTH;
+          p.x += dx * force;
+          p.y += dy * force;
+        }
+      }
+
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      for (var j = i + 1; j < stars.length; j++) {
+        var dx = stars[i].x - stars[j].x;
+        var dy = stars[i].y - stars[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          var alpha = (1 - dist / CONNECT_DIST) * 0.12;
+          if (stars[i].isHub || stars[j].isHub) alpha *= 1.8;
+          ctx.beginPath();
+          ctx.moveTo(stars[i].x, stars[i].y);
+          ctx.lineTo(stars[j].x, stars[j].y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (mouse.active) {
+      for (var i = 0; i < stars.length; i++) {
+        var p = stars[i];
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          var mFade = 1 - mDist / MOUSE_RADIUS;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + (mFade * mFade * 0.2) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      var pulseVal = 0.6 + 0.4 * Math.sin(p.pulse);
+      var currentOpacity = p.opacity * pulseVal;
+      var currentSize = p.baseSize * (0.85 + 0.15 * Math.sin(p.pulse));
+
+      var proximityBoost = 1;
+      if (mouse.active) {
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          proximityBoost = 1 + (1 - mDist / MOUSE_RADIUS) * 1.5;
+        }
+      }
+
+      var boostedOpacity = Math.min(currentOpacity * proximityBoost, 1);
+
+      var glowRadius = currentSize * (p.isHub ? 8 : 5);
+      var grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      grd.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.3) + ')');
+      grd.addColorStop(0.4, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.08) + ')');
+      grd.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + Math.min(p.r + 60, 255) + ',' + Math.min(p.g + 60, 255) + ',' + Math.min(p.b + 60, 255) + ',' + boostedOpacity + ')';
+      ctx.fill();
+
+      if (p.isHub) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, currentSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (boostedOpacity * 0.7) + ')';
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+/* ===================================================
+   SECTION VISIBILITY + NAV
+   =================================================== */
+var sections = document.querySelectorAll('.section');
+var navNodes = document.querySelectorAll('.nav-node');
+var navConnectors = document.querySelectorAll('.nav-connector');
+var progressFill = document.getElementById('progress-fill');
+var navLabel = document.getElementById('nav-current-label');
+var lcarsSegs = document.querySelectorAll('.lcars-seg');
+var ambientEl = document.getElementById('ambient-glow');
+
+var usesCSSTimeline = CSS.supports && CSS.supports('animation-timeline', 'view()');
+
+if (!usesCSSTimeline) {
+  var sectionObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+      else entry.target.classList.remove('visible');
+    });
+  }, { threshold: 0.01, rootMargin: '200px 0px -40px 0px' });
+  sections.forEach(function(s) { sectionObserver.observe(s); });
+}
+
+
+var sectionColors = [];
+sections.forEach(function(s) {
+  var dc = s.getAttribute('data-color');
+  if (dc) {
+    var parts = dc.split(',');
+    sectionColors.push({ r: parseInt(parts[0]), g: parseInt(parts[1]), b: parseInt(parts[2]) });
+  } else {
+    sectionColors.push({ r: 0, g: 180, b: 255 });
+  }
+});
+
+var lastActiveIndex = -1;
+function updateNav() {
+  var activeIdx = 0;
+  var scrollY = window.scrollY + window.innerHeight * 0.35;
+  sections.forEach(function(s, i) { if (s.offsetTop <= scrollY) activeIdx = i; });
+
+  if (activeIdx !== lastActiveIndex) {
+    lastActiveIndex = activeIdx;
+    navNodes.forEach(function(n, i) {
+      n.classList.remove('active', 'completed');
+      if (i === activeIdx) n.classList.add('active');
+      else if (i < activeIdx) n.classList.add('completed');
+    });
+    navConnectors.forEach(function(c, i) {
+      if (i < activeIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+    var currentSection = sections[activeIdx];
+    if (currentSection) navLabel.textContent = currentSection.getAttribute('data-label') || '';
+    lcarsSegs.forEach(function(seg, i) {
+      seg.classList.remove('active', 'completed');
+      if (i === activeIdx) seg.classList.add('active');
+      else if (i < activeIdx) seg.classList.add('completed');
+    });
+    var c = sectionColors[activeIdx];
+    if (c && ambientEl) {
+      ambientEl.style.setProperty('--ambient-c1', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.06)');
+      ambientEl.style.setProperty('--ambient-c2', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.03)');
+      ambientEl.style.setProperty('--ambient-c3', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.02)');
+    }
+  }
+
+  var activeSection = sections[lastActiveIndex];
+  var nextSection = sections[lastActiveIndex + 1];
+  if (activeSection) {
+    var secTop = activeSection.offsetTop;
+    var secBottom = nextSection ? nextSection.offsetTop : (document.documentElement.scrollHeight - window.innerHeight * 0.65);
+    var secHeight = secBottom - secTop;
+    var currentY = window.scrollY + window.innerHeight * 0.35;
+    var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+    fill = Math.max(0, Math.min(100, fill));
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+    lcarsSegs.forEach(function(seg, i) {
+      if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+      else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+      else seg.style.removeProperty('--seg-fill');
+    });
+  }
+
+  var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  var scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) scrolled = 100;
+  progressFill.style.width = Math.min(scrolled, 100) + '%';
+}
+
+
+/* ===================================================
+   SCROLL PROGRESS + WORD REVEAL
+   =================================================== */
+function updateScrollProgress() {
+  var viewH = window.innerHeight;
+  sections.forEach(function(section) {
+    var rect = section.getBoundingClientRect();
+    var progress = 1 - (rect.top / viewH);
+    progress = Math.max(0, Math.min(1, progress));
+    section.style.setProperty('--scroll-progress', progress);
+    /* Word reveal: use aggressive ramp so all words are lit once section
+       enters the lower 35% of viewport (progress >= 0.35 → all lit).
+       Factor of 3.0 means: at progress 0.33 all words are revealed. */
+    section.querySelectorAll('.hook-text').forEach(function(hook) {
+      var count = parseInt(hook.getAttribute('data-word-count')) || 1;
+      var litCount = Math.floor(progress * count * 3.0);
+      litCount = Math.min(litCount, count);
+      hook.querySelectorAll('.word').forEach(function(word, i) {
+        if (i < litCount) word.classList.add('lit');
+        else word.classList.remove('lit');
+      });
+    });
+  });
+}
+
+
+/* ===================================================
+   PARALLAX
+   =================================================== */
+var depthShapes = document.querySelectorAll('.depth-shape');
+var depthRates = [0.03, 0.05, 0.02, 0.04];
+function updateParallax() {
+  var scrollY = window.scrollY;
+  depthShapes.forEach(function(shape, i) {
+    shape.style.transform = 'translateY(' + (-scrollY * depthRates[i]) + 'px)';
+  });
+}
+
+
+/* ===================================================
+   UNIFIED SCROLL
+   =================================================== */
+var scrollTicking = false;
+function onScroll() {
+  if (!scrollTicking) {
+    requestAnimationFrame(function() {
+      updateNav();
+      updateScrollProgress();
+      updateParallax();
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('load', function() { updateNav(); updateScrollProgress(); });
+
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    var y = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
+
+
+/* ===================================================
+   4-LAYER TOGGLE
+   =================================================== */
+function toggleLayer(header) {
+  var layer = header.parentElement;
+  layer.classList.toggle('open');
+  var container = layer.closest('.four-layers');
+  if (container) updateLayerDots(container);
+}
+
+function jumpToLayer(containerId, layerIndex) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var layers = container.querySelectorAll('.layer');
+  layers.forEach(function(l, i) {
+    if (i <= layerIndex) l.classList.add('open');
+    else l.classList.remove('open');
+  });
+  updateLayerDots(container);
+}
+
+function updateLayerDots(container) {
+  var layers = container.querySelectorAll('.layer');
+  var dots = container.querySelectorAll('.layer-dot');
+  layers.forEach(function(l, i) {
+    if (dots[i]) {
+      if (l.classList.contains('open')) dots[i].classList.add('active');
+      else dots[i].classList.remove('active');
+    }
+  });
+}
+
+
+/* ===================================================
+   EXPLORE MORE
+   =================================================== */
+function toggleExplore(opener) {
+  var panel = opener.nextElementSibling;
+  var isOpen = opener.classList.toggle('open');
+  if (panel) panel.classList.toggle('open', isOpen);
+}
+
+
+/* ===================================================
+   DRAGGABLE PANELS
+   Make quest log and inventory toolbar movable.
+   Drag by clicking and dragging. Position persists in localStorage.
+   =================================================== */
+(function() {
+  var panels = document.querySelectorAll('.draggable-panel');
+  if (!panels.length) return;
+
+  panels.forEach(function(panel) {
+    var id = panel.id;
+    var state = { dragging: false, startX: 0, startY: 0, origLeft: 0, origTop: 0 };
+
+    // Restore saved position
+    try {
+      var saved = JSON.parse(localStorage.getItem('sv-panel-pos-' + id));
+      if (saved && saved.left != null && saved.top != null) {
+        panel.style.left = saved.left + 'px';
+        panel.style.top = saved.top + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+        panel.style.transform = 'none';
+      }
+    } catch(e) {}
+
+    function onDown(e) {
+      // Don't drag if clicking on interactive elements inside
+      var tag = e.target.tagName;
+      if (tag === 'SELECT' || tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+      // Don't drag if clicking inside quest log body (allow scrolling items)
+      if (e.target.closest && e.target.closest('.quest-log-body')) return;
+
+      state.dragging = true;
+      var rect = panel.getBoundingClientRect();
+      state.startX = e.clientX || (e.touches && e.touches[0].clientX);
+      state.startY = e.clientY || (e.touches && e.touches[0].clientY);
+      state.origLeft = rect.left;
+      state.origTop = rect.top;
+      panel.classList.add('dragging');
+      e.preventDefault();
+    }
+
+    function onMove(e) {
+      if (!state.dragging) return;
+      var cx = e.clientX || (e.touches && e.touches[0].clientX);
+      var cy = e.clientY || (e.touches && e.touches[0].clientY);
+      var dx = cx - state.startX;
+      var dy = cy - state.startY;
+      var newLeft = Math.max(0, Math.min(window.innerWidth - 50, state.origLeft + dx));
+      var newTop = Math.max(0, Math.min(window.innerHeight - 30, state.origTop + dy));
+      panel.style.left = newLeft + 'px';
+      panel.style.top = newTop + 'px';
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+      panel.style.transform = 'none';
+    }
+
+    function onUp() {
+      if (!state.dragging) return;
+      state.dragging = false;
+      panel.classList.remove('dragging');
+      // Save position
+      try {
+        localStorage.setItem('sv-panel-pos-' + id, JSON.stringify({
+          left: parseInt(panel.style.left),
+          top: parseInt(panel.style.top)
+        }));
+      } catch(e) {}
+    }
+
+    panel.addEventListener('mousedown', onDown);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    panel.addEventListener('touchstart', onDown, {passive: false});
+    document.addEventListener('touchmove', onMove, {passive: false});
+    document.addEventListener('touchend', onUp);
+  });
+})();
+
+
+/* === Chapter 11: SQL Practice + dbt Output — Exercise Functions === */
+
+/* --- Quest objectives --- */
+var TUTORIAL_10_OBJECTIVES = [
+  { id: 'symbols', label: 'Symbol Contrastive Drills', sectionId: 's1' },
+  { id: 'hub', label: 'Hub CREATE TABLE', sectionId: 's2' },
+  { id: 'link', label: 'Link CREATE TABLE', sectionId: 's3' },
+  { id: 'satellite', label: 'Satellite CREATE TABLE', sectionId: 's4' },
+  { id: 'dbt-model', label: 'dbt Model Reading', sectionId: 's5' },
+  { id: 'compiled-sql', label: 'Compiled SQL', sectionId: 's6' }
+];
+
+/* --- Loot mapping: exercise completion -> item(s) to discover --- */
+/* Values can be a string (single drop) or array (multi-drop) */
+var TUTORIAL_10_LOOT = {
+  'exercise-1': 'symbol-discrimination',
+  'write-1': null,
+  'write-2': 'link-create-table',
+  'write-3': 'sat-create-table',
+  'exercise-3': ['dbt-model-reading', 'jinja-templating', 'config-ref-source'],
+  'exercise-4': ['compiled-sql-reading', 'dbt-compilation', 'where-not-exists']
+};
+
+/* --- Exercise tracking --- */
+var exercisesCompleted = {
+  ex1: false,
+  write1: false,
+  write2: false,
+  write3: false,
+  ex3: false,
+  ex4: false
+};
+
+/* ─── Per-row feedback data (DOET Row-Level Specific Feedback) ─── */
+
+/* Exercise 1: Symbol Discrimination */
+var feedback1 = {
+  0: {
+    "* (asterisk in SELECT)": "Correct. * in SELECT means 'all columns.' It is a column selector that lives in the SELECT clause.",
+    "% (percent in LIKE)": "Not quite. % is a wildcard for string patterns in LIKE, not for selecting columns. You want * for 'all columns.'",
+    ". (dot notation)": "Not quite. The dot separates owner from property (table.column). You want * for 'every column from a table.'",
+    "_ (underscore in LIKE)": "Not quite. _ matches exactly one character in a LIKE pattern. You want * for selecting all columns.",
+    "'single quotes'": "Not quite. Single quotes wrap string data values. You want * for 'all columns.'"
+  },
+  1: {
+    "% (percent in LIKE)": "Correct. % in LIKE means 'any characters after this point.' LIKE 'Ulfric%' matches anything starting with Ulfric.",
+    "* (asterisk in SELECT)": "Not quite. * selects all columns. For string pattern matching with 'starts with,' you need % in a LIKE clause.",
+    ". (dot notation)": "Not quite. Dot notation is for owner.property references, not pattern matching.",
+    "_ (underscore in LIKE)": "Close — _ is also a LIKE wildcard, but it matches exactly ONE character. % matches any number of characters.",
+    "'single quotes'": "Not quite. Single quotes wrap the string value, but the wildcard symbol for 'any characters' is %."
+  },
+  2: {
+    ". (dot notation)": "Correct. h.business_key — the dot is the possessive operator. Read it as 'h's business_key.'",
+    "* (asterisk in SELECT)": "Not quite. * means all columns. To reference a specific column from a specific table/alias, use dot notation.",
+    "% (percent in LIKE)": "Not quite. % is for string pattern matching. Referencing an alias's column uses the dot.",
+    "_ (underscore in LIKE)": "Not quite. _ is a LIKE wildcard. The structural separator between owner and property is the dot.",
+    "'single quotes'": "Not quite. Single quotes wrap data values. The owner.property separator is the dot."
+  },
+  3: {
+    "_ (underscore in LIKE)": "Correct. _ matches exactly one character in a LIKE pattern. LIKE 'Ulf_ic' allows any single character in position 4.",
+    "* (asterisk in SELECT)": "Not quite. * selects all columns. For matching a single unknown character, use _ in LIKE.",
+    "% (percent in LIKE)": "Close — % is also a LIKE wildcard, but it matches ANY NUMBER of characters. _ matches exactly ONE.",
+    ". (dot notation)": "Not quite. Dot is a structural separator (table.column), not a pattern wildcard.",
+    "'single quotes'": "Not quite. Single quotes wrap string values. The single-character wildcard in LIKE is _."
+  },
+  4: {
+    "'single quotes'": "Correct. Single quotes wrap string data values. WHERE record_source = 'Skyrim_NPC_DB' — the value is in single quotes.",
+    "* (asterisk in SELECT)": "Not quite. * selects all columns. To compare against a text value, wrap it in single quotes.",
+    "% (percent in LIKE)": "Not quite. % is a pattern wildcard. The text value itself needs to be wrapped in single quotes.",
+    ". (dot notation)": "Not quite. Dot separates owner from property. String values are wrapped in single quotes.",
+    "_ (underscore in LIKE)": "Not quite. _ is a single-character wildcard. String values are wrapped in single quotes."
+  }
+};
+
+/* Exercise 3: dbt Model Components */
+var feedback3 = {
+  0: {
+    "Sets the table to only process new data each run": "Correct. materialized='incremental' tells dbt to only process new records — matching the DV insert-only pattern.",
+    "Names the output hash key column": "Not quite. The hash key name is set by the hashkey config, not the materialization setting.",
+    "Specifies which source columns get hashed": "Not quite. The business_keys config specifies hash sources. materialized controls HOW the table is built.",
+    "Calls the macro that generates the full SQL": "Not quite. The macro call is datavault4dbt.hub(). config() sets build behavior.",
+    "Tells the macro which staging model to read from": "Not quite. source_models names the staging model. config() sets the materialization strategy."
+  },
+  1: {
+    "Names the output hash key column": "Correct. hashkey: 'hub_character_hk' tells the macro what to name the hash key column in the output Hub.",
+    "Sets the table to only process new data each run": "Not quite. That is config(materialized='incremental'). hashkey names the output hash column.",
+    "Specifies which source columns get hashed": "Close but different — business_keys specifies the INPUT columns. hashkey names the OUTPUT column.",
+    "Calls the macro that generates the full SQL": "Not quite. The macro call is the datavault4dbt.hub() line. hashkey is a config value.",
+    "Tells the macro which staging model to read from": "Not quite. source_models names the staging model. hashkey names the output hash column."
+  },
+  2: {
+    "Specifies which source columns get hashed": "Correct. business_keys lists the staging column(s) that the macro hashes to produce the hub hash key.",
+    "Names the output hash key column": "Close but different — hashkey names the OUTPUT column. business_keys specifies the INPUT columns that get hashed.",
+    "Sets the table to only process new data each run": "Not quite. That is config(materialized='incremental'). business_keys tells the macro which columns to hash.",
+    "Calls the macro that generates the full SQL": "Not quite. The macro call is datavault4dbt.hub(). business_keys is a config value inside the metadata.",
+    "Tells the macro which staging model to read from": "Not quite. source_models names the staging model. business_keys names the columns to hash."
+  },
+  3: {
+    "Tells the macro which staging model to read from": "Correct. source_models: stage_character tells the macro where to find the input data.",
+    "Sets the table to only process new data each run": "Not quite. That is config(materialized='incremental'). source_models names the input model.",
+    "Names the output hash key column": "Not quite. hashkey names the output column. source_models identifies the upstream data source.",
+    "Specifies which source columns get hashed": "Not quite. business_keys specifies hash sources. source_models names the staging model to read from.",
+    "Calls the macro that generates the full SQL": "Not quite. The macro call is datavault4dbt.hub(). source_models is a config value."
+  },
+  4: {
+    "Calls the macro that generates the full SQL": "Correct. This single line expands into ~50+ lines of SQL. The macro knows the entire DV Hub loading pattern.",
+    "Sets the table to only process new data each run": "Not quite. That is config(). The macro call is what actually generates the INSERT SQL.",
+    "Names the output hash key column": "Not quite. hashkey names the column. The macro call generates the entire SQL using all the config values.",
+    "Specifies which source columns get hashed": "Not quite. business_keys specifies hash sources. The macro call uses ALL config values to generate SQL.",
+    "Tells the macro which staging model to read from": "Not quite. source_models names the model. The macro call is what actually generates the SQL from all configs."
+  }
+};
+
+/* Exercise 4: Compiled SQL Components */
+var feedback4 = {
+  0: {
+    "Adds new rows to the existing Hub table": "Correct. INSERT INTO is DML — it adds rows. The table already exists from CREATE TABLE at deployment time.",
+    "Removes duplicate business keys before inserting": "Not quite. Deduplication is SELECT DISTINCT's job. INSERT INTO just adds rows to the table.",
+    "Computes the hash key from the business key": "Not quite. Hash computation is SHA2(UPPER(TRIM(...)), 256)). INSERT INTO targets the destination table.",
+    "Prevents inserting a hash key that already exists": "Not quite. That is WHERE NOT EXISTS. INSERT INTO is the insertion command itself.",
+    "Reads data from the staging model": "Not quite. FROM stage_character reads the data. INSERT INTO specifies where the data goes."
+  },
+  1: {
+    "Removes duplicate business keys before inserting": "Correct. DISTINCT collapses duplicate rows from staging so each character enters the Hub only once per run.",
+    "Adds new rows to the existing Hub table": "Not quite. INSERT INTO adds rows. SELECT DISTINCT reads and deduplicates before the insert happens.",
+    "Computes the hash key from the business key": "Not quite. Hash computation is the SHA2(..., 256) function. DISTINCT removes duplicate rows.",
+    "Prevents inserting a hash key that already exists": "Not quite. WHERE NOT EXISTS prevents existing duplicates. DISTINCT prevents staging duplicates.",
+    "Reads data from the staging model": "Close — SELECT does read data, but the DISTINCT keyword specifically deduplicates the rows."
+  },
+  2: {
+    "Computes the hash key from the business key": "Correct. TRIM removes whitespace, UPPER normalizes case, SHA2 hashes to a fixed-length key. This is where the hash key is born.",
+    "Adds new rows to the existing Hub table": "Not quite. INSERT INTO adds rows. SHA2(UPPER(TRIM(...)), 256)) computes the hash key value.",
+    "Removes duplicate business keys before inserting": "Not quite. DISTINCT removes duplicates. The hash functions compute the hash key from the business key.",
+    "Prevents inserting a hash key that already exists": "Not quite. WHERE NOT EXISTS checks for existing keys. The hash functions compute the key value itself.",
+    "Reads data from the staging model": "Not quite. FROM reads data. SHA2(UPPER(TRIM(...)), 256)) transforms the business key into a hash."
+  },
+  3: {
+    "Prevents inserting a hash key that already exists": "Correct. The insert-only guard — if this hash key already exists in the Hub, skip this row. DV principle enforced in SQL.",
+    "Adds new rows to the existing Hub table": "Not quite. INSERT INTO adds rows. WHERE NOT EXISTS is the guard that checks before inserting.",
+    "Removes duplicate business keys before inserting": "Not quite. DISTINCT removes staging duplicates. NOT EXISTS checks against the existing Hub table.",
+    "Computes the hash key from the business key": "Not quite. SHA2(UPPER(TRIM(...)), 256)) computes hashes. NOT EXISTS checks if the computed hash already exists.",
+    "Reads data from the staging model": "Not quite. FROM reads data. WHERE NOT EXISTS checks the target table for existing keys."
+  },
+  4: {
+    "Reads data from the staging model": "Correct. FROM stage_character AS stage — reads all rows from the staging model, aliased as 'stage' for dot notation.",
+    "Adds new rows to the existing Hub table": "Not quite. INSERT INTO targets the Hub. FROM identifies where the source data comes from.",
+    "Removes duplicate business keys before inserting": "Not quite. DISTINCT deduplicates. FROM names the source table to read from.",
+    "Computes the hash key from the business key": "Not quite. SHA2(UPPER(TRIM(...)), 256)) computes hashes. FROM identifies the source table.",
+    "Prevents inserting a hash key that already exists": "Not quite. WHERE NOT EXISTS is the guard. FROM just names the staging model to read."
+  }
+};
+
+/* ─── Generic check function with per-row feedback ─── */
+
+function checkWithFeedback(exerciseNum, feedbackData) {
+  var rows = document.querySelectorAll('#exercise-' + exerciseNum + ' .match-row');
+  var correct = 0;
+
+  rows.forEach(function(row, index) {
+    var sel = row.querySelector('.match-select');
+    var fb = row.querySelector('.row-feedback');
+    var expected = row.getAttribute('data-correct');
+    var val = sel.value;
+
+    /* Reset previous state */
+    fb.className = 'row-feedback';
+    row.style.borderColor = '';
+    row.style.borderLeftWidth = '';
+
+    if (!val) {
+      fb.className = 'row-feedback feedback-incorrect';
+      fb.textContent = 'Please select an answer.';
+      fb.style.display = 'block';
+      return;
+    }
+
+    var isCorrect = val === expected;
+    if (isCorrect) {
+      correct++;
+      row.style.borderColor = 'var(--success-color)';
+      row.style.borderLeftWidth = '3px';
+      fb.className = 'row-feedback feedback-correct';
+    } else {
+      row.style.borderColor = '#ff4444';
+      row.style.borderLeftWidth = '3px';
+      fb.className = 'row-feedback feedback-incorrect';
+    }
+
+    /* Look up specific feedback text */
+    var feedbackText = feedbackData[index] ? feedbackData[index][val] : null;
+    fb.textContent = feedbackText || (isCorrect ? 'Correct.' : 'Not quite. Try again.');
+    fb.style.display = 'block';
+  });
+
+  var totalFb = document.getElementById('feedback-' + exerciseNum);
+  if (correct === rows.length) {
+    totalFb.textContent = correct + '/' + rows.length + ' — All correct!';
+    totalFb.style.color = 'var(--success-color)';
+    var exKey = 'ex' + exerciseNum;
+    exercisesCompleted[exKey] = true;
+
+    /* Loot drop (supports single string or array of items) */
+    var loot = TUTORIAL_10_LOOT['exercise-' + exerciseNum];
+    if (loot && typeof SV !== 'undefined' && SV.inventory) {
+      if (typeof loot === 'string') {
+        SV.inventory.addItem(loot);
+      } else {
+        for (var li = 0; li < loot.length; li++) {
+          SV.inventory.addItem(loot[li]);
+        }
+      }
+    }
+
+    /* Quest objective */
+    var objectiveMap = { 1: 'symbols', 3: 'dbt-model', 4: 'compiled-sql' };
+    if (objectiveMap[exerciseNum] && typeof SV !== 'undefined' && SV.questLog) {
+      SV.questLog.complete(objectiveMap[exerciseNum]);
+    }
+
+    checkAllComplete();
+  } else {
+    totalFb.textContent = correct + '/' + rows.length + ' — Review the feedback below each row.';
+    totalFb.style.color = '#ff9580';
+  }
+}
+
+function checkExercise1() { checkWithFeedback(1, feedback1); }
+function checkExercise3() { checkWithFeedback(3, feedback3); }
+function checkExercise4() { checkWithFeedback(4, feedback4); }
+
+/* ─── Write exercise reveal ─── */
+
+function showAnswer(id) {
+  var answerDiv = document.getElementById(id + '-answer');
+  if (!answerDiv) return;
+
+  if (answerDiv.style.display === 'none' || !answerDiv.style.display) {
+    answerDiv.style.display = 'block';
+
+    /* Mark the write exercise as completed */
+    var writeNum = id.replace('write-', '');
+    var exKey = 'write' + writeNum;
+    if (exercisesCompleted.hasOwnProperty(exKey)) {
+      exercisesCompleted[exKey] = true;
+
+      /* Loot drop (supports single string or array of items) */
+      var loot = TUTORIAL_10_LOOT[id];
+      if (loot && typeof SV !== 'undefined' && SV.inventory) {
+        if (typeof loot === 'string') {
+          SV.inventory.addItem(loot);
+        } else {
+          for (var li = 0; li < loot.length; li++) {
+            SV.inventory.addItem(loot[li]);
+          }
+        }
+      }
+
+      /* Quest objectives for write exercises */
+      var questMap = { '1': 'hub', '2': 'link', '3': 'satellite' };
+      if (questMap[writeNum] && typeof SV !== 'undefined' && SV.questLog) {
+        SV.questLog.complete(questMap[writeNum]);
+      }
+
+      checkAllComplete();
+    }
+  } else {
+    answerDiv.style.display = 'none';
+  }
+}
+
+/* ─── Completion tracking ─── */
+
+function checkAllComplete() {
+  /* Award "Schema From Memory" when all 3 write exercises are done */
+  if (exercisesCompleted.write1 && exercisesCompleted.write2 && exercisesCompleted.write3) {
+    if (typeof SV !== 'undefined' && SV.inventory) {
+      SV.inventory.addItem('schema-from-memory');
+    }
+  }
+
+  var all = true;
+  for (var key in exercisesCompleted) {
+    if (!exercisesCompleted[key]) { all = false; break; }
+  }
+  if (all) {
+    var banner = document.getElementById('completion-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    /* Final achievement check */
+    if (typeof SV !== 'undefined' && SV.achievements) {
+      SV.achievements.checkAll();
+    }
+  }
+}
+
+/* ─── Shuffle select options (keeps placeholder first) ─── */
+
+function shuffleSelectOptions() {
+  var selects = document.querySelectorAll('.match-select');
+  selects.forEach(function(sel) {
+    var placeholder = sel.options[0];
+    var opts = Array.prototype.slice.call(sel.options, 1);
+    for (var i = opts.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = opts[i]; opts[i] = opts[j]; opts[j] = tmp;
+    }
+    while (sel.options.length > 0) sel.remove(0);
+    sel.appendChild(placeholder);
+    opts.forEach(function(o) { sel.appendChild(o); });
+    sel.selectedIndex = 0;
+  });
+}
+
+/* ─── DOMContentLoaded: initialize game systems ─── */
+
+document.addEventListener('DOMContentLoaded', function() {
+  shuffleSelectOptions();
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+
+    /* Reset quest progress for this tutorial on each page load so
+       objectives always start unchecked — they check off as exercises
+       are completed during the session. */
+    if (SV.persistence) {
+      SV.persistence.update('quest-progress', function(p) {
+        delete p['tutorial-10'];
+        return p;
+      }, {});
+    }
+
+    /* Clear saved draggable panel positions so panels use their CSS defaults.
+       Prevents stale positions from previous layouts persisting. */
+    try {
+      localStorage.removeItem('sv-panel-pos-quest-log');
+      localStorage.removeItem('sv-panel-pos-inventory-toolbar');
+    } catch(e) {}
+    var ql = document.getElementById('quest-log');
+    if (ql) ql.removeAttribute('style');
+
+    if (SV.questLog) SV.questLog.init({
+      tutorialId: 'tutorial-10',
+      objectives: TUTORIAL_10_OBJECTIVES
+    });
+    if (SV.achievements) SV.achievements.init();
+    if (SV.scrollEffects) SV.scrollEffects.init();
+  }
+});
+
+
+/* ===================================================
+   WORD-WRAP UTILITY
+   =================================================== */
+function wrapHookWords(hookEl) {
+  var nodes = Array.prototype.slice.call(hookEl.childNodes);
+  var frag = document.createDocumentFragment();
+  nodes.forEach(function(node) {
+    if (node.nodeType === 1 && node.tagName === 'EM') {
+      var span = document.createElement('span');
+      span.className = 'word';
+      span.appendChild(node.cloneNode(true));
+      frag.appendChild(span);
+    } else if (node.nodeType === 3) {
+      var words = node.textContent.split(/(\s+)/);
+      words.forEach(function(w) {
+        if (/^\s+$/.test(w)) { frag.appendChild(document.createTextNode(w)); }
+        else if (w.length > 0) {
+          var span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = w;
+          frag.appendChild(span);
+        }
+      });
+    } else { frag.appendChild(node.cloneNode(true)); }
+  });
+  while (hookEl.firstChild) hookEl.removeChild(hookEl.firstChild);
+  hookEl.appendChild(frag);
+  hookEl.setAttribute('data-word-count', hookEl.querySelectorAll('.word').length);
+}
+
+
+/* ===================================================
+   INIT
+   =================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.four-layers').forEach(function(container) { updateLayerDots(container); });
+  document.querySelectorAll('.hook-text').forEach(function(hook) { wrapHookWords(hook); });
+});
+</script>
+
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script src="../nav-inject.js"></script>
+</body>
+</html>

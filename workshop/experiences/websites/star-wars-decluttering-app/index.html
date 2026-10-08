@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Lorenzo Colombani">
+    <meta name="description" content="A Star Wars-themed interactive decluttering app for physical and digital organization, drawing on Dana K. White and Cal Newport.">
+    <title>Decluttering Protocol - Jedi Archives</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            background: #000;
+            color: #00d4ff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(0, 136, 255, 0.05) 0%, transparent 50%);
+            animation: pulse 15s ease-in-out infinite;
+            z-index: -2;
+        }
+        
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 212, 255, 0.03) 2px,
+                rgba(0, 212, 255, 0.03) 4px
+            );
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Header with holographic effect */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            position: relative;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #00d4ff, #00ff88, #00d4ff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient-shift 3s ease infinite;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+        
+        .header .subtitle {
+            color: #00ff88;
+            font-size: 0.9em;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+        
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Navigation tabs */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-tab {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .nav-tab:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00ff88;
+        }
+        
+        .nav-tab.active {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+        
+        .nav-tab.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Screen sections */
+        .screen {
+            display: none;
+            animation: screenLoad 0.5s ease-out;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        @keyframes screenLoad {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Holographic panels */
+        .holo-panel {
+            background: rgba(0, 212, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 25px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 0 30px rgba(0, 212, 255, 0.2),
+                inset 0 0 20px rgba(0, 212, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .holo-panel:hover {
+            border-color: rgba(0, 255, 136, 0.5);
+            box-shadow: 
+                0 0 40px rgba(0, 255, 136, 0.3),
+                inset 0 0 30px rgba(0, 255, 136, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .holo-panel::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, transparent, #00d4ff, transparent, #00ff88);
+            border-radius: 8px;
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+        }
+        
+        .holo-panel:hover::before {
+            opacity: 0.3;
+            animation: border-pulse 2s linear infinite;
+        }
+        
+        @keyframes border-pulse {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 255, 136, 0.2));
+            border: 2px solid #00d4ff;
+            color: #00d4ff;
+            padding: 15px 30px;
+            font-size: 1em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            margin: 10px;
+            display: inline-block;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.5), transparent);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        
+        .btn:hover {
+            border-color: #00ff88;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.3), rgba(0, 212, 255, 0.3));
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+        
+        .btn-danger {
+            border-color: #ff4444;
+            color: #ff4444;
+            background: linear-gradient(135deg, rgba(255, 68, 68, 0.2), rgba(255, 100, 100, 0.2));
+        }
+        
+        .btn-danger:hover {
+            border-color: #ff6666;
+            color: #ff6666;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.8);
+        }
+        
+        /* Progress indicator */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 3px;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 30px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5));
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-30px); }
+            100% { transform: translateX(30px); }
+        }
+        
+        /* Terminal text effect */
+        .terminal-text {
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-left: 3px solid #00ff88;
+            border-radius: 4px;
+        }
+        
+        .typing {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 2s steps(40, end);
+        }
+        
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        /* Mission cards */
+        .mission-card {
+            background: rgba(0, 136, 255, 0.05);
+            border: 1px solid rgba(0, 136, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .mission-card:hover {
+            background: rgba(0, 136, 255, 0.1);
+            border-color: #00ff88;
+            transform: translateX(5px);
+        }
+        
+        .mission-card h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .mission-card p {
+            color: rgba(0, 212, 255, 0.8);
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .mission-card.completed {
+            opacity: 0.6;
+            border-color: #00ff88;
+        }
+        
+        .mission-card.completed::after {
+            content: '✓';
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            color: #00ff88;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .mission-card.selected {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+        }
+        
+        /* Stats display */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: scale(1.05);
+            border-color: #00ff88;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: 900;
+            color: #00ff88;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: rgba(0, 212, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Interactive elements */
+        .choice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .choice-card {
+            background: rgba(0, 212, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .choice-card:hover {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+        }
+        
+        .choice-card.selected {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+        }
+        
+        .choice-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        /* Timer display */
+        .timer-display {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin: 30px auto;
+            max-width: 300px;
+        }
+        
+        .timer-value {
+            font-size: 3em;
+            font-weight: 900;
+            color: #00ff88;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+        }
+        
+        .timer-label {
+            color: rgba(0, 212, 255, 0.8);
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        /* Room selector */
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .room-btn {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        
+        .room-btn:hover {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+            transform: scale(1.05);
+        }
+        
+        .room-btn.selected {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+        
+        .room-btn.cleared {
+            background: rgba(0, 255, 136, 0.3);
+            border-color: #00ff88;
+            color: #00ff88;
+            position: relative;
+        }
+        
+        .room-btn.cleared::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 1.2em;
+        }
+        
+        /* Checkbox list */
+        .checklist {
+            margin: 20px 0;
+        }
+        
+        .checklist-item {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .checklist-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00ff88;
+        }
+        
+        .checklist-item.checked {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+            opacity: 0.7;
+            text-decoration: line-through;
+        }
+        
+        .checklist-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00d4ff;
+            border-radius: 3px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .checklist-item.checked .checklist-checkbox {
+            background: #00ff88;
+            border-color: #00ff88;
+        }
+        
+        .checklist-item.checked .checklist-checkbox::after {
+            content: '✓';
+            color: #000;
+            font-weight: bold;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: modalSlide 0.3s ease-out;
+        }
+        
+        @keyframes modalSlide {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Achievement notification */
+        .achievement {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 212, 255, 0.2));
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            padding: 20px;
+            min-width: 300px;
+            z-index: 2000;
+            animation: achievementSlide 0.5s ease-out;
+            display: none;
+        }
+        
+        .achievement.show {
+            display: block;
+        }
+        
+        @keyframes achievementSlide {
+            from {
+                transform: translateX(400px);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+        
+        .achievement-title {
+            color: #00ff88;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .achievement-desc {
+            color: rgba(0, 212, 255, 0.9);
+            font-size: 0.9em;
+        }
+        
+        /* Input fields */
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.05);
+        }
+        
+        /* Hidden by default */
+        .hidden {
+            display: none;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 0.9em;
+            }
+            
+            .choice-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .nav-tab {
+                width: 200px;
+                text-align: center;
+            }
+        }
+        
+        /* Scanline effect */
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+        
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to bottom, transparent, rgba(0, 255, 136, 0.2), transparent);
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00d4ff;
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+        
+        @keyframes float {
+            from {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+        
+        /* XP bar */
+        .xp-bar {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 20px;
+            height: 24px;
+            margin: 10px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .xp-fill {
+            background: linear-gradient(90deg, #ffbf00, #ffd700);
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            color: #000;
+            font-weight: bold;
+        }
+        
+        /* Sound toggle */
+        .sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+        
+        .sound-toggle:hover {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+            transform: scale(1.1);
+        }
+        
+        .sound-toggle.muted {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    <div class="particles" id="particles"></div>
+    
+    <!-- Achievement Notification -->
+    <div class="achievement" id="achievementNotif">
+        <div class="achievement-title" id="achievementTitle">Achievement Unlocked!</div>
+        <div class="achievement-desc" id="achievementDesc">You've completed your first mission!</div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Decluttering Protocol</h1>
+            <div class="subtitle">JEDI ARCHIVES • TRAINING MODULE 7734</div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav-tabs" id="navTabs">
+            <div class="nav-tab active" onclick="navigateTo('discovery')" id="discoveryTab">Discovery</div>
+            <div class="nav-tab locked" onclick="navigateTo('training')" id="trainingTab">Training</div>
+            <div class="nav-tab locked" onclick="navigateTo('missions')" id="missionsTab">Missions</div>
+            <div class="nav-tab locked" onclick="navigateTo('academy')" id="academyTab">Academy</div>
+            <div class="nav-tab locked" onclick="navigateTo('mastery')" id="masteryTab">Mastery</div>
+        </div>
+        
+        <!-- Discovery Screen -->
+        <div class="screen active" id="discoveryScreen">
+            <div class="holo-panel">
+                <h2 style="color: #00ff88; margin-bottom: 20px;">SYSTEM INITIALIZATION</h2>
+                <p style="line-height: 1.6; margin-bottom: 20px;">Greetings, Initiate. The Archives have detected critical accumulation levels in your sector. Your environment exceeds optimal capacity by <span style="color: #ff4444; font-weight: bold;">87%</span>.</p>
+                
+                <div class="terminal-text">
+                    > SCANNING ENVIRONMENT...<br>
+                    > CLUTTER THRESHOLD: EXCEEDED<br>
+                    > CONTAINER CAPACITY: OVERLOADED<br>
+                    > VISIBILITY INDEX: COMPROMISED<br>
+                    > RECOMMENDED: IMMEDIATE INTERVENTION
+                </div>
+                
+                <p style="margin: 20px 0;">This protocol will guide you through the ancient techniques of spatial optimization, developed by Master Dana of House White. Her wisdom has been encoded into this training module.</p>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="startJourney()">INITIATE PROTOCOL</button>
+                    <button class="btn" onclick="showQuickStart()">QUICK START</button>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="clutterLevel">87%</div>
+                    <div class="stat-label">Clutter Index</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="userRank">Initiate</div>
+                    <div class="stat-label">Current Rank</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="systemStatus">Ready</div>
+                    <div class="stat-label">System Status</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalXP">0</div>
+                    <div class="stat-label">Total XP</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Training Screen -->
+        <div class="screen" id="trainingScreen">
+            <div class="holo-panel">
+                <h2 style="color: #00ff88; margin-bottom: 20px;">CORE TRAINING MODULES</h2>
+                <p style="margin-bottom: 20px;">Master these fundamental protocols to unlock advanced techniques:</p>
+                
+                <div id="trainingModules">
+                    <div class="mission-card" onclick="startModule('container')">
+                        <h3>📦 Module 1: Container Protocol</h3>
+                        <p>Understanding spatial limitations and the truth about your dwelling's capacity.</p>
+                        <div class="xp-bar">
+                            <div class="xp-fill" style="width: 0%" id="containerXP">0/100 XP</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mission-card" onclick="startModule('visibility')">
+                        <h3>👁️ Module 2: Visibility Doctrine</h3>
+                        <p>Strategic prioritization - why visible areas create sustainable momentum.</p>
+                        <div class="xp-bar">
+                            <div class="xp-fill" style="width: 0%" id="visibilityXP">0/100 XP</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mission-card" onclick="startModule('questions')">
+                        <h3>❓ Module 3: The Two Questions</h3>
+                        <p>Master the decision matrix that eliminates analysis paralysis.</p>
+                        <div class="xp-bar">
+                            <div class="xp-fill" style="width: 0%" id="questionsXP">0/100 XP</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mission-card" onclick="startModule('layers')">
+                        <h3>📚 Module 4: The Three Layers</h3>
+                        <p>Daily stuff, clutter, and actual cleaning - understand the hierarchy.</p>
+                        <div class="xp-bar">
+                            <div class="xp-fill" style="width: 0%" id="layersXP">0/100 XP</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mission-card" onclick="startModule('removal')">
+                        <h3>🎯 Module 5: Total Removal Protocol</h3>
+                        <p>The advanced technique - empty completely, return only the ideal.</p>
+                        <div class="xp-bar">
+                            <div class="xp-fill" style="width: 0%" id="removalXP">0/100 XP</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Missions Screen -->
+        <div class="screen" id="missionsScreen">
+            <div class="holo-panel">
+                <h2 style="color: #00ff88; margin-bottom: 20px;">ACTIVE MISSIONS</h2>
+                <p style="margin-bottom: 20px;">Select your mission parameters:</p>
+                
+                <!-- Time Selection -->
+                <h3 style="color: #00d4ff; margin-top: 20px;">TIME ALLOCATION</h3>
+                <div class="choice-grid">
+                    <div class="choice-card" onclick="selectTime('5min')">
+                        <div class="choice-icon">⚡</div>
+                        <h3 style="color: #00d4ff;">Quick Strike</h3>
+                        <p>5 minutes</p>
+                    </div>
+                    
+                    <div class="choice-card" onclick="selectTime('15min')">
+                        <div class="choice-icon">🎯</div>
+                        <h3 style="color: #00d4ff;">Tactical Clear</h3>
+                        <p>15 minutes</p>
+                    </div>
+                    
+                    <div class="choice-card" onclick="selectTime('30min')">
+                        <div class="choice-icon">⚔️</div>
+                        <h3 style="color: #00d4ff;">Sector Sweep</h3>
+                        <p>30 minutes</p>
+                    </div>
+                    
+                    <div class="choice-card" onclick="selectTime('1hour')">
+                        <div class="choice-icon">🛡️</div>
+                        <h3 style="color: #00d4ff;">Full Assault</h3>
+                        <p>1 hour</p>
+                    </div>
+                </div>
+                
+                <!-- Room Selection -->
+                <h3 style="color: #00d4ff; margin-top: 30px;">TARGET SECTOR</h3>
+                <div class="room-grid">
+                    <div class="room-btn" onclick="selectRoom('entry')">Entry</div>
+                    <div class="room-btn" onclick="selectRoom('living')">Living Area</div>
+                    <div class="room-btn" onclick="selectRoom('kitchen')">Kitchen</div>
+                    <div class="room-btn" onclick="selectRoom('bedroom')">Sleeping Quarters</div>
+                    <div class="room-btn" onclick="selectRoom('bathroom')">Refresher</div>
+                    <div class="room-btn" onclick="selectRoom('office')">Command Center</div>
+                    <div class="room-btn" onclick="selectRoom('closet')">Storage Bay</div>
+                    <div class="room-btn" onclick="selectRoom('garage')">Hangar</div>
+                </div>
+                
+                <div id="missionBriefing" class="terminal-text hidden" style="margin-top: 20px;">
+                    <!-- Mission details will appear here -->
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="launchMission()" id="launchBtn" disabled>LAUNCH MISSION</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Academy Screen -->
+        <div class="screen" id="academyScreen">
+            <div class="holo-panel">
+                <h2 style="color: #00ff88; margin-bottom: 20px;">JEDI DECLUTTERING ACADEMY</h2>
+                
+                <h3 style="color: #00d4ff; margin: 20px 0;">WISDOM OF THE ARCHIVES</h3>
+                
+                <div class="mission-card" onclick="showWisdom('procrasticlutter')">
+                    <h3>⏰ Procrasticlutter Phenomenon</h3>
+                    <p>Clean laundry on the couch, dishes in the drainer - technically not clutter, but...</p>
+                </div>
+                
+                <div class="mission-card" onclick="showWisdom('momentum')">
+                    <h3>🌊 Decluttering Momentum</h3>
+                    <p>The force that builds as you progress - each cleared space energizes the next.</p>
+                </div>
+                
+                <div class="mission-card" onclick="showWisdom('paralysis')">
+                    <h3>🧊 Decluttering Paralysis</h3>
+                    <p>The overwhelming freeze when facing massive clutter - and how to break through.</p>
+                </div>
+                
+                <div class="mission-card" onclick="showWisdom('regret')">
+                    <h3>💭 Decluttering Regret</h3>
+                    <p>The fear of needing something after it's gone - why it's worth the risk.</p>
+                </div>
+                
+                <div class="mission-card" onclick="showWisdom('threshold')">
+                    <h3>📊 Clutter Threshold</h3>
+                    <p>Your personal limit - the amount of stuff you can manage before chaos ensues.</p>
+                </div>
+                
+                <div class="mission-card" onclick="showWisdom('donate')">
+                    <h3>📦 The Donate Box Doctrine</h3>
+                    <p>Why donating beats selling - speed over profit in the decluttering war.</p>
+                </div>
+            </div>
+            
+            <div class="holo-panel">
+                <h3 style="color: #00d4ff; margin-bottom: 20px;">YOUR PROGRESS</h3>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalMissions">0</div>
+                        <div class="stat-label">Missions Complete</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="itemsReleased">0</div>
+                        <div class="stat-label">Items Released</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="spaceReclaimed">0%</div>
+                        <div class="stat-label">Space Reclaimed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="currentStreak">0</div>
+                        <div class="stat-label">Day Streak</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mastery Screen (Now with content) -->
+        <div class="screen" id="masteryScreen">
+            <div class="holo-panel">
+                <h2 style="color: #00ff88; margin-bottom: 20px;">MASTER PROTOCOLS</h2>
+                <p style="margin-bottom: 20px;">Welcome, Master. You have proven your dedication to physical decluttering. Now face the ultimate challenge: Digital Decluttering.</p>
+                
+                <div class="terminal-text">
+                    > ACCESS GRANTED<br>
+                    > RANK: MASTER OR HIGHER<br>
+                    > LOADING ADVANCED PROTOCOLS...<br>
+                    > SOURCE: ARCHIVES OF CAL NEWPORT
+                </div>
+            </div>
+            
+            <div class="holo-panel">
+                <h2 style="color: #00d4ff; margin-bottom: 20px;">THE DIGITAL DECLUTTER PROTOCOL</h2>
+                <p style="margin-bottom: 20px;">A 30-day transformation of your digital life. Unlike gradual change, this rapid process breaks the engineered attraction of the attention economy.</p>
+                
+                <div class="mission-card" onclick="showDigitalProtocol('overview')">
+                    <h3>📱 Protocol Overview</h3>
+                    <p>The three-phase process for reclaiming your digital life</p>
+                </div>
+                
+                <div class="mission-card" onclick="showDigitalProtocol('step1')">
+                    <h3>🎯 Phase 1: Define Technology Rules</h3>
+                    <p>Identify optional vs essential technologies</p>
+                </div>
+                
+                <div class="mission-card" onclick="showDigitalProtocol('step2')">
+                    <h3>⏰ Phase 2: The 30-Day Break</h3>
+                    <p>Detox and rediscover meaningful activities</p>
+                </div>
+                
+                <div class="mission-card" onclick="showDigitalProtocol('step3')">
+                    <h3>🔄 Phase 3: Reintroduction</h3>
+                    <p>The Minimalist Technology Screen</p>
+                </div>
+                
+                <div class="mission-card" onclick="showDigitalProtocol('examples')">
+                    <h3>💡 Field Reports</h3>
+                    <p>Success stories from 1,600+ participants</p>
+                </div>
+                
+                <div class="mission-card" onclick="startDigitalDeclutter()">
+                    <h3 style="color: #00ff88;">🚀 BEGIN DIGITAL DECLUTTER</h3>
+                    <p>Start your 30-day journey now</p>
+                </div>
+            </div>
+            
+            <div class="holo-panel" id="digitalTrackerPanel" style="display: none;">
+                <h2 style="color: #00ff88; margin-bottom: 20px;">DIGITAL DECLUTTER TRACKER</h2>
+                
+                <div class="timer-display">
+                    <div class="timer-value" id="daysRemaining">30</div>
+                    <div class="timer-label">Days Remaining</div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="completeDigitalDeclutter()">COMPLETE 30 DAYS</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Digital Protocol Modal -->
+        <div class="modal" id="digitalModal">
+            <div class="modal-content">
+                <h2 style="color: #00ff88; margin-bottom: 20px;" id="digitalModalTitle">Digital Protocol</h2>
+                <div id="digitalModalContent">
+                    <!-- Content will be inserted here -->
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="closeDigitalModal()">UNDERSTOOD</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Mission Overlay -->
+        <div class="screen" id="activeMissionScreen">
+            <div class="holo-panel">
+                <h2 style="color: #00ff88; margin-bottom: 20px;">MISSION ACTIVE</h2>
+                
+                <div class="timer-display">
+                    <div class="timer-value" id="timerDisplay">5:00</div>
+                    <div class="timer-label">Time Remaining</div>
+                </div>
+                
+                <h3 style="color: #00d4ff; margin: 20px 0;">CURRENT OBJECTIVES</h3>
+                <div class="checklist" id="missionChecklist">
+                    <!-- Checklist items will be inserted here -->
+                </div>
+                
+                <div class="terminal-text" style="margin: 15px 0;">
+                    > TIP: Check off tasks as you complete them<br>
+                    > Use PAUSE to stop timer if needed<br>
+                    > Navigate away anytime using tabs above<br>
+                    > Click COMPLETE when finished
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="itemsProcessed">0</div>
+                        <div class="stat-label">Items Processed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="decisionsCompleted">0</div>
+                        <div class="stat-label">Decisions Made</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="progressPercent">0%</div>
+                        <div class="stat-label">Progress</div>
+                    </div>
+                </div>
+                
+                <div class="terminal-text">
+                    <div id="missionLog">
+                        > Mission started<br>
+                        > Scanning sector...<br>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn" id="pauseBtn" type="button">⏸ PAUSE</button>
+                    <button class="btn btn-primary" id="completeBtn" type="button">✓ COMPLETE</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Module Modal -->
+        <div class="modal" id="moduleModal">
+            <div class="modal-content">
+                <h2 style="color: #00ff88; margin-bottom: 20px;" id="moduleTitle">Module Title</h2>
+                <div id="moduleContent">
+                    <!-- Module content will be inserted here -->
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn" onclick="closeModal()">CLOSE</button>
+                    <button class="btn btn-primary" onclick="completeModule()">COMPLETE MODULE</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Wisdom Modal -->
+        <div class="modal" id="wisdomModal">
+            <div class="modal-content">
+                <h2 style="color: #00ff88; margin-bottom: 20px;" id="wisdomTitle">Wisdom Title</h2>
+                <div id="wisdomContent">
+                    <!-- Wisdom content will be inserted here -->
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="closeWisdomModal()">UNDERSTOOD</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Game state - make globally accessible
+        window.gameState = {
+            progress: 0,
+            rank: 'Initiate',
+            xp: 0,
+            missionsCompleted: 0,
+            modulesCompleted: [],
+            currentMission: null,
+            selectedTime: null,
+            selectedRoom: null,
+            clutterLevel: 87,
+            itemsCleared: 0,
+            spaceReclaimed: 0,
+            dayStreak: 0,
+            achievements: [],
+            moduleXP: {
+                container: 0,
+                visibility: 0,
+                questions: 0,
+                layers: 0,
+                removal: 0
+            }
+        };
+        
+        // Timer variables - make globally accessible
+        window.timerInterval = null;
+        window.timeRemaining = 0;
+        window.missionStartTime = null;
+        
+        // Sound effects (disabled for now to prevent errors)
+        function playSound(type) {
+            // Disabled to prevent any issues
+            return;
+        }
+        
+        function toggleSound() {
+            window.gameState.soundEnabled = !window.gameState.soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            const toggle = document.getElementById('soundToggle');
+            
+            if (window.gameState.soundEnabled) {
+                icon.textContent = '🔊';
+                toggle.classList.remove('muted');
+            } else {
+                icon.textContent = '🔇';
+                toggle.classList.add('muted');
+            }
+        }
+        
+        // Initialize particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+        
+        // Helper function to update navigation
+        function updateNavigation(screenName) {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            const tabMap = {
+                'discovery': 'discoveryScreen',
+                'training': 'trainingScreen', 
+                'missions': 'missionsScreen',
+                'academy': 'academyScreen',
+                'mastery': 'masteryScreen'
+            };
+            
+            // Find which tab corresponds to this screen
+            for (const [tabName, screen] of Object.entries(tabMap)) {
+                if (screen === screenName) {
+                    const tabElement = document.getElementById(tabName + 'Tab');
+                    if (tabElement) {
+                        tabElement.classList.add('active');
+                    }
+                    break;
+                }
+            }
+        }
+        
+        // Navigation
+        function navigateTo(screen) {
+            // Check if screen is locked
+            if (screen === 'mastery' && window.gameState.modulesCompleted.length < 5) {
+                showAchievement('Access Denied', 'Complete all training modules first');
+                playSound('error');
+                return;
+            }
+            
+            // Update nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show screen
+            showScreen(screen + 'Screen');
+            playSound('navigate');
+        }
+        
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+            updateProgress();
+        }
+        
+        // Journey start
+        function startJourney() {
+            showScreen('trainingScreen');
+            document.getElementById('trainingTab').classList.remove('locked');
+            updateNavigation('trainingScreen');
+            
+            window.gameState.progress = 10;
+            playSound('start');
+            showAchievement('Journey Begun', 'Your decluttering training has started');
+        }
+        
+        function showQuickStart() {
+            window.gameState.selectedTime = '5min';
+            window.gameState.selectedRoom = 'any';
+            showScreen('missionsScreen');
+            document.getElementById('missionsTab').classList.remove('locked');
+            updateNavigation('missionsScreen');
+            
+            playSound('quickstart');
+        }
+        
+        // Training modules
+        function startModule(moduleType) {
+            const modal = document.getElementById('moduleModal');
+            const title = document.getElementById('moduleTitle');
+            const content = document.getElementById('moduleContent');
+            
+            const modules = {
+                container: {
+                    title: 'Container Protocol',
+                    content: `
+                        <div class="terminal-text">
+                            > LOADING ARCHIVE ENTRY...<br>
+                            > SOURCE: Master Dana K. White<br>
+                            > CLASSIFICATION: FUNDAMENTAL
+                        </div>
+                        <h3 style="color: #00d4ff; margin: 20px 0;">The Universal Truth</h3>
+                        <p style="line-height: 1.6;">Your dwelling is a container. Every container has finite capacity. This is not a limitation to overcome - it is a law of physics to accept.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Key Principles:</h4>
+                        <ul style="line-height: 1.8; color: rgba(0, 212, 255, 0.9);">
+                            <li>Every shelf, drawer, and room has a maximum capacity</li>
+                            <li>Exceeding capacity creates chaos, not organization</li>
+                            <li>The container decides how much you can keep</li>
+                            <li>Fill containers with favorites first</li>
+                            <li>When full, the container has decided - excess must go</li>
+                        </ul>
+                        
+                        <div class="terminal-text" style="margin-top: 20px;">
+                            > PRACTICAL APPLICATION:<br>
+                            > 1. Identify the container (shelf, drawer, closet)<br>
+                            > 2. Remove everything<br>
+                            > 3. Return favorites first<br>
+                            > 4. Stop when container is comfortably full<br>
+                            > 5. Everything else leaves your dwelling
+                        </div>
+                    `
+                },
+                visibility: {
+                    title: 'Visibility Doctrine',
+                    content: `
+                        <div class="terminal-text">
+                            > STRATEGIC PROTOCOL INITIATED<br>
+                            > PRIORITY: MAXIMUM IMPACT<br>
+                            > EFFICIENCY: OPTIMIZED
+                        </div>
+                        <h3 style="color: #00d4ff; margin: 20px 0;">The Power of Visible Progress</h3>
+                        <p style="line-height: 1.6;">Begin with spaces visible to guests. This creates momentum, energy, and sustainable progress.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Why Visibility Matters:</h4>
+                        <ul style="line-height: 1.8; color: rgba(0, 212, 255, 0.9);">
+                            <li>Clear spaces generate energy for more decluttering</li>
+                            <li>Re-decluttering visible areas takes less time each round</li>
+                            <li>Progress compounds - 1 hour → 10 minutes → 2 minutes</li>
+                            <li>Visible results prevent re-cluttering behavior</li>
+                            <li>Creates accountability and pride</li>
+                        </ul>
+                        
+                        <div class="terminal-text" style="margin-top: 20px;">
+                            > SEQUENCE:<br>
+                            > 1. Entry point (what guests see first)<br>
+                            > 2. Living/dining areas<br>
+                            > 3. Kitchen surfaces<br>
+                            > 4. Bathrooms<br>
+                            > 5. Bedrooms (work from door inward)
+                        </div>
+                    `
+                },
+                questions: {
+                    title: 'The Two Questions Protocol',
+                    content: `
+                        <div class="terminal-text">
+                            > DECISION MATRIX LOADED<br>
+                            > ELIMINATING ANALYSIS PARALYSIS<br>
+                            > SPEED: MAXIMUM
+                        </div>
+                        <h3 style="color: #00d4ff; margin: 20px 0;">The Only Two Questions You Need</h3>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Question 1: Where would I look for this?</h4>
+                        <p style="line-height: 1.6;">Trust your first instinct. Take it there immediately. No temporary holding zones.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Question 2: Would I remember I have this?</h4>
+                        <p style="line-height: 1.6;">If you wouldn't remember owning it when you need it, you don't really have it. Let it go.</p>
+                        
+                        <div class="terminal-text" style="margin-top: 20px;">
+                            > DECISION TREE:<br>
+                            > IF has_obvious_home THEN take_there_now<br>
+                            > ELSE IF would_remember_exists THEN find_home<br>
+                            > ELSE donate_immediately<br>
+                            > <br>
+                            > NO EXCEPTIONS. NO MAYBE PILES.
+                        </div>
+                        
+                        <p style="margin-top: 20px; color: #ff4444;">Critical: Take items to their homes NOW. No procrastination stations!</p>
+                    `
+                },
+                layers: {
+                    title: 'The Three Layers System',
+                    content: `
+                        <div class="terminal-text">
+                            > ANALYZING HOME CHAOS STRUCTURE<br>
+                            > LAYERS DETECTED: 3<br>
+                            > ADDRESSING ORDER: CRITICAL
+                        </div>
+                        <h3 style="color: #00d4ff; margin: 20px 0;">Understanding the Layers</h3>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Layer 1: Daily Stuff</h4>
+                        <p style="line-height: 1.6;">Dishes, laundry, trash - the daily maintenance. Must be handled daily or it multiplies exponentially.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Layer 2: Clutter</h4>
+                        <p style="line-height: 1.6;">Things without homes, excess items, the "might need someday" pile. This is what decluttering addresses.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Layer 3: Actual Cleaning</h4>
+                        <p style="line-height: 1.6;">Dusting, mopping, scrubbing. Can only happen effectively after Layers 1 and 2 are addressed.</p>
+                        
+                        <div class="terminal-text" style="margin-top: 20px;">
+                            > IMPORTANT:<br>
+                            > - Layer 2 (decluttering) is the ONLY permanent fix<br>
+                            > - Once clutter leaves, it's gone forever<br>
+                            > - Less clutter makes Layers 1 and 3 exponentially easier<br>
+                            > - Focus here for lasting change
+                        </div>
+                    `
+                },
+                removal: {
+                    title: 'Total Removal Protocol',
+                    content: `
+                        <div class="terminal-text">
+                            > ADVANCED TECHNIQUE UNLOCKED<br>
+                            > WARNING: MAXIMUM EFFECTIVENESS<br>
+                            > INSTANT GRATIFICATION: ENABLED
+                        </div>
+                        <h3 style="color: #00d4ff; margin: 20px 0;">The Ultimate Strategy</h3>
+                        <p style="line-height: 1.6; color: #ff4444; font-weight: bold;">This is the most powerful technique, understated in most teachings but devastatingly effective.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">The Process:</h4>
+                        <ol style="line-height: 1.8; color: rgba(0, 212, 255, 0.9);">
+                            <li>Remove EVERYTHING from the space</li>
+                            <li>Clean the empty space thoroughly</li>
+                            <li>Visualize your ideal for this space</li>
+                            <li>Return ONLY items that match your vision</li>
+                            <li>Everything else gets donated/trashed immediately</li>
+                        </ol>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Why This Works:</h4>
+                        <ul style="line-height: 1.8; color: rgba(0, 212, 255, 0.9);">
+                            <li>Instant visual gratification</li>
+                            <li>Easier to let go when items are already "out"</li>
+                            <li>Creates a clean slate mindset</li>
+                            <li>Forces conscious choice about every item</li>
+                            <li>Breaks the inertia of existing arrangements</li>
+                        </ul>
+                        
+                        <div class="terminal-text" style="margin-top: 20px;">
+                            > CAUTION: Highly addictive due to immediate results<br>
+                            > SIDE EFFECTS: Extreme satisfaction, urge to continue<br>
+                            > RECOMMENDED: Start with one drawer or shelf
+                        </div>
+                    `
+                }
+            };
+            
+            const module = modules[moduleType];
+            title.textContent = module.title;
+            content.innerHTML = module.content;
+            
+            modal.classList.add('active');
+            window.gameState.currentModule = moduleType;
+            playSound('open');
+        }
+        
+        function closeModal() {
+            document.getElementById('moduleModal').classList.remove('active');
+            playSound('close');
+        }
+        
+        function completeModule() {
+            const module = window.gameState.currentModule;
+            if (!window.gameState.modulesCompleted.includes(module)) {
+                window.gameState.modulesCompleted.push(module);
+                window.gameState.moduleXP[module] = 100;
+                window.gameState.xp += 100;
+                
+                // Update XP bar
+                const xpBar = document.getElementById(module + 'XP');
+                if (xpBar) {
+                    xpBar.style.width = '100%';
+                    xpBar.textContent = '100/100 XP';
+                }
+                
+                // Mark card as completed
+                const cards = document.querySelectorAll('.mission-card');
+                cards.forEach(card => {
+                    if (card.onclick && card.onclick.toString().includes(module)) {
+                        card.classList.add('completed');
+                    }
+                });
+                
+                showAchievement('Module Complete!', `You've mastered the ${module} protocol`);
+                updateRank();
+                
+                // Unlock missions tab
+                if (window.gameState.modulesCompleted.length >= 2) {
+                    document.getElementById('missionsTab').classList.remove('locked');
+                }
+                
+                // Unlock academy tab
+                if (window.gameState.modulesCompleted.length >= 3) {
+                    document.getElementById('academyTab').classList.remove('locked');
+                }
+                
+                // Unlock mastery tab
+                if (window.gameState.modulesCompleted.length >= 5) {
+                    document.getElementById('masteryTab').classList.remove('locked');
+                    showAchievement('Master Access Granted!', 'All protocols unlocked');
+                }
+            }
+            
+            closeModal();
+            playSound('complete');
+        }
+        
+        // Mission system
+        function selectTime(time) {
+            window.gameState.selectedTime = time;
+            document.querySelectorAll('.choice-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.choice-card').classList.add('selected');
+            updateMissionBriefing();
+            playSound('select');
+        }
+        
+        function selectRoom(room) {
+            window.gameState.selectedRoom = room;
+            document.querySelectorAll('.room-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+            updateMissionBriefing();
+            playSound('select');
+        }
+        
+        function updateMissionBriefing() {
+            if (!window.gameState.selectedTime || !window.gameState.selectedRoom) return;
+            
+            const briefing = document.getElementById('missionBriefing');
+            const launchBtn = document.getElementById('launchBtn');
+            
+            const timeMap = {
+                '5min': '5 minutes',
+                '15min': '15 minutes',
+                '30min': '30 minutes',
+                '1hour': '60 minutes'
+            };
+            
+            const missionSteps = {
+                '5min': [
+                    'Grab a trash bag (black preferred)',
+                    'Scan for obvious trash',
+                    'Remove without analysis',
+                    'Trust your instincts',
+                    'Speed over perfection'
+                ],
+                '15min': [
+                    'Select one surface',
+                    'Clear everything off',
+                    'Apply the Two Questions',
+                    'Return only essentials',
+                    'Donate/trash the rest'
+                ],
+                '30min': [
+                    'Choose a defined area',
+                    'Remove all items',
+                    'Clean the empty space',
+                    'Return favorites first',
+                    'Stop when 80% full'
+                ],
+                '1hour': [
+                    'Empty entire room/area',
+                    'Deep clean empty space',
+                    'Visualize ideal setup',
+                    'Return only ideal items',
+                    'Remove everything else immediately'
+                ]
+            };
+            
+            briefing.innerHTML = `
+                > MISSION PARAMETERS SET<br>
+                > TIME: ${timeMap[window.gameState.selectedTime]}<br>
+                > SECTOR: ${window.gameState.selectedRoom.toUpperCase()}<br>
+                > DIFFICULTY: ${window.gameState.selectedTime === '5min' ? 'EASY' : window.gameState.selectedTime === '15min' ? 'MEDIUM' : window.gameState.selectedTime === '30min' ? 'HARD' : 'EXTREME'}<br>
+                > <br>
+                > MISSION STEPS:<br>
+                ${missionSteps[window.gameState.selectedTime].map((step, i) => `> ${i + 1}. ${step}`).join('<br>')}
+            `;
+            
+            briefing.classList.remove('hidden');
+            launchBtn.disabled = false;
+        }
+        
+        function launchMission() {
+            if (!window.gameState.selectedTime || !window.gameState.selectedRoom) return;
+            
+            // Reset any previous mission state
+            if (window.timerInterval) {
+                clearInterval(window.timerInterval);
+                window.timerInterval = null;
+            }
+            
+            // Reset pause button appearance
+            const pauseBtns = document.querySelectorAll('button');
+            pauseBtns.forEach(btn => {
+                if (btn.textContent.includes('RESUME')) {
+                    btn.textContent = '⏸ PAUSE';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                }
+            });
+            
+            showScreen('activeMissionScreen');
+            startMissionTimer();
+            generateMissionChecklist();
+            playSound('launch');
+            
+            window.gameState.currentMission = {
+                time: window.gameState.selectedTime,
+                room: window.gameState.selectedRoom,
+                startTime: Date.now()
+            };
+            
+            // Reset mission stats
+            document.getElementById('itemsProcessed').textContent = '0';
+            document.getElementById('decisionsCompleted').textContent = '0';
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('missionLog').innerHTML = '> Mission started<br>> Scanning sector...<br>';
+        }
+        
+        function generateMissionChecklist() {
+            const checklist = document.getElementById('missionChecklist');
+            const items = {
+                '5min': [
+                    'Acquire disposal container',
+                    'Remove obvious trash',
+                    'Clear one surface',
+                    'No analysis - trust instincts'
+                ],
+                '15min': [
+                    'Clear selected surface completely',
+                    'Sort items with Two Questions',
+                    'Return items to proper homes',
+                    'Fill donate box',
+                    'Wipe clean surface'
+                ],
+                '30min': [
+                    'Empty target area completely',
+                    'Clean empty space',
+                    'Sort items into keep/donate/trash',
+                    'Return keepers strategically',
+                    'Remove donations immediately'
+                ],
+                '1hour': [
+                    'Document before state',
+                    'Remove everything from space',
+                    'Deep clean empty area',
+                    'Visualize and plan ideal setup',
+                    'Return only joy-sparking items',
+                    'Bag donations for immediate removal',
+                    'Document after state'
+                ]
+            };
+            
+            const checklistItems = items[window.gameState.selectedTime] || items['5min'];
+            
+            checklist.innerHTML = checklistItems.map((item, index) => `
+                <div class="checklist-item" onclick="toggleChecklistItem(this, ${index})">
+                    <div class="checklist-checkbox"></div>
+                    <span>${item}</span>
+                </div>
+            `).join('');
+        }
+        
+        function toggleChecklistItem(element, index) {
+            element.classList.toggle('checked');
+            updateMissionProgress();
+            playSound('check');
+            
+            // Add to mission log
+            const log = document.getElementById('missionLog');
+            const taskName = element.querySelector('span').textContent;
+            log.innerHTML += `> Task completed: ${taskName}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateMissionProgress() {
+            const total = document.querySelectorAll('.checklist-item').length;
+            const completed = document.querySelectorAll('.checklist-item.checked').length;
+            const percent = Math.round((completed / total) * 100);
+            
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('decisionsCompleted').textContent = completed;
+            
+            // Simulate items processed
+            document.getElementById('itemsProcessed').textContent = Math.floor(Math.random() * 20) + completed * 5;
+        }
+        
+        function startMissionTimer() {
+            // Clear any existing timer first
+            if (window.timerInterval) {
+                clearInterval(window.timerInterval);
+                window.timerInterval = null;
+            }
+            
+            const times = {
+                '5min': 300,
+                '15min': 900,
+                '30min': 1800,
+                '1hour': 3600
+            };
+            
+            window.timeRemaining = times[window.gameState.selectedTime];
+            window.missionStartTime = Date.now();
+            
+            updateTimerDisplay();
+            window.timerInterval = setInterval(() => {
+                window.timeRemaining--;
+                updateTimerDisplay();
+                
+                if (window.timeRemaining <= 0) {
+                    clearInterval(window.timerInterval);
+                    window.timerInterval = null;
+                    completeMission();
+                }
+                
+                // Warning at 1 minute
+                if (window.timeRemaining === 60) {
+                    showAchievement('1 Minute Warning', 'Time to wrap up!');
+                    playSound('warning');
+                }
+                
+                // Warning at 10 seconds
+                if (window.timeRemaining === 10) {
+                    showAchievement('10 Seconds!', 'Final countdown!');
+                    playSound('warning');
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(window.timeRemaining / 60);
+            const seconds = window.timeRemaining % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function pauseMission(event) {
+            const pauseBtn = event ? event.target : document.getElementById('pauseBtn');
+            
+            if (window.timerInterval) {
+                clearInterval(window.timerInterval);
+                window.timerInterval = null;
+                
+                // Update button text to show paused state
+                if (pauseBtn) {
+                    pauseBtn.textContent = '▶ RESUME';
+                    pauseBtn.style.borderColor = '#00ff88';
+                    pauseBtn.style.color = '#00ff88';
+                }
+                
+                showAchievement('Mission Paused', 'Timer stopped - Click resume to continue');
+                playSound('pause');
+            } else {
+                // Resume the timer with remaining time
+                window.timerInterval = setInterval(() => {
+                    window.timeRemaining--;
+                    updateTimerDisplay();
+                    
+                    if (window.timeRemaining <= 0) {
+                        clearInterval(window.timerInterval);
+                        completeMission();
+                    }
+                    
+                    // Warning at 1 minute
+                    if (window.timeRemaining === 60) {
+                        showAchievement('1 Minute Warning', 'Time to wrap up!');
+                        playSound('warning');
+                    }
+                }, 1000);
+                
+                // Update button back to pause
+                if (pauseBtn) {
+                    pauseBtn.textContent = '⏸ PAUSE';
+                    pauseBtn.style.borderColor = '';
+                    pauseBtn.style.color = '';
+                }
+                
+                showAchievement('Mission Resumed', 'Timer restarted');
+                playSound('resume');
+            }
+        }
+        
+        // Mission control functions
+        window.abortMission = function() {
+            
+            // Simple confirmation
+            const shouldAbort = window.confirm('Abort mission? Progress will be lost.');
+            
+            if (!shouldAbort) {
+                return;
+            }
+            
+            // Clear timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            // Reset mission state
+            gameState.currentMission = null;
+            
+            // Show notification first
+            showAchievement('Mission Aborted', 'Returning to mission selection');
+            
+            // Return to missions screen
+            showScreen('missionsScreen');
+            updateNavigation('missionsScreen');
+            
+            // Reset displays after screen change
+            setTimeout(() => {
+                const itemsEl = document.getElementById('itemsProcessed');
+                const decisionsEl = document.getElementById('decisionsCompleted');
+                const progressEl = document.getElementById('progressPercent');
+                const checklistEl = document.getElementById('missionChecklist');
+                const logEl = document.getElementById('missionLog');
+                
+                if (itemsEl) itemsEl.textContent = '0';
+                if (decisionsEl) decisionsEl.textContent = '0';
+                if (progressEl) progressEl.textContent = '0%';
+                if (checklistEl) checklistEl.innerHTML = '';
+                if (logEl) logEl.innerHTML = '> Ready for new mission<br>';
+            }, 100);
+        }
+        
+        function completeMission() {
+            // Clear timer if still running
+            if (window.timerInterval) {
+                clearInterval(window.timerInterval);
+                window.timerInterval = null;
+            }
+            
+            const completed = document.querySelectorAll('.checklist-item.checked').length;
+            const total = document.querySelectorAll('.checklist-item').length;
+            const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            // Calculate rewards
+            const xpGained = Math.round(successRate * 2);
+            const clutterReduction = Math.round(successRate / 10);
+            
+            window.gameState.xp += xpGained;
+            window.gameState.missionsCompleted++;
+            window.gameState.clutterLevel = Math.max(0, window.gameState.clutterLevel - clutterReduction);
+            
+            // Get items processed value
+            const itemsProcessedEl = document.getElementById('itemsProcessed');
+            const itemsProcessed = itemsProcessedEl ? parseInt(itemsProcessedEl.textContent) || 0 : 0;
+            window.gameState.itemsCleared += itemsProcessed;
+            window.gameState.spaceReclaimed += clutterReduction;
+            
+            // Mark room as cleared if high success
+            if (successRate >= 80 && window.gameState.selectedRoom) {
+                const roomBtns = document.querySelectorAll('.room-btn');
+                roomBtns.forEach(btn => {
+                    if (btn.onclick && btn.onclick.toString().includes(window.gameState.selectedRoom)) {
+                        btn.classList.add('cleared');
+                    }
+                });
+            }
+            
+            // Show results
+            showAchievement('Mission Complete!', `Success rate: ${successRate}% | XP: +${xpGained}`);
+            
+            // Reset mission state
+            window.gameState.currentMission = null;
+            
+            // Update stats
+            updateStats();
+            updateRank();
+            
+            // Return to missions screen after a delay
+            setTimeout(() => {
+                showScreen('missionsScreen');
+                updateNavigation('missionsScreen');
+                
+                // Reset mission displays for next mission
+                document.getElementById('itemsProcessed').textContent = '0';
+                document.getElementById('decisionsCompleted').textContent = '0';
+                document.getElementById('progressPercent').textContent = '0%';
+                document.getElementById('missionChecklist').innerHTML = '';
+                document.getElementById('missionLog').innerHTML = '> Mission completed successfully<br>';
+            }, 2000);
+            
+            playSound('victory');
+        }
+        
+        // Wisdom system
+        function showWisdom(topic) {
+            const modal = document.getElementById('wisdomModal');
+            const title = document.getElementById('wisdomTitle');
+            const content = document.getElementById('wisdomContent');
+            
+            const wisdom = {
+                procrasticlutter: {
+                    title: 'The Procrasticlutter Phenomenon',
+                    content: `
+                        <p style="line-height: 1.6;">Procrasticlutter is the stuff that's technically not clutter - it's clean laundry on the couch, clean dishes in the drainer, papers that need filing.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">The Problem:</h4>
+                        <p>It makes spaces look messy even though everything is "clean." It becomes invisible to you but screams chaos to others.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">The Solution:</h4>
+                        <p>Deal with it FIRST during decluttering. Put things away before tackling "real" clutter. This creates instant visible progress and prevents the "I worked all day but it still looks messy" syndrome.</p>
+                        
+                        <div class="terminal-text">
+                            > PRIORITY: MAXIMUM<br>
+                            > Clear procrasticlutter → Instant improvement<br>
+                            > Skip procrasticlutter → Wasted effort feeling
+                        </div>
+                    `
+                },
+                momentum: {
+                    title: 'Decluttering Momentum',
+                    content: `
+                        <p style="line-height: 1.6;">Momentum is real. Each cleared space gives energy for the next. This is why the Visibility Rule works.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">How It Builds:</h4>
+                        <ul style="line-height: 1.8;">
+                            <li>First clear space = hardest (all decisions are new)</li>
+                            <li>Second space = easier (you've made similar decisions)</li>
+                            <li>Third space = faster (patterns established)</li>
+                            <li>Fourth+ = automatic (muscle memory developed)</li>
+                        </ul>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Maintaining Momentum:</h4>
+                        <p>Never skip more than 2 days. Even 5 minutes maintains the energy. Visible spaces first - seeing progress daily keeps you going.</p>
+                    `
+                },
+                paralysis: {
+                    title: 'Breaking Decluttering Paralysis',
+                    content: `
+                        <p style="line-height: 1.6; color: #ff4444;">The overwhelming freeze when facing massive clutter. Your brain literally cannot process where to start.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">The Cure: Just Move</h4>
+                        <p>Start with trash. Only trash. Set a 5-minute timer. This breaks the paralysis because:</p>
+                        <ul style="line-height: 1.8;">
+                            <li>No decisions needed (trash is trash)</li>
+                            <li>Immediate visible impact</li>
+                            <li>Builds confidence</li>
+                            <li>Creates physical momentum</li>
+                        </ul>
+                        
+                        <div class="terminal-text">
+                            > EMERGENCY PROTOCOL:<br>
+                            > 1. Black trash bag<br>
+                            > 2. 5-minute timer<br>
+                            > 3. Remove only obvious trash<br>
+                            > 4. Celebrate the win<br>
+                            > 5. Repeat tomorrow
+                        </div>
+                    `
+                },
+                regret: {
+                    title: 'Decluttering Regret - The Truth',
+                    content: `
+                        <p style="line-height: 1.6;">Yes, you might need something after you declutter it. This fear keeps many paralyzed.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">The Reality Check:</h4>
+                        <p>People living in organized homes choose regret over clutter. They've decided that occasionally replacing something is worth the daily peace of a clutter-free space.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">The Math:</h4>
+                        <p>If you declutter 1000 items and regret 5, that's a 99.5% success rate. The peace from removing 995 unwanted items far outweighs the minor inconvenience of replacing 5.</p>
+                        
+                        <p style="color: #ff4444; margin-top: 20px;">Remember: You can't even find what you need in the clutter now. At least in a decluttered space, you'll know what you don't have.</p>
+                    `
+                },
+                threshold: {
+                    title: 'Your Clutter Threshold',
+                    content: `
+                        <p style="line-height: 1.6;">Everyone has a personal Clutter Threshold - the amount of stuff you can manage before your space spirals out of control.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Finding Yours:</h4>
+                        <p>Declutter until your space stays manageable with normal effort. That's your threshold. It's not about the "right" amount - it's about YOUR manageable amount.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Living Below Your Threshold:</h4>
+                        <ul style="line-height: 1.8;">
+                            <li>Daily tasks become easier</li>
+                            <li>Cleaning takes minutes, not hours</li>
+                            <li>You can find things when needed</li>
+                            <li>Unexpected guests aren't terrifying</li>
+                            <li>Your home becomes a haven, not a burden</li>
+                        </ul>
+                        
+                        <p style="color: #00d4ff; margin-top: 20px;">Your threshold might be lower than others'. That's not weakness - it's self-awareness.</p>
+                    `
+                },
+                donate: {
+                    title: 'The Power of the Donate Box',
+                    content: `
+                        <p style="line-height: 1.6;">Donating is the fastest way to declutter. Selling seems smart but often becomes a bottleneck.</p>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Why Donate Wins:</h4>
+                        <ul style="line-height: 1.8;">
+                            <li>No photos, listings, or pricing decisions</li>
+                            <li>No storage while waiting to sell</li>
+                            <li>No buyer negotiations or no-shows</li>
+                            <li>Immediate space reclaimed</li>
+                            <li>Tax deduction often equals garage sale profit</li>
+                        </ul>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">The Speed Factor:</h4>
+                        <p>Item donated today = gone today<br>
+                        Item to sell = still in your house 6 months later</p>
+                        
+                        <div class="terminal-text">
+                            > TRUTH: The money you "lose" by donating<br>
+                            > is less than the cost of storing items<br>
+                            > in your living space for months
+                        </div>
+                    `
+                }
+            };
+            
+            const wisdomData = wisdom[topic];
+            title.textContent = wisdomData.title;
+            content.innerHTML = wisdomData.content;
+            
+            modal.classList.add('active');
+            playSound('wisdom');
+        }
+        
+        function closeWisdomModal() {
+            document.getElementById('wisdomModal').classList.remove('active');
+            playSound('close');
+        }
+        
+        // Stats and progress
+        function updateStats() {
+            // Update all stat displays
+            document.getElementById('clutterLevel').textContent = window.gameState.clutterLevel + '%';
+            document.getElementById('userRank').textContent = window.gameState.rank;
+            document.getElementById('totalXP').textContent = window.gameState.xp;
+            document.getElementById('totalMissions').textContent = window.gameState.missionsCompleted;
+            document.getElementById('itemsReleased').textContent = window.gameState.itemsCleared;
+            document.getElementById('spaceReclaimed').textContent = window.gameState.spaceReclaimed + '%';
+            
+            // Update progress bar
+            updateProgress();
+        }
+        
+        function updateProgress() {
+            const maxProgress = 100;
+            let progress = 0;
+            
+            // Calculate progress based on achievements
+            progress += window.gameState.modulesCompleted.length * 10;
+            progress += window.gameState.missionsCompleted * 5;
+            progress += (87 - window.gameState.clutterLevel); // Clutter reduction
+            
+            progress = Math.min(progress, maxProgress);
+            window.gameState.progress = progress;
+            
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+        
+        function updateRank() {
+            const ranks = [
+                { name: 'Initiate', minXP: 0 },
+                { name: 'Padawan', minXP: 200 },
+                { name: 'Knight', minXP: 500 },
+                { name: 'Master', minXP: 1000 },
+                { name: 'Grand Master', minXP: 2000 }
+            ];
+            
+            for (let i = ranks.length - 1; i >= 0; i--) {
+                if (window.gameState.xp >= ranks[i].minXP) {
+                    if (window.gameState.rank !== ranks[i].name) {
+                        window.gameState.rank = ranks[i].name;
+                        showAchievement('Rank Up!', `You are now a ${window.gameState.rank}`);
+                    }
+                    break;
+                }
+            }
+            
+            document.getElementById('userRank').textContent = window.gameState.rank;
+        }
+        
+        // Achievement system
+        function showAchievement(title, description) {
+            const notif = document.getElementById('achievementNotif');
+            const titleEl = document.getElementById('achievementTitle');
+            const descEl = document.getElementById('achievementDesc');
+            
+            titleEl.textContent = title;
+            descEl.textContent = description;
+            
+            notif.classList.add('show');
+            playSound('achievement');
+            
+            setTimeout(() => {
+                notif.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Digital Declutter Functions
+        function showDigitalProtocol(section) {
+            const modal = document.getElementById('digitalModal');
+            const title = document.getElementById('digitalModalTitle');
+            const content = document.getElementById('digitalModalContent');
+            
+            const protocols = {
+                overview: {
+                    title: 'The Digital Declutter Process',
+                    content: `
+                        <div class="terminal-text">
+                            > PROTOCOL SUMMARY<br>
+                            > DURATION: 30 STANDARD DAYS<br>
+                            > DIFFICULTY: EXTREME<br>
+                            > SUCCESS RATE: 70% WITH PROPER EXECUTION
+                        </div>
+                        
+                        <h3 style="color: #00d4ff; margin: 20px 0;">The Three Phases</h3>
+                        
+                        <h4 style="color: #00ff88;">Phase 1: Define Your Rules</h4>
+                        <p style="line-height: 1.6;">Identify which technologies are truly optional. Create operating procedures for essential tools.</p>
+                        
+                        <h4 style="color: #00ff88;">Phase 2: 30-Day Break</h4>
+                        <p style="line-height: 1.6;">Complete abstinence from optional technologies. Aggressively explore meaningful alternatives.</p>
+                        
+                        <h4 style="color: #00ff88;">Phase 3: Reintroduction</h4>
+                        <p style="line-height: 1.6;">Start from blank slate. Only reintroduce technologies that pass strict minimalist screening.</p>
+                        
+                        <div class="terminal-text" style="margin-top: 20px;">
+                            > WARNING: Gradual change doesn't work<br>
+                            > The attention economy's engineered attraction<br>
+                            > requires rapid, decisive transformation
+                        </div>
+                    `
+                },
+                step1: {
+                    title: 'Phase 1: Define Technology Rules',
+                    content: `
+                        <h3 style="color: #00d4ff; margin: 20px 0;">Identifying Optional Technologies</h3>
+                        
+                        <p style="line-height: 1.6; margin-bottom: 15px;">Consider a technology "optional" unless its removal would:</p>
+                        <ul style="line-height: 1.8; color: rgba(0, 212, 255, 0.9);">
+                            <li>Harm your professional life</li>
+                            <li>Significantly disrupt critical personal logistics</li>
+                            <li>Cause serious relationship damage</li>
+                        </ul>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">What to Evaluate:</h4>
+                        <ul style="line-height: 1.8;">
+                            <li>Social media (Facebook, Instagram, Twitter, etc.)</li>
+                            <li>News websites and apps</li>
+                            <li>Video games</li>
+                            <li>Streaming services (Netflix, YouTube, etc.)</li>
+                            <li>Reddit, forums, and online communities</li>
+                            <li>Messaging apps (beyond essential contacts)</li>
+                        </ul>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Operating Procedures</h4>
+                        <p>For technologies with critical uses, create specific rules:</p>
+                        <div class="terminal-text" style="margin: 15px 0;">
+                            > EXAMPLE: "Check work email only on desktop, twice daily"<br>
+                            > EXAMPLE: "Text messages only from immediate family"<br>
+                            > EXAMPLE: "Streaming only with other people present"
+                        </div>
+                        
+                        <p style="color: #ff4444; margin-top: 20px;">⚠️ Don't confuse "convenient" with "critical"</p>
+                    `
+                },
+                step2: {
+                    title: 'Phase 2: The 30-Day Break',
+                    content: `
+                        <h3 style="color: #00d4ff; margin: 20px 0;">The Detox Experience</h3>
+                        
+                        <h4 style="color: #00ff88;">Week 1: Withdrawal</h4>
+                        <p style="line-height: 1.6;">Expect discomfort. Compulsive checking habits revealed. Constant urges to reach for devices.</p>
+                        
+                        <h4 style="color: #00ff88;">Week 2-3: Clarity</h4>
+                        <p style="line-height: 1.6;">Detox symptoms fade. Mental fog lifts. Rediscovery of forgotten pleasures begins.</p>
+                        
+                        <h4 style="color: #00ff88;">Week 4: Transformation</h4>
+                        <p style="line-height: 1.6;">New rhythms established. Clear perspective on technology's true value.</p>
+                        
+                        <h3 style="color: #00d4ff; margin: 20px 0;">Critical: Fill the Void</h3>
+                        <p style="line-height: 1.6; color: #ff4444;">You MUST aggressively explore high-quality alternatives:</p>
+                        
+                        <ul style="line-height: 1.8;">
+                            <li>Read physical books (participants averaged 3-8 books)</li>
+                            <li>Learn/restart hobbies (music, art, coding, crafts)</li>
+                            <li>Exercise and outdoor activities</li>
+                            <li>Face-to-face socializing</li>
+                            <li>Long-form creative projects</li>
+                            <li>Home improvement tasks</li>
+                        </ul>
+                        
+                        <div class="terminal-text" style="margin-top: 20px;">
+                            > FIELD REPORT: "I finished 8.5 books that month.<br>
+                            > I could never have thought about doing that before."<br>
+                            > - Graduate Student Unaiza
+                        </div>
+                    `
+                },
+                step3: {
+                    title: 'Phase 3: Reintroduction',
+                    content: `
+                        <h3 style="color: #00d4ff; margin: 20px 0;">The Minimalist Technology Screen</h3>
+                        
+                        <p style="line-height: 1.6; margin-bottom: 20px;">For each technology to return, it must pass ALL three tests:</p>
+                        
+                        <div style="background: rgba(0, 255, 136, 0.1); border: 2px solid #00ff88; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                            <h4 style="color: #00ff88;">Test 1: Deep Value</h4>
+                            <p>Does this directly support something you deeply value?<br>
+                            <span style="color: rgba(0, 212, 255, 0.8);">(Offering "some" benefit is NOT enough)</span></p>
+                            
+                            <h4 style="color: #00ff88; margin-top: 15px;">Test 2: Best Tool</h4>
+                            <p>Is this the BEST way to support this value?<br>
+                            <span style="color: rgba(0, 212, 255, 0.8);">(If not, replace with something better)</span></p>
+                            
+                            <h4 style="color: #00ff88; margin-top: 15px;">Test 3: Constrained Use</h4>
+                            <p>Do you have specific operating procedures?<br>
+                            <span style="color: rgba(0, 212, 255, 0.8);">(When, where, and how will you use it?)</span></p>
+                        </div>
+                        
+                        <h4 style="color: #00ff88; margin: 20px 0;">Example Operating Procedures:</h4>
+                        <div class="terminal-text">
+                            > "Facebook: Saturdays only, desktop only, 30 minutes"<br>
+                            > "News: One podcast during morning commute"<br>
+                            > "Instagram: Removed from phone, check weekly"<br>
+                            > "Reddit: Two specific subreddits, 15 min evening"
+                        </div>
+                        
+                        <p style="color: #ff4444; margin-top: 20px;">Many find they don't want technologies back at all.</p>
+                    `
+                },
+                examples: {
+                    title: 'Field Reports from 1,600+ Participants',
+                    content: `
+                        <h3 style="color: #00d4ff; margin: 20px 0;">Success Stories</h3>
+                        
+                        <div style="background: rgba(0, 136, 255, 0.05); padding: 15px; border-radius: 8px; margin: 15px 0;">
+                            <h4 style="color: #00ff88;">Kate - Management Consultant</h4>
+                            <p>"After 30 minutes back on Facebook, I thought... why am I doing this? This is boring. It isn't bringing happiness." <em>Never returned to social media.</em></p>
+                        </div>
+                        
+                        <div style="background: rgba(0, 136, 255, 0.05); padding: 15px; border-radius: 8px; margin: 15px 0;">
+                            <h4 style="color: #00ff88;">Tarald - Father</h4>
+                            <p>"I rediscovered the satisfaction of spending real time with my boys instead of just time near them with eyes on screen. Surreal being the only parent at playground not looking down."</p>
+                        </div>
+                        
+                        <div style="background: rgba(0, 136, 255, 0.05); padding: 15px; border-radius: 8px; margin: 15px 0;">
+                            <h4 style="color: #00ff88;">Melissa - Insurance Agent</h4>
+                            <p>During 30 days: Read 3 books, organized wardrobe, scheduled dinners with friends, found and bought a new house.</p>
+                        </div>
+                        
+                        <div style="background: rgba(0, 136, 255, 0.05); padding: 15px; border-radius: 8px; margin: 15px 0;">
+                            <h4 style="color: #00ff88;">Caleb - Computer Scientist</h4>
+                            <p>Started journaling, reading before bed, listening to full albums on record player. "A much richer experience than Spotify."</p>
+                        </div>
+                        
+                        <h3 style="color: #00d4ff; margin: 20px 0;">Common Outcomes</h3>
+                        <ul style="line-height: 1.8;">
+                            <li>70% permanently quit at least one major platform</li>
+                            <li>Average 5 books read during the month</li>
+                            <li>Most restarted abandoned hobbies</li>
+                            <li>Improved real-world relationships</li>
+                            <li>Discovered "hours in the day I didn't know existed"</li>
+                        </ul>
+                        
+                        <div class="terminal-text" style="margin-top: 20px;">
+                            > "Stepping away for 31 days provided clarity<br>
+                            > I didn't know I was missing... I see there is<br>
+                            > so much more the world has to offer!"<br>
+                            > - Brooke, Full-time Mother
+                        </div>
+                    `
+                }
+            };
+            
+            const protocol = protocols[section];
+            if (protocol) {
+                title.textContent = protocol.title;
+                content.innerHTML = protocol.content;
+                modal.classList.add('active');
+            }
+        }
+        
+        function closeDigitalModal() {
+            document.getElementById('digitalModal').classList.remove('active');
+        }
+        
+        function startDigitalDeclutter() {
+            // Show the tracker panel
+            document.getElementById('digitalTrackerPanel').style.display = 'block';
+            
+            // Initialize digital declutter state
+            if (!window.gameState.digitalDeclutter) {
+                window.gameState.digitalDeclutter = {
+                    startDate: new Date(),
+                    daysComplete: 0
+                };
+            }
+            
+            // Update days remaining
+            updateDigitalTracker();
+            
+            showAchievement('Digital Declutter Initiated', '30-day protocol has begun');
+        }
+        
+        function updateDigitalTracker() {
+            if (window.gameState.digitalDeclutter) {
+                const dd = window.gameState.digitalDeclutter;
+                const daysPassed = Math.floor((new Date() - new Date(dd.startDate)) / (1000 * 60 * 60 * 24));
+                const daysRemaining = Math.max(0, 30 - daysPassed);
+                
+                document.getElementById('daysRemaining').textContent = daysRemaining;
+            }
+        }
+        
+        function completeDigitalDeclutter() {
+            if (confirm('Have you completed the full 30 days?')) {
+                window.gameState.xp += 500;
+                window.gameState.achievements.push('Digital Minimalist');
+                showAchievement('DIGITAL MASTERY ACHIEVED', 'You are now a true Digital Minimalist!');
+                updateStats();
+                updateRank();
+                
+                // Hide the tracker panel
+                document.getElementById('digitalTrackerPanel').style.display = 'none';
+            }
+        }
+        
+        // Make functions globally accessible
+        window.showDigitalProtocol = showDigitalProtocol;
+        window.closeDigitalModal = closeDigitalModal;
+        window.startDigitalDeclutter = startDigitalDeclutter;
+        window.completeDigitalDeclutter = completeDigitalDeclutter;
+        
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            
+            // Set up mission control buttons
+            setTimeout(() => {
+                const pauseBtn = document.getElementById('pauseBtn');
+                if (pauseBtn) {
+                    pauseBtn.onclick = function(e) {
+                        e.preventDefault();
+                        window.pauseMission(e);
+                    };
+                }
+                
+                const completeBtn = document.getElementById('completeBtn');
+                if (completeBtn) {
+                    completeBtn.onclick = function(e) {
+                        e.preventDefault();
+                        window.completeMission();
+                    };
+                }
+            }, 1000);
+            
+            // Animate initial stats
+            setTimeout(() => {
+                const clutterDisplay = document.getElementById('clutterLevel');
+                if (clutterDisplay) {
+                    let current = 0;
+                    const target = window.gameState.clutterLevel;
+                    const increment = setInterval(() => {
+                        current += 3;
+                        if (current >= target) {
+                            current = target;
+                            clearInterval(increment);
+                        }
+                        clutterDisplay.textContent = current + '%';
+                    }, 30);
+                }
+            }, 500);
+            
+            // Load saved state if exists
+            const saved = localStorage.getItem('declutterGameState');
+            if (saved) {
+                const savedState = JSON.parse(saved);
+                Object.assign(window.gameState, savedState);
+                updateStats();
+                
+                // Restore completed modules
+                window.gameState.modulesCompleted.forEach(module => {
+                    const xpBar = document.getElementById(module + 'XP');
+                    if (xpBar) {
+                        xpBar.style.width = '100%';
+                        xpBar.textContent = '100/100 XP';
+                    }
+                });
+                
+                // Unlock appropriate tabs
+                if (window.gameState.modulesCompleted.length >= 2) {
+                    document.getElementById('missionsTab').classList.remove('locked');
+                }
+                if (window.gameState.modulesCompleted.length >= 3) {
+                    document.getElementById('academyTab').classList.remove('locked');
+                }
+                if (window.gameState.modulesCompleted.length >= 5) {
+                    document.getElementById('masteryTab').classList.remove('locked');
+                }
+            }
+        });
+        
+        // Save state periodically
+        setInterval(() => {
+            localStorage.setItem('declutterGameState', JSON.stringify(window.gameState));
+        }, 5000);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                // Close any open modals
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+            
+            // Quick actions
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'm':
+                        e.preventDefault();
+                        navigateTo('missions');
+                        break;
+                    case 't':
+                        e.preventDefault();
+                        navigateTo('training');
+                        break;
+                    case 'a':
+                        e.preventDefault();
+                        navigateTo('academy');
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

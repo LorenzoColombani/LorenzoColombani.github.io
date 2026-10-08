@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Vault Foundations — 14 Interactive Chapters</title>
+<meta name="description" content="14 interactive chapters covering Data Vault 2.0, SQL, dbt, EU compliance, and Python. A visual learning experience built with the 32nd-century programmable matter aesthetic.">
+<meta property="og:title" content="Data Vault Foundations — An Interactive Learning Primer">
+<meta property="og:description" content="14 interactive chapters on Data Vault 2.0, SQL, dbt, EU compliance frameworks (GDPR, DORA, AI Act), and Python. A free visual learning experience.">
+<meta property="og:url" content="https://datavault-foundations.netlify.app">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://datavault-foundations.netlify.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="Data Vault Foundations">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Data Vault Foundations — An Interactive Learning Primer">
+<meta name="twitter:description" content="14 interactive chapters on Data Vault 2.0, SQL, dbt, EU compliance frameworks (GDPR, DORA, AI Act), and Python. A free visual learning experience.">
+<meta name="twitter:image" content="https://datavault-foundations.netlify.app/og-image.png">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #030810;
+  --pm-surface: rgba(8, 20, 42, 0.82);
+  --pm-glass-edge: rgba(0, 180, 255, 0.12);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --border-subtle: rgba(0, 180, 255, 0.08);
+  --border-medium: rgba(0, 180, 255, 0.15);
+
+  /* Topic colors */
+  --dv-color: #06b6d4;
+  --dv-glow: rgba(6, 182, 212, 0.2);
+  --sql-color: #22c55e;
+  --sql-glow: rgba(34, 197, 94, 0.2);
+  --compliance-color: #a855f7;
+  --compliance-glow: rgba(168, 85, 247, 0.2);
+  --tools-color: #14b8a6;
+  --tools-glow: rgba(20, 184, 166, 0.2);
+  --python-color: #f59e0b;
+  --python-glow: rgba(245, 158, 11, 0.2);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Exo 2', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#particle-field {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.page-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 80px 0 60px;
+}
+
+.hero-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-bright);
+  text-shadow: 0 0 40px rgba(0, 180, 255, 0.2);
+  margin-bottom: 16px;
+}
+
+.hero-title .accent { color: var(--accent); }
+
+.hero-subtitle {
+  font-size: clamp(14px, 2vw, 18px);
+  color: var(--text-secondary);
+  max-width: 600px;
+  line-height: 1.8;
+  margin-bottom: 40px;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hero-stat {
+  text-align: center;
+}
+
+.hero-stat-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+
+.hero-stat-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: 'Orbitron', monospace;
+}
+
+/* ── CHAPTER GRID ── */
+.grid-section {
+  padding: 40px 0 60px;
+}
+
+.section-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent-glow);
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.chapter-card {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  display: block;
+}
+
+.chapter-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--card-accent, var(--accent));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.chapter-card:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px var(--card-glow, var(--accent-glow));
+}
+
+.chapter-card:hover::before { opacity: 1; }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.card-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dim);
+  min-width: 36px;
+}
+
+.chapter-card:hover .card-num { color: var(--card-accent, var(--accent)); }
+
+.card-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-bright);
+  line-height: 1.4;
+}
+
+.card-tag {
+  display: inline-block;
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.tag-dv { color: var(--dv-color); border-color: rgba(6, 182, 212, 0.3); background: rgba(6, 182, 212, 0.08); }
+.tag-sql { color: var(--sql-color); border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.08); }
+.tag-compliance { color: var(--compliance-color); border-color: rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.08); }
+.tag-tools { color: var(--tools-color); border-color: rgba(20, 184, 166, 0.3); background: rgba(20, 184, 166, 0.08); }
+.tag-python { color: var(--python-color); border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.08); }
+
+/* Card accent colors by topic */
+.card-dv { --card-accent: var(--dv-color); --card-glow: var(--dv-glow); }
+.card-sql { --card-accent: var(--sql-color); --card-glow: var(--sql-glow); }
+.card-compliance { --card-accent: var(--compliance-color); --card-glow: var(--compliance-glow); }
+.card-tools { --card-accent: var(--tools-color); --card-glow: var(--tools-glow); }
+.card-python { --card-accent: var(--python-color); --card-glow: var(--python-glow); }
+
+/* ── ABOUT ── */
+.about-section {
+  padding: 60px 0;
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.about-section h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent-glow);
+  margin-bottom: 20px;
+}
+
+.about-section p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.9;
+  margin-bottom: 16px;
+}
+
+.about-section a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.about-section a:hover { text-decoration: underline; }
+
+/* -- LLM CALLOUT -- */
+.llm-callout {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 0 48px;
+  text-align: center;
+}
+
+.llm-tip {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.llm-prompt-block {
+  position: relative;
+  background: var(--pm-surface);
+  border: 1px solid rgba(0, 180, 255, 0.15);
+  border-radius: 10px;
+  padding: 20px 48px 20px 20px;
+  text-align: left;
+}
+
+.llm-prompt-block code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 6px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  color: var(--accent);
+  border-color: var(--border-medium);
+}
+
+/* -- GO FURTHER -- */
+.further-section {
+  padding: 60px 0;
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.further-section h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent-glow);
+  margin-bottom: 20px;
+}
+
+.further-section p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.9;
+  margin-bottom: 16px;
+}
+
+.further-section a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.further-section a:hover { text-decoration: underline; }
+
+.further-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 8px 20px;
+  border: 1px solid rgba(0, 180, 255, 0.2);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.further-link:hover {
+  border-color: rgba(0, 180, 255, 0.5);
+  background: rgba(0, 180, 255, 0.08);
+  box-shadow: 0 0 20px rgba(0, 180, 255, 0.1);
+  text-decoration: none;
+}
+
+/* ── FOOTER ── */
+.site-footer {
+  padding: 40px 0;
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.site-footer p {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-title { animation: fadeUp 0.8s ease-out; }
+.hero-subtitle { animation: fadeUp 0.8s ease-out 0.15s both; }
+.hero-stats { animation: fadeUp 0.8s ease-out 0.3s both; }
+
+.chapter-card {
+  opacity: 0;
+  animation: fadeUp 0.5s ease-out both;
+}
+
+.chapter-card:nth-child(1) { animation-delay: 0.4s; }
+.chapter-card:nth-child(2) { animation-delay: 0.45s; }
+.chapter-card:nth-child(3) { animation-delay: 0.5s; }
+.chapter-card:nth-child(4) { animation-delay: 0.55s; }
+.chapter-card:nth-child(5) { animation-delay: 0.6s; }
+.chapter-card:nth-child(6) { animation-delay: 0.65s; }
+.chapter-card:nth-child(7) { animation-delay: 0.7s; }
+.chapter-card:nth-child(8) { animation-delay: 0.75s; }
+.chapter-card:nth-child(9) { animation-delay: 0.8s; }
+.chapter-card:nth-child(10) { animation-delay: 0.85s; }
+.chapter-card:nth-child(11) { animation-delay: 0.9s; }
+.chapter-card:nth-child(12) { animation-delay: 0.95s; }
+.chapter-card:nth-child(13) { animation-delay: 1.0s; }
+.chapter-card:nth-child(14) { animation-delay: 1.05s; }
+
+@media (max-width: 600px) {
+  .hero { min-height: 50vh; padding: 60px 0 40px; }
+  .hero-stats { gap: 20px; }
+  .chapter-grid { grid-template-columns: 1fr; }
+  .page-content { padding: 0 16px; }
+}
+</style>
+</head>
+<body>
+<canvas id="particle-field"></canvas>
+
+<div class="page-content">
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1 class="hero-title">Data Vault <span class="accent">Foundations</span></h1>
+    <p class="hero-subtitle">
+      14 interactive chapters covering Data Vault 2.0 architecture, SQL, dbt, EU compliance frameworks, and Python. Built as a visual learning experience.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">14</div>
+        <div class="hero-stat-label">Chapters</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">5</div>
+        <div class="hero-stat-label">Topics</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">100+</div>
+        <div class="hero-stat-label">Exercises</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="llm-callout">
+    <p class="llm-tip">These chapters are built to be explored alongside an AI assistant. Ask it to explain a concept differently, quiz you, or go deeper. The tutorials are the reference — the conversation is the lesson.</p>
+    <div class="llm-prompt-block">
+      <button class="copy-btn" aria-label="Copy prompt" onclick="copyPrompt(this)">
+        <svg class="icon-clipboard" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3" width="8" height="10" rx="1.5"/><path d="M3 5v7a1.5 1.5 0 001.5 1.5H11"/></svg>
+        <svg class="icon-check" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><polyline points="3,8 7,12 13,4"/></svg>
+      </button>
+      <code>I'm working through Data Vault Foundations (datavault-foundations.netlify.app), currently on Chapter ___. Read the chapter and help me understand the concepts — quiz me, explain things differently, go deeper where I'm curious.</code>
+    </div>
+  </section>
+
+  <!-- CHAPTER GRID -->
+  <section class="grid-section">
+    <div class="section-title">Chapters</div>
+    <div class="chapter-grid">
+
+      <a class="chapter-card card-dv" href="chapters/01-ontology.html">
+        <div class="card-header">
+          <span class="card-num">01</span>
+          <span class="card-title">Ontology</span>
+        </div>
+        <span class="card-tag tag-dv">DV Architecture</span>
+      </a>
+
+      <a class="chapter-card card-dv" href="chapters/02-data-vault-deep-cuts.html">
+        <div class="card-header">
+          <span class="card-num">02</span>
+          <span class="card-title">Data Vault Deep Cuts</span>
+        </div>
+        <span class="card-tag tag-dv">DV Architecture</span>
+      </a>
+
+      <a class="chapter-card card-sql" href="chapters/03-sql-select.html">
+        <div class="card-header">
+          <span class="card-num">03</span>
+          <span class="card-title">SQL SELECT</span>
+        </div>
+        <span class="card-tag tag-sql">SQL</span>
+      </a>
+
+      <a class="chapter-card card-sql" href="chapters/04-sql-joins.html">
+        <div class="card-header">
+          <span class="card-num">04</span>
+          <span class="card-title">SQL JOINs</span>
+        </div>
+        <span class="card-tag tag-sql">SQL</span>
+      </a>
+
+      <a class="chapter-card card-compliance" href="chapters/05-compliance-gdpr.html">
+        <div class="card-header">
+          <span class="card-num">05</span>
+          <span class="card-title">Compliance and GDPR</span>
+        </div>
+        <span class="card-tag tag-compliance">Compliance</span>
+      </a>
+
+      <a class="chapter-card card-tools" href="chapters/06-dbt-tools.html">
+        <div class="card-header">
+          <span class="card-num">06</span>
+          <span class="card-title">dbt Tools</span>
+        </div>
+        <span class="card-tag tag-tools">Tools</span>
+      </a>
+
+      <a class="chapter-card card-compliance" href="chapters/07-eu-regulations.html">
+        <div class="card-header">
+          <span class="card-num">07</span>
+          <span class="card-title">EU Regulations</span>
+        </div>
+        <span class="card-tag tag-compliance">Compliance</span>
+      </a>
+
+      <a class="chapter-card card-compliance" href="chapters/08-compliance-mechanisms.html">
+        <div class="card-header">
+          <span class="card-num">08</span>
+          <span class="card-title">Compliance Mechanisms</span>
+        </div>
+        <span class="card-tag tag-compliance">Compliance</span>
+      </a>
+
+      <a class="chapter-card card-compliance" href="chapters/09-ai-act-data-vault.html">
+        <div class="card-header">
+          <span class="card-num">09</span>
+          <span class="card-title">AI Act and Data Vault</span>
+        </div>
+        <span class="card-tag tag-compliance">Compliance</span>
+      </a>
+
+      <a class="chapter-card card-sql" href="chapters/10-sql-create-table.html">
+        <div class="card-header">
+          <span class="card-num">10</span>
+          <span class="card-title">SQL CREATE TABLE</span>
+        </div>
+        <span class="card-tag tag-sql">SQL</span>
+      </a>
+
+      <a class="chapter-card card-sql" href="chapters/11-sql-practice-dbt.html">
+        <div class="card-header">
+          <span class="card-num">11</span>
+          <span class="card-title">SQL Practice and dbt</span>
+        </div>
+        <span class="card-tag tag-sql">SQL</span>
+      </a>
+
+      <a class="chapter-card card-sql" href="chapters/12-integration-day.html">
+        <div class="card-header">
+          <span class="card-num">12</span>
+          <span class="card-title">Integration Day</span>
+        </div>
+        <span class="card-tag tag-sql">SQL</span>
+      </a>
+
+      <a class="chapter-card card-compliance" href="chapters/13-compliance-self-test.html">
+        <div class="card-header">
+          <span class="card-num">13</span>
+          <span class="card-title">Compliance Self-Test</span>
+        </div>
+        <span class="card-tag tag-compliance">Compliance</span>
+      </a>
+
+      <a class="chapter-card card-python" href="chapters/14-python-vault-runner.html">
+        <div class="card-header">
+          <span class="card-num">14</span>
+          <span class="card-title">Python Vault Runner</span>
+        </div>
+        <span class="card-tag tag-python">Python</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="about-section">
+    <h2>About This Project</h2>
+    <p>
+      These chapters were built as an interactive learning journey through Data Vault 2.0 and its surrounding ecosystem. Each one is a standalone visual experience with exercises, quizzes, and concept explanations using the 32nd-century programmable matter aesthetic.
+    </p>
+    <p>
+      Topics span from foundational ontology (what IS a Hub?) through SQL construction, dbt tooling, EU regulatory compliance (GDPR, DORA, AI Act), and Python for data engineering. The chapters use Skyrim, Star Trek, and The Matrix as analogy domains to make abstract architecture tangible.
+    </p>
+  </section>
+
+  <!-- GO FURTHER -->
+  <section class="further-section">
+    <h2>Go Further</h2>
+    <p>
+      These chapters cover the foundations — what Data Vault is, how SQL queries it, and why compliance matters. They're a starting point, not the destination.
+    </p>
+    <p>
+      For professional certification, enterprise implementation, and the tooling that automates Data Vault at scale — that's <a href="https://www.scalefree.com">ScaleFree International</a>, the consultancy that co-created Data Vault 2.0. Their <a href="https://www.scalefree.com/trainings/">Boot Camp &amp; Certification</a> is where practitioners go next.
+    </p>
+    <a class="further-link" href="https://www.scalefree.com">scalefree.com &rarr;</a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <p>Data Vault Foundations</p>
+    <p style="margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.25); letter-spacing: 0.04em;">Created by &copy; <a href="https://lorenzocolombani.com" style="color: inherit;">Lorenzo Colombani</a> 2026</p>
+  </footer>
+
+</div>
+
+<script>
+function copyPrompt(btn) {
+  var text = btn.parentElement.querySelector('code').textContent;
+  navigator.clipboard.writeText(text);
+  btn.querySelector('.icon-clipboard').style.display = 'none';
+  btn.querySelector('.icon-check').style.display = '';
+  setTimeout(function() {
+    btn.querySelector('.icon-clipboard').style.display = '';
+    btn.querySelector('.icon-check').style.display = 'none';
+  }, 2000);
+}
+</script>
+
+<script>
+/* Star Constellation Particle Field */
+(function() {
+  var canvas = document.getElementById('particle-field');
+  var ctx = canvas.getContext('2d');
+  var w, h;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var STAR_COUNT = 110;
+  var HUB_FRACTION = 0.15;
+  var CONNECT_DIST = 140;
+  var MOUSE_RADIUS = 200;
+  var MOUSE_STRENGTH = 0.015;
+
+  var starColors = [
+    { r: 16, g: 185, b: 129 },
+    { r: 59, g: 130, b: 246 },
+    { r: 245, g: 158, b: 11 },
+    { r: 0, g: 180, b: 255 },
+    { r: 6, g: 182, b: 212 },
+    { r: 139, g: 92, b: 246 },
+    { r: 168, g: 85, b: 247 }
+  ];
+
+  var stars = [];
+  for (var i = 0; i < STAR_COUNT; i++) {
+    var isHub = Math.random() < HUB_FRACTION;
+    var col = starColors[Math.floor(Math.random() * starColors.length)];
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      baseSize: isHub ? (2.5 + Math.random() * 2) : (0.8 + Math.random() * 1.2),
+      opacity: isHub ? (0.6 + Math.random() * 0.4) : (0.25 + Math.random() * 0.35),
+      r: col.r, g: col.g, b: col.b,
+      isHub: isHub,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.008 + Math.random() * 0.012,
+      driftAngle: Math.random() * Math.PI * 2,
+      driftSpeed: 0.08 + Math.random() * 0.15,
+      driftTurn: (Math.random() - 0.5) * 0.005
+    });
+  }
+
+  var mouse = { x: 0, y: 0, active: false };
+  document.addEventListener('mousemove', function(e) {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+  });
+  document.addEventListener('mouseleave', function() { mouse.active = false; });
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      p.pulse += p.pulseSpeed;
+      p.driftAngle += p.driftTurn;
+      p.x += Math.cos(p.driftAngle) * p.driftSpeed;
+      p.y += Math.sin(p.driftAngle) * p.driftSpeed;
+
+      if (mouse.active) {
+        var dx = mouse.x - p.x;
+        var dy = mouse.y - p.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS && dist > 1) {
+          var force = (1 - dist / MOUSE_RADIUS) * MOUSE_STRENGTH;
+          p.x += dx * force;
+          p.y += dy * force;
+        }
+      }
+
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      for (var j = i + 1; j < stars.length; j++) {
+        var dx = stars[i].x - stars[j].x;
+        var dy = stars[i].y - stars[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          var alpha = (1 - dist / CONNECT_DIST) * 0.12;
+          if (stars[i].isHub || stars[j].isHub) alpha *= 1.8;
+          ctx.beginPath();
+          ctx.moveTo(stars[i].x, stars[i].y);
+          ctx.lineTo(stars[j].x, stars[j].y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (mouse.active) {
+      for (var i = 0; i < stars.length; i++) {
+        var p = stars[i];
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          var mFade = 1 - mDist / MOUSE_RADIUS;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + (mFade * mFade * 0.2) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      var pulseVal = 0.6 + 0.4 * Math.sin(p.pulse);
+      var currentOpacity = p.opacity * pulseVal;
+      var currentSize = p.baseSize * (0.85 + 0.15 * Math.sin(p.pulse));
+
+      var proximityBoost = 1;
+      if (mouse.active) {
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          proximityBoost = 1 + (1 - mDist / MOUSE_RADIUS) * 1.5;
+        }
+      }
+
+      var boostedOpacity = Math.min(currentOpacity * proximityBoost, 1);
+
+      var glowRadius = currentSize * (p.isHub ? 8 : 5);
+      var grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      grd.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.3) + ')');
+      grd.addColorStop(0.4, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.08) + ')');
+      grd.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + Math.min(p.r + 60, 255) + ',' + Math.min(p.g + 60, 255) + ',' + Math.min(p.b + 60, 255) + ',' + boostedOpacity + ')';
+      ctx.fill();
+
+      if (p.isHub) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, currentSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (boostedOpacity * 0.7) + ')';
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

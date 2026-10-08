@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 7: EU Regulations — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #030810;
+  --bg-void: #010409;
+  --pm-surface: rgba(8, 20, 42, 0.82);
+  --pm-surface-hover: rgba(12, 28, 54, 0.88);
+  --pm-glass: rgba(0, 180, 255, 0.06);
+  --pm-glass-edge: rgba(0, 180, 255, 0.12);
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+  /* Tools color palette */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --accent-dim: rgba(0, 180, 255, 0.06);
+  --accent-color: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --accent-bg: rgba(251, 191, 36, 0.04);
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.3);
+  --sql-select: #22c55e;
+  --sql-select-dim: rgba(34, 197, 94, 0.08);
+  --sql-select-glow: rgba(34, 197, 94, 0.25);
+  --border-subtle: rgba(0, 180, 255, 0.08);
+  --border-medium: rgba(0, 180, 255, 0.15);
+  --border-glow: rgba(0, 180, 255, 0.3);
+  --border-active: rgba(0, 180, 255, 0.45);
+  --holo-cyan: #0ef;
+  --holo-cyan-dim: rgba(0, 238, 255, 0.04);
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Exo 2', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#particle-field {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.scanline-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 238, 255, 0.007) 2px, rgba(0, 238, 255, 0.007) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.scan-bar {
+  position: fixed;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 238, 255, 0.08), transparent);
+  animation: scan-sweep 12s linear infinite;
+  pointer-events: none;
+  z-index: 9997;
+}
+
+@keyframes scan-sweep {
+  0% { top: -3px; }
+  100% { top: 100vh; }
+}
+
+.page-content { position: relative; z-index: 2; }
+
+/* NAVIGATION */
+.holo-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(3, 8, 16, 0.9);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.nav-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+.nav-nodes { display: flex; align-items: center; gap: 4px; padding: 12px 0 8px; }
+.nav-node {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--accent-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+  opacity: 0;
+  animation: node-appear 0.4s ease both;
+}
+.nav-node:hover { border-color: var(--accent); color: var(--hub-text); background: rgba(0, 180, 255, 0.1); box-shadow: 0 0 18px rgba(0, 180, 255, 0.2); }
+.nav-node.active { opacity: 1; border-color: var(--accent); color: var(--bg-deep); background: var(--accent); box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.15); animation: node-appear 0.4s ease both, node-pulse 3s ease-in-out 0.4s infinite; }
+.nav-node.completed { opacity: 1; border-color: var(--sql-select); color: var(--sql-select); background: rgba(34, 197, 94, 0.08); }
+.nav-connector { flex: 1; height: 1px; background: var(--border-subtle); min-width: 6px; transition: all 0.6s; }
+.nav-connector.active { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+@keyframes node-pulse { 0%, 100% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.1); } 50% { box-shadow: 0 0 28px rgba(0, 180, 255, 0.5), 0 0 55px rgba(0, 180, 255, 0.2); } }
+@keyframes node-appear { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+.nav-node:nth-child(1) { animation-delay: 0.1s; }
+.nav-node:nth-child(3) { animation-delay: 0.15s; }
+.nav-node:nth-child(5) { animation-delay: 0.2s; }
+.nav-node:nth-child(7) { animation-delay: 0.25s; }
+.nav-node:nth-child(9) { animation-delay: 0.3s; }
+.nav-node:nth-child(11) { animation-delay: 0.35s; }
+.nav-node:nth-child(13) { animation-delay: 0.4s; }
+.nav-node:nth-child(15) { animation-delay: 0.45s; }
+.nav-node:nth-child(17) { animation-delay: 0.5s; }
+.nav-label { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); text-align: center; padding: 2px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* LCARS SEGMENTED PROGRESS BAR */
+.lcars-bar { display: flex; align-items: stretch; padding: 6px 24px 4px; gap: 0; }
+.lcars-elbow { width: 18px; flex-shrink: 0; background: var(--accent); border-radius: 0 0 0 14px; opacity: 0.35; position: relative; transition: opacity 0.6s ease; }
+.lcars-elbow::after { content: ''; position: absolute; bottom: -12px; left: 0; width: 100%; height: 12px; background: var(--accent); border-radius: 0 0 0 8px; opacity: inherit; }
+.lcars-segments { display: flex; gap: 3px; flex: 1; height: 32px; padding-left: 4px; }
+.lcars-seg {
+  flex: 1; border-radius: 3px;
+  background: linear-gradient(90deg, var(--seg-color) 0%, var(--seg-color) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) 100%);
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255, 255, 255, 0.5); cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0; animation: seg-appear 0.4s ease both;
+}
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; } .lcars-seg:nth-child(2) { animation-delay: 0.1s; } .lcars-seg:nth-child(3) { animation-delay: 0.15s; } .lcars-seg:nth-child(4) { animation-delay: 0.2s; } .lcars-seg:nth-child(5) { animation-delay: 0.25s; } .lcars-seg:nth-child(6) { animation-delay: 0.3s; } .lcars-seg:nth-child(7) { animation-delay: 0.35s; } .lcars-seg:nth-child(8) { animation-delay: 0.4s; } .lcars-seg:nth-child(9) { animation-delay: 0.45s; }
+@keyframes seg-appear { from { opacity: 0; transform: scaleX(0.3); } to { opacity: 1; transform: scaleX(1); } }
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+.lcars-seg.active { box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent), inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent); color: var(--bg-deep); }
+.lcars-seg.completed { --seg-fill: 100%; filter: brightness(0.7); color: var(--bg-deep); }
+.lcars-seg:hover { filter: brightness(1.2); box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent); }
+.lcars-flow { height: 3px; margin: 0 24px; background: rgba(0, 180, 255, 0.06); }
+.lcars-flow-fill { height: 100%; background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); width: 0%; transition: width 0.5s ease; }
+/* CONTAINER */
+.container { max-width: 800px; margin: 0 auto; padding: 92px 28px 140px; }
+
+/* TITLE */
+.title-section { margin-bottom: 72px; padding-bottom: 48px; border-bottom: 1px solid var(--border-subtle); opacity: 0; animation: matter-form 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+@keyframes matter-form { 0% { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(6px); } 40% { filter: blur(2px); } 70% { filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+.title-label { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; display: flex; align-items: center; gap: 12px; }
+.title-label::before { content: ''; width: 32px; height: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.title-section h1 { font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.15; color: var(--text-bright); margin-bottom: 18px; letter-spacing: 0.02em; text-shadow: 0 0 40px rgba(16, 185, 129, 0.12); }
+.title-section .subtitle { font-size: 17px; color: var(--text-secondary); font-weight: 400; line-height: 1.75; max-width: 620px; }
+.meta-chips { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.meta-chip { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; background: var(--holo-cyan-dim); color: var(--text-dim); border: 1px solid var(--border-subtle); transition: all 0.4s; opacity: 0; animation: chip-appear 0.5s ease both; }
+.meta-chip:hover { border-color: var(--border-medium); color: var(--text-secondary); box-shadow: 0 0 12px rgba(0, 180, 255, 0.08); }
+.meta-chip:nth-child(1) { animation-delay: 0.6s; } .meta-chip:nth-child(2) { animation-delay: 0.7s; } .meta-chip:nth-child(3) { animation-delay: 0.8s; } .meta-chip:nth-child(4) { animation-delay: 0.9s; } .meta-chip:nth-child(5) { animation-delay: 1.0s; } .meta-chip:nth-child(6) { animation-delay: 1.1s; } .meta-chip:nth-child(7) { animation-delay: 1.2s; }
+@keyframes chip-appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* SECTIONS */
+.section { margin-bottom: 88px; }
+@supports (animation-timeline: view()) {
+  .section { animation: scroll-materialize both linear; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+  @keyframes scroll-materialize { 0% { opacity: 0; transform: translateY(30px) scale(0.97); filter: blur(4px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+}
+@supports not (animation-timeline: view()) {
+  .section { opacity: 0; transform: translateY(30px); transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94); filter: blur(4px); }
+  .section.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+.section-tag { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bg-deep); padding: 5px 16px; border-radius: 4px; white-space: nowrap; }
+.section-tag.accent-t { background: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+.section-tag.exercise-t { background: linear-gradient(135deg, var(--sql-select), var(--accent)); box-shadow: 0 0 16px var(--success-glow); }
+.section-tag.hub-t { background: var(--hub-color); box-shadow: 0 0 14px var(--hub-glow); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+h2 { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 600; line-height: 1.3; color: var(--text-bright); margin-bottom: 22px; letter-spacing: 0.01em; }
+h3 { font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 600; color: var(--text-bright); margin: 38px 0 14px; letter-spacing: 0.02em; }
+p { margin-bottom: 16px; }
+strong { font-weight: 600; color: var(--text-bright); }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; background: var(--accent-dim); color: var(--hub-text); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-subtle); }
+/* TIER BADGES */
+.tier-badge { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 10px; border-radius: 10px; margin-left: 12px; vertical-align: middle; }
+.tier-core { background: var(--hub-dim); color: var(--hub-text); border: 1px solid rgba(6, 182, 212, 0.2); }
+.tier-important { background: var(--etl-dim); color: var(--etl-text); border: 1px solid rgba(245, 158, 11, 0.2); }
+.tier-bonus { background: var(--sat-dim); color: var(--sat-text); border: 1px solid rgba(168, 85, 247, 0.15); opacity: 0.8; }
+
+/* PM PANELS */
+.pm-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 26px 30px; margin: 26px 0; position: relative; overflow: hidden; backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); transition: border-color 0.5s, box-shadow 0.5s, transform 0.5s; }
+.pm-panel:hover { border-color: var(--border-glow); box-shadow: 0 0 30px rgba(0, 180, 255, 0.06), inset 0 0 40px rgba(0, 180, 255, 0.02); transform: translateY(-1px); }
+.pm-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.35; }
+.pm-panel::after { content: ''; position: absolute; top: -1px; left: 0; width: 60px; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; animation: edge-charge 6s ease-in-out infinite; }
+@keyframes edge-charge { 0% { left: -60px; opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { left: calc(100% + 60px); opacity: 0; } }
+
+/* HOOK PANELS */
+.hook { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.hook::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+.hook::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50px; pointer-events: none; }
+.hook-default::before { background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.hook-default::after { background: linear-gradient(90deg, rgba(0,180,255,0.06), transparent); }
+.hook .hook-text { font-size: 17.5px; font-weight: 400; color: var(--text-bright); line-height: 1.75; margin: 0; }
+.hook-default .hook-text em { color: var(--hub-text); text-shadow: 0 0 12px var(--hub-glow); font-style: normal; }
+
+/* LANGUAGE BRIDGE */
+.language-bridge { background: var(--pm-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 24px 28px; margin: 26px 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.bridge-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--link-text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.bridge-label::before { content: ''; width: 16px; height: 2px; background: var(--link-color); box-shadow: 0 0 6px var(--link-glow); }
+.language-bridge p { font-size: 15px; color: var(--text-secondary); margin-bottom: 10px; }
+.language-bridge p:last-child { margin-bottom: 0; }
+.bridge-word { color: var(--link-text); font-weight: 600; }
+/* 4-LAYER EXPLANATION */
+.four-layers { margin: 30px 0; border: 1px solid var(--border-medium); border-radius: 16px; overflow: hidden; background: var(--pm-surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.layers-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px 12px; }
+.layers-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); }
+.layer-dots { display: flex; gap: 8px; }
+.layer-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--border-subtle); background: transparent; transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); cursor: pointer; }
+.layer-dot.l1 { border-color: var(--success-color); } .layer-dot.l2 { border-color: var(--hub-color); } .layer-dot.l3 { border-color: var(--link-color); } .layer-dot.l4 { border-color: var(--sat-color); }
+.layer-dot.active { transform: scale(1.4); }
+.layer-dot.l1.active { background: var(--success-color); box-shadow: 0 0 10px var(--success-glow); }
+.layer-dot.l2.active { background: var(--hub-color); box-shadow: 0 0 10px var(--hub-glow); }
+.layer-dot.l3.active { background: var(--link-color); box-shadow: 0 0 10px var(--link-glow); }
+.layer-dot.l4.active { background: var(--sat-color); box-shadow: 0 0 10px var(--sat-glow); }
+.layer { border-top: 1px solid var(--border-subtle); overflow: hidden; }
+.layer-header { display: flex; align-items: center; gap: 14px; padding: 14px 28px; cursor: pointer; user-select: none; transition: background 0.4s; }
+.layer-header:hover { background: rgba(0, 180, 255, 0.03); }
+.layer-badge { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 14px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.layer-1 .layer-badge { background: var(--success-color); color: var(--bg-deep); }
+.layer-2 .layer-badge { background: var(--hub-color); color: var(--bg-deep); }
+.layer-3 .layer-badge { background: var(--link-color); color: var(--bg-deep); }
+.layer-4 .layer-badge { background: var(--sat-color); color: var(--bg-deep); }
+.layer-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); flex: 1; }
+.layer-toggle { font-size: 12px; color: var(--text-dim); transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.layer.open .layer-toggle { transform: rotate(180deg); }
+.layer-content { max-height: 0; overflow: hidden; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.layer.open .layer-content { max-height: 600px; }
+.layer-content-inner { padding: 0 28px 22px; font-size: 15px; line-height: 1.8; color: var(--text-secondary); animation: layer-fade 0.5s ease; }
+@keyframes layer-fade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.layer-content-inner p { margin-bottom: 10px; font-size: 15px; }
+.layer-content-inner p:last-child { margin-bottom: 0; }
+/* DATA TABLES */
+.data-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; margin: 26px 0; overflow: hidden; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; }
+.data-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3; }
+.data-panel-header { padding: 12px 24px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); }
+.data-panel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; animation: dot-glow 3s ease-in-out infinite; }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+.data-panel-dot.hub { background: var(--hub-color); box-shadow: 0 0 8px var(--hub-color); }
+.data-panel-dot.result { background: var(--sql-select); box-shadow: 0 0 8px var(--sql-select); }
+.data-panel-title { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; flex: 1; }
+.data-panel-title.snow-title { color: var(--snow-text); }
+.data-panel-title.result-title { color: var(--sql-select); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.data-table td { font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 10px 16px; border-bottom: 1px solid rgba(0, 180, 255, 0.04); color: var(--text-secondary); transition: background 0.3s; }
+.data-table tr:hover td { background: rgba(0, 180, 255, 0.03); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table td.pk { color: var(--hub-text); font-weight: 500; }
+.data-table td.dbt-val { color: var(--dbt-text); font-weight: 500; }
+.data-table td.etl-val { color: var(--etl-text); font-weight: 500; }
+.data-table td.val { color: var(--text-secondary); }
+/* CONCEPT CALLOUT */
+.concept-callout { background: var(--accent-bg); border: 1px solid rgba(251, 191, 36, 0.12); border-radius: 14px; padding: 22px 26px; margin: 28px 0; position: relative; overflow: hidden; }
+.concept-callout::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent-color); box-shadow: 0 0 8px var(--accent-glow); border-radius: 3px 0 0 3px; }
+.concept-callout::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50px; background: linear-gradient(90deg, rgba(251,191,36,0.04), transparent); pointer-events: none; }
+.concept-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-color); margin-bottom: 10px; text-shadow: 0 0 10px var(--accent-glow); }
+.concept-callout blockquote { font-size: 15px; color: var(--text-bright); font-weight: 400; margin: 0; line-height: 1.75; font-style: italic; border: none; padding: 0; }
+
+/* CONTRASTIVE PANEL */
+.contrast-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 26px 0; border: 1px solid var(--border-medium); border-radius: 14px; overflow: hidden; background: var(--pm-surface); }
+.contrast-side { padding: 24px 26px; }
+.contrast-side:first-child { border-right: 1px solid var(--border-subtle); }
+.contrast-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+.contrast-side p { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+.contrast-side p:last-child { margin-bottom: 0; }
+
+/* DISAMBIGUATION PANEL */
+.disambig-panel { border: 2px solid rgba(245, 158, 11, 0.2); border-radius: 16px; padding: 28px 30px; margin: 30px 0; background: var(--pm-surface); position: relative; overflow: hidden; }
+.disambig-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, var(--etl-color), transparent); opacity: 0.4; }
+.disambig-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--etl-text); margin-bottom: 16px; text-shadow: 0 0 10px var(--etl-glow); }
+.disambig-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; }
+.disambig-item { padding: 16px 18px; border-radius: 10px; }
+.disambig-item h4 { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.disambig-item p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+/* CODE BLOCKS */
+.code-panel { background: rgba(2, 6, 14, 0.9); border: 1px solid var(--border-subtle); border-radius: 12px; margin: 22px 0; overflow: hidden; }
+.code-header { padding: 8px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.code-dot { width: 7px; height: 7px; border-radius: 50%; }
+.code-dot.r { background: #ef4444; } .code-dot.y { background: #f59e0b; } .code-dot.g { background: #22c55e; }
+.code-filename { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); margin-left: 8px; }
+.code-body { padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; color: var(--text-secondary); white-space: pre-wrap; }
+
+/* EXPLORE MORE */
+.explore-opener { display: flex; align-items: center; gap: 10px; padding: 12px 18px; margin: 24px 0 0; background: rgba(10, 25, 47, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.12); border-radius: 12px; cursor: pointer; transition: all 0.35s ease; user-select: none; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 180, 255, 0.15); }
+.explore-opener:hover { background: rgba(10, 25, 47, 0.85); border-color: var(--accent); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 180, 255, 0.1); transform: translateY(-1px); }
+.explore-opener .explore-icon { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--accent); flex-shrink: 0; transition: transform 0.35s ease, background 0.35s ease; }
+.explore-opener.open .explore-icon { transform: rotate(45deg); background: var(--accent); color: var(--bg-deep); }
+.explore-opener .explore-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: color 0.3s ease; }
+.explore-opener:hover .explore-label { color: var(--text-primary); }
+.explore-opener .explore-hint { font-family: 'Orbitron', monospace; font-size: 7px; font-weight: 600; letter-spacing: 0.12em; color: var(--accent); opacity: 0.5; margin-left: auto; transition: opacity 0.3s ease; }
+.explore-opener:hover .explore-hint { opacity: 1; }
+.explore-panel { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.explore-panel.open { max-height: 800px; }
+.explore-panel-inner { padding: 20px 22px 16px; margin: 6px 0 20px; background: rgba(10, 25, 47, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.08); border-radius: 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 180, 255, 0.1); animation: explore-slide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes explore-slide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.explore-panel-inner p { font-size: 14px; line-height: 1.65; color: var(--text-secondary); margin: 0 0 10px; }
+.explore-panel-inner p:last-child { margin: 0; }
+.explore-panel-inner strong { color: var(--text-primary); }
+/* EXERCISE */
+.exercise-section { background: var(--pm-surface); border: 2px solid var(--sql-select); border-radius: 18px; padding: 34px; margin: 52px 0; position: relative; overflow: hidden; box-shadow: 0 0 35px var(--sql-select-glow), 0 0 70px rgba(34,197,94,0.04); }
+.exercise-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--sql-select), transparent); animation: exercise-glow 4s ease-in-out infinite; }
+@keyframes exercise-glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+.exercise-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sql-select); margin-bottom: 16px; text-shadow: 0 0 10px var(--sql-select-glow); }
+.exercise-section h2 { font-size: 22px; margin-bottom: 10px; }
+.match-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 1px solid var(--border-subtle); border-radius: 10px; margin: 8px 0; }
+.match-label { font-size: 14px; color: var(--text-bright); min-width: 180px; flex-shrink: 0; }
+.match-select { flex: 1; font-family: 'Exo 2', sans-serif; font-size: 13px; background: rgba(2, 6, 14, 0.8); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 8px 12px; color: var(--text-primary); outline: none; cursor: pointer; transition: border-color 0.3s; }
+.match-select:focus { border-color: var(--accent); }
+.match-select option { background: var(--bg-deep); color: var(--text-primary); }
+.match-feedback { font-size: 12px; min-width: 20px; text-align: center; }
+.check-btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sql-select); background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 10px; padding: 10px 24px; cursor: pointer; margin-top: 14px; transition: all 0.4s; }
+.check-btn:hover { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.45); box-shadow: 0 0 20px rgba(34,197,94,0.2); }
+.feedback { margin-top: 14px; padding: 16px 20px; border-radius: 12px; font-size: 14px; display: none; animation: feedback-appear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes feedback-appear { from { opacity: 0; transform: translateY(-10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.feedback.correct { display: block; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); color: var(--sql-select); }
+.feedback.incorrect { display: block; background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); color: #f97316; }
+
+/* PIPELINE FLOW */
+.pipeline-flow { display: flex; align-items: center; gap: 0; margin: 30px 0; padding: 20px; overflow-x: auto; }
+.pipeline-node { padding: 12px 16px; border-radius: 10px; font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; text-align: center; white-space: nowrap; min-width: 80px; border: 1px solid; }
+.pipeline-arrow { font-size: 16px; color: var(--text-dim); padding: 0 4px; flex-shrink: 0; }
+
+/* COMPLETION */
+.completion-banner { display: none; background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.06)); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 14px; padding: 24px 28px; margin-top: 28px; text-align: center; animation: matter-form 0.8s ease forwards; }
+.completion-banner h3 { font-family: 'Orbitron', sans-serif; font-size: 18px; color: var(--sql-select); margin-bottom: 8px; text-shadow: 0 0 15px var(--sql-select-glow); }
+.completion-banner p { font-size: 14px; color: var(--text-secondary); margin: 0; }
+
+.tutorial-footer { margin-top: 80px; padding: 24px 0; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+
+/* AMBIENT + PARALLAX */
+.ambient-glow { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 0; transition: background 1.5s ease; background: radial-gradient(ellipse 600px 400px at 15% 20%, var(--ambient-c1, rgba(16, 185, 129, 0.06)) 0%, transparent 70%), radial-gradient(ellipse 500px 500px at 85% 60%, var(--ambient-c2, rgba(139, 92, 246, 0.04)) 0%, transparent 70%), radial-gradient(ellipse 400px 300px at 50% 90%, var(--ambient-c3, rgba(245, 158, 11, 0.03)) 0%, transparent 70%); }
+.parallax-layer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape.shape-1 { width: 300px; height: 300px; top: 10%; left: 5%; }
+.depth-shape.shape-2 { width: 200px; height: 200px; top: 40%; right: 10%; }
+.depth-shape.shape-3 { width: 250px; height: 250px; top: 70%; left: 60%; }
+.depth-shape.shape-4 { width: 180px; height: 180px; top: 30%; left: 40%; }
+/* WORD REVEAL */
+.hook-text .word { opacity: 0.2; transition: opacity 0.25s ease; }
+.section.visible .hook-text .word, .hook-text .word.lit { opacity: 1; }
+@supports (animation-timeline: view()) {
+  .section h2 { background: linear-gradient(90deg, var(--text-bright) 0%, var(--text-bright) 50%, var(--text-dim) 50.5%, var(--text-dim) 100%); background-size: 200% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: heading-sweep both linear; animation-timeline: view(); animation-range: entry 10% entry 80%; }
+  @keyframes heading-sweep { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+}
+
+@supports not (animation-timeline: view()) {
+  .section .data-table tr { opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  .section.visible .data-table tr { opacity: 1; transform: translateY(0); }
+  .section.visible .data-table tr:nth-child(1) { transition-delay: 0ms; } .section.visible .data-table tr:nth-child(2) { transition-delay: 60ms; } .section.visible .data-table tr:nth-child(3) { transition-delay: 120ms; } .section.visible .data-table tr:nth-child(4) { transition-delay: 180ms; } .section.visible .data-table tr:nth-child(5) { transition-delay: 240ms; } .section.visible .data-table tr:nth-child(6) { transition-delay: 300ms; }
+}
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .container { padding: 88px 18px 100px; }
+  .title-section h1 { font-size: 28px; }
+  h2 { font-size: 20px; }
+  .pm-panel { padding: 20px 22px; }
+  .hook { padding: 22px 24px; }
+  .exercise-section { padding: 24px 20px; }
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .contrast-panel { grid-template-columns: 1fr; }
+  .contrast-side:first-child { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+  .disambig-grid { grid-template-columns: 1fr; }
+  .disambig-vs { padding: 8px 0; }
+  .pipeline-flow { flex-wrap: wrap; justify-content: center; }
+  .match-row { flex-wrap: wrap; }
+  .match-label { min-width: 140px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.1ms !important; }
+  .section { opacity: 1; transform: none; filter: none; }
+  .title-section { opacity: 1; animation: none; }
+  .nav-node { opacity: 1; }
+  .meta-chip { opacity: 1; }
+  .lcars-seg { opacity: 1; }
+  .hook-text .word { opacity: 1; }
+  .data-table tr { opacity: 1; transform: none; }
+  .ambient-glow { transition: none; }
+  .section h2 { -webkit-text-fill-color: var(--text-bright); background: none; }
+}
+<style>
+/* Chapter 7: EU Regulatory Landscape — Tutorial-Specific CSS */
+
+:root {
+  --reg-blue: #1a3d8f;
+  --reg-blue-glow: rgba(26, 61, 143, 0.4);
+  --reg-blue-dim: rgba(26, 61, 143, 0.15);
+  --reg-blue-text: #6b8fd4;
+
+  --reg-amber: #c8920a;
+  --reg-amber-glow: rgba(200, 146, 10, 0.4);
+  --reg-amber-dim: rgba(200, 146, 10, 0.15);
+  --reg-amber-text: #e8b84b;
+
+  --reg-crimson: #9b2335;
+  --reg-crimson-glow: rgba(155, 35, 53, 0.4);
+  --reg-crimson-dim: rgba(155, 35, 53, 0.15);
+  --reg-crimson-text: #d46b7a;
+
+  --reg-purple: #6b2d8f;
+  --reg-purple-glow: rgba(107, 45, 143, 0.4);
+  --reg-purple-dim: rgba(107, 45, 143, 0.15);
+  --reg-purple-text: #a97bd4;
+
+  --reg-green: #1a6b3c;
+  --reg-green-glow: rgba(26, 107, 60, 0.4);
+  --reg-green-dim: rgba(26, 107, 60, 0.15);
+  --reg-green-text: #4db87a;
+}
+
+/* Ambient background gradient */
+body::before {
+  background:
+    radial-gradient(ellipse at 15% 20%, rgba(26, 61, 143, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 70%, rgba(200, 146, 10, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(155, 35, 53, 0.08) 0%, transparent 60%);
+}
+
+/* LCARS flow gradient */
+.lcars-flow-fill {
+  background: linear-gradient(90deg, var(--reg-blue) 0%, var(--reg-amber) 50%, var(--reg-crimson) 100%);
+  box-shadow: 0 0 8px var(--reg-blue-glow);
+}
+
+/* Section tag variants */
+.section-tag.reg-act-t     { background: var(--reg-blue);    box-shadow: 0 0 14px var(--reg-blue-glow); }
+.section-tag.reg-dora-t    { background: var(--reg-amber);   box-shadow: 0 0 14px var(--reg-amber-glow); }
+.section-tag.reg-privacy-t { background: var(--reg-crimson); box-shadow: 0 0 14px var(--reg-crimson-glow); }
+.section-tag.comparison-t  { background: var(--reg-purple);  box-shadow: 0 0 14px var(--reg-purple-glow); }
+
+/* Hook color variants */
+.hook-reg-act::before     { background: var(--reg-blue);    box-shadow: 0 0 12px var(--reg-blue-glow); }
+.hook-reg-act::after      { background: linear-gradient(90deg, rgba(26, 61, 143, 0.06), transparent); }
+.hook-reg-dora::before    { background: var(--reg-amber);   box-shadow: 0 0 12px var(--reg-amber-glow); }
+.hook-reg-dora::after     { background: linear-gradient(90deg, rgba(200, 146, 10, 0.06), transparent); }
+.hook-reg-privacy::before { background: var(--reg-crimson); box-shadow: 0 0 12px var(--reg-crimson-glow); }
+.hook-reg-privacy::after  { background: linear-gradient(90deg, rgba(155, 35, 53, 0.06), transparent); }
+
+.hook-reg-act .hook-text em     { color: var(--reg-blue-text);    text-shadow: 0 0 12px var(--reg-blue-glow);    font-style: normal; }
+.hook-reg-dora .hook-text em    { color: var(--reg-amber-text);   text-shadow: 0 0 12px var(--reg-amber-glow);   font-style: normal; }
+.hook-reg-privacy .hook-text em { color: var(--reg-crimson-text); text-shadow: 0 0 12px var(--reg-crimson-glow); font-style: normal; }
+
+/* Data panel dot/title variants */
+.data-panel-dot.reg-act     { background: var(--reg-blue);    box-shadow: 0 0 8px var(--reg-blue); }
+.data-panel-dot.reg-dora    { background: var(--reg-amber);   box-shadow: 0 0 8px var(--reg-amber); }
+.data-panel-dot.reg-privacy { background: var(--reg-crimson); box-shadow: 0 0 8px var(--reg-crimson); }
+.data-panel-dot.comparison  { background: var(--reg-purple);  box-shadow: 0 0 8px var(--reg-purple); }
+
+.data-panel-title.reg-act-title     { color: var(--reg-blue-text); }
+.data-panel-title.reg-dora-title    { color: var(--reg-amber-text); }
+.data-panel-title.reg-privacy-title { color: var(--reg-crimson-text); }
+.data-panel-title.comparison-title  { color: var(--reg-purple-text); }
+
+/* Depth shape colors */
+.depth-shape.shape-1 { width: 320px; height: 320px; top: 8%;  left: 3%;   background: radial-gradient(circle, var(--reg-blue),    transparent 70%); }
+.depth-shape.shape-2 { width: 220px; height: 220px; top: 38%; right: 8%;  background: radial-gradient(circle, var(--reg-amber),   transparent 70%); }
+.depth-shape.shape-3 { width: 260px; height: 260px; top: 68%; left: 55%;  background: radial-gradient(circle, var(--reg-crimson), transparent 70%); }
+.depth-shape.shape-4 { width: 190px; height: 190px; top: 25%; left: 38%;  background: radial-gradient(circle, var(--reg-purple),  transparent 70%); }
+
+/* ===================================================
+   OVERFLOW FIXES (bug carried over from tutorial-6)
+   =================================================== */
+.data-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.data-table td,
+.data-table th {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.data-table-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.match-select,
+select {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.match-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.match-label {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.pm-panel,
+.language-bridge,
+.hook,
+.concept-callout,
+.explore-panel {
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+</style>
+<style>
+/* ═══════ Game UI: Inventory + Achievements ═══════ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary, rgba(255,255,255,0.5)); }
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim, rgba(255,255,255,0.3)); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.3));
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright, #fff); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright, #fff); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim, rgba(255,255,255,0.3)); font-family: 'Orbitron', sans-serif; }
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+@media (max-width: 600px) {
+  .inventory-toolbar { bottom: 8px; left: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .inventory-panel { width: calc(100vw - 16px); left: 8px; bottom: 60px; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+
+</style>
+</head>
+<body data-chapter="7" style="padding-top: 52px;">
+<canvas id="particle-field"></canvas>
+<div class="scanline-overlay"></div>
+<div class="scan-bar"></div>
+<div class="ambient-glow" id="ambient-glow"></div>
+<div class="parallax-layer" id="parallax-layer">
+  <div class="depth-shape shape-1"></div>
+  <div class="depth-shape shape-2"></div>
+  <div class="depth-shape shape-3"></div>
+  <div class="depth-shape shape-4"></div>
+</div>
+
+<div class="page-content">
+
+<nav class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('s1')">1</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s2')">2</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s3')">3</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s4')">4</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s5')">5</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s6')">6</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s7')">7</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">Orientation</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: #1a3d8f" onclick="scrollToSection('s1')">1</div>
+        <div class="lcars-seg" style="--seg-color: #c8920a" onclick="scrollToSection('s2')">2</div>
+        <div class="lcars-seg" style="--seg-color: #1a6b3c" onclick="scrollToSection('s3')">3</div>
+        <div class="lcars-seg" style="--seg-color: #8f1a1a" onclick="scrollToSection('s4')">4</div>
+        <div class="lcars-seg" style="--seg-color: #50287a" onclick="scrollToSection('s5')">5</div>
+        <div class="lcars-seg" style="--seg-color: #14648c" onclick="scrollToSection('s6')">6</div>
+        <div class="lcars-seg" style="--seg-color: #287850" onclick="scrollToSection('s7')">EX</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ═══════════════════════════════ TITLE ═══════════════════════════════ -->
+  <div class="title-section">
+    <div class="title-label">CHAPTER 07 // COMPLIANCE DAY 2A</div>
+    <h1>The Regulatory Landscape<br>Beyond GDPR</h1>
+    <p class="subtitle">EU Data Act · DORA · ePrivacy — three regulations, three different slices of the data world your Data Vault already handles</p>
+    <div class="meta-chips">
+      <span class="meta-chip">3 Regulations</span>
+      <span class="meta-chip">7 Sections</span>
+      <span class="meta-chip">3 Exercises</span>
+      <span class="meta-chip tier-badge tier-core" style="font-size:0.7rem;">CORE + IMPORTANT</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ S1: ORIENTATION ═══════════════════════════════ -->
+  <div class="section" id="s1" data-label="Orientation" data-color="26,61,143">
+
+    <div class="section-header">
+      <div class="section-tag accent-t">ORIENTATION</div>
+      <span class="tier-badge tier-core">CORE</span>
+    </div>
+
+    <div class="hook hook-default">
+      <div class="hook-text">GDPR covers personal data. You've <em>mastered</em> that. Your thermostat generates data every 30 seconds. Your factory's CNC machine logs every single cut. A car generates <em>25 gigabytes per hour</em>. None of that is personal data. But someone controls it — and someone wants access to it. Three regulations answer different parts of that question.</div>
+    </div>
+
+    <div class="language-bridge">
+      <div class="lb-label">LANGUAGE BRIDGE</div>
+      <div class="lb-content">
+        <p><strong>"Regulation"</strong> (EU sense) — a specific legal instrument that is directly binding in all 27 EU member states without requiring national legislation to implement it. A <strong>Directive</strong> says "member states, make a law that achieves this goal." A <strong>Regulation</strong> IS the law, identical everywhere, the moment it enters into force.</p>
+        <p style="margin-top:0.75rem;">GDPR is a Regulation. The EU Data Act is a Regulation. DORA is a Regulation. ePrivacy is currently still a Directive — which is one reason it's messier in practice.</p>
+      </div>
+    </div>
+
+    <div class="pm-panel" style="max-width:100%; overflow:hidden;">
+      <div class="pm-panel-header">THE THREE GAPS GDPR LEAVES OPEN</div>
+      <div class="pm-panel-body">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:1rem; overflow:hidden;">
+
+          <div style="background:rgba(26,61,143,0.15); border:1px solid rgba(26,61,143,0.4); border-radius:8px; padding:1rem;">
+            <div style="color:#5b82e0; font-family:'Orbitron',sans-serif; font-size:0.75rem; letter-spacing:0.1em; margin-bottom:0.5rem;">EU DATA ACT</div>
+            <p style="font-size:0.9rem; color:var(--text-secondary);">GDPR covers <em>personal</em> data. Who covers <em>non-personal machine-generated</em> data? Your thermostat, your factory sensors, your car — who can access what they generate?</p>
+          </div>
+
+          <div style="background:rgba(26,107,60,0.15); border:1px solid rgba(26,107,60,0.4); border-radius:8px; padding:1rem;">
+            <div style="color:#2ecc71; font-family:'Orbitron',sans-serif; font-size:0.75rem; letter-spacing:0.1em; margin-bottom:0.5rem;">DORA</div>
+            <p style="font-size:0.9rem; color:var(--text-secondary);">GDPR covers data rights. Who covers <em>financial system reliability</em>? Banks and insurers must prove their IT can survive cyberattacks, outages, and supplier failures.</p>
+          </div>
+
+          <div style="background:rgba(143,26,26,0.15); border:1px solid rgba(143,26,26,0.4); border-radius:8px; padding:1rem;">
+            <div style="color:#e05b5b; font-family:'Orbitron',sans-serif; font-size:0.75rem; letter-spacing:0.1em; margin-bottom:0.5rem;">ePRIVACY</div>
+            <p style="font-size:0.9rem; color:var(--text-secondary);">GDPR covers personal data broadly. Who covers the specific case of <em>electronic communications and cookies</em>? Every cookie banner you've clicked lives here.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="pm-panel" style="margin-top:1.5rem; max-width:100%; overflow:hidden;">
+      <div class="pm-panel-header">WHY DATA VAULT IS ALREADY POSITIONED</div>
+      <div class="pm-panel-body">
+        <p style="color:var(--text-secondary);">Data Vault's design choices — <code>record_source</code>, <code>load_date</code>, insert-only Satellites, layered architecture — were made for auditability and historization, not for regulatory compliance. But they happen to align exactly with what all three regulations require. By the end of this chapter, you'll be able to explain <em>why</em> for each regulation specifically.</p>
+      </div>
+    </div>
+
+  </div><!-- /s1 -->
+
+
+  <!-- ═══════════════════════════════ S2: EU DATA ACT ═══════════════════════════════ -->
+  <div class="section" id="s2" data-label="EU Data Act" data-color="200,146,10">
+
+    <div class="section-header">
+      <div class="section-tag" style="background:rgba(200,146,10,0.15); border-color:rgba(200,146,10,0.4); color:#f0b82a;">EU DATA ACT</div>
+      <span class="tier-badge tier-core">CORE</span>
+    </div>
+
+    <div class="hook hook-default" style="--hook-color:200,146,10;">
+      <div class="hook-text">Your Siemens smart thermostat generates data about your home every 30 seconds. Siemens built the sensor. You own the device. You live in the house. Before <em>September 2025</em>, if you wanted that data, it was mostly Siemens's call. The EU Data Act changed that.</div>
+    </div>
+
+    <div class="language-bridge">
+      <div class="lb-label">LANGUAGE BRIDGE</div>
+      <div class="lb-content">
+        <p><strong>"Data Act"</strong> — "Act" in EU law is just an English word for a legislative instrument (same usage as "EU AI Act" — both are formally Regulations, but commonly called Acts). "Data Act" = legislation about data — specifically, who can <strong>access</strong>, <strong>share</strong>, and <strong>use</strong> non-personal machine-generated data.</p>
+        <p style="margin-top:0.75rem;">Think of it as <em>property law for data that GDPR doesn't cover.</em> GDPR says: here are the rights of people whose personal data you process. The Data Act says: here are the rights of people who <em>generate</em> data through the devices they use.</p>
+      </div>
+    </div>
+
+    <div class="four-layers" id="s2-layers">
+      <div class="layers-header">
+        <div class="layer-dots">
+          <div class="layer-dot l1 active" onclick="jumpToLayer('s2-layers', 0)"></div>
+          <div class="layer-dot l2" onclick="jumpToLayer('s2-layers', 1)"></div>
+          <div class="layer-dot l3" onclick="jumpToLayer('s2-layers', 2)"></div>
+          <div class="layer-dot l4" onclick="jumpToLayer('s2-layers', 3)"></div>
+        </div>
+        <div class="layers-label">4-LAYER EXPLANATION // TAP TO EXPAND</div>
+      </div>
+
+      <div class="layer layer-1 open">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L1</span><span class="layer-label">Plain Language</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>The EU Data Act says: if you use a connected device — a thermostat, a factory machine, a car — you have the right to access the data that device generates. You can share it with a third party of your choice. Manufacturers can't just lock that data inside their ecosystem and sell it back to you.</p>
+          <p style="margin-top:0.75rem;">Your device, your data. Simple.</p>
+        </div></div>
+      </div>
+
+      <div class="layer layer-2">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L2</span><span class="layer-label">With Mechanism</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>The Data Act creates data access rights similar to the way open banking (PSD2) created payment data access rights. It targets IoT and industrial data — the billions of data points generated by connected devices every day.</p>
+          <p style="margin-top:0.75rem;">The regulation defines: who can request the data (the user of the device), who must provide it (the manufacturer/service provider), under what terms (<strong>FRAND</strong> — Fair, Reasonable, And Non-Discriminatory), and how it must be portable (cloud switching without lock-in barriers).</p>
+          <p style="margin-top:0.75rem;">FRAND is borrowed from telecommunications patent law — the standard used for essential patents on mobile phone technology. In data: you can't charge unreasonable prices for data access that users are legally entitled to.</p>
+        </div></div>
+      </div>
+
+      <div class="layer layer-3">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L3</span><span class="layer-label">Technical Detail</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p><strong>Key provisions:</strong></p>
+          <ul style="list-style:none; padding:0; margin-top:0.75rem;">
+            <li style="margin-bottom:0.5rem;"><span style="color:#f0b82a;">Articles 3–7:</span> Users of connected products have a right of access to data generated by those products in real-time, in a structured, machine-readable format.</li>
+            <li style="margin-bottom:0.5rem;"><span style="color:#f0b82a;">Article 8:</span> Data holders sharing data with third parties at the user's request must do so under FRAND terms.</li>
+            <li style="margin-bottom:0.5rem;"><span style="color:#f0b82a;">Articles 23–31:</span> Cloud switching and portability. Cloud providers must enable customers to switch to a competing provider within a defined timeframe, without punitive exit fees or technical lock-in.</li>
+          </ul>
+          <p style="margin-top:0.75rem;"><strong>Enforcement timeline:</strong></p>
+          <ul style="list-style:none; padding:0; margin-top:0.5rem;">
+            <li style="margin-bottom:0.4rem;"><span style="color:#f0b82a;">Sep 12, 2025:</span> Most provisions — IoT data access rights, data sharing obligations, cloud switching/portability</li>
+            <li style="margin-bottom:0.4rem;"><span style="color:#f0b82a;">Sep 12, 2026:</span> Design obligations for new connected products</li>
+            <li style="margin-bottom:0.4rem;"><span style="color:#f0b82a;">Sep 12, 2027:</span> Contractual terms for B2B data sharing; full enforcement</li>
+          </ul>
+        </div></div>
+      </div>
+
+      <div class="layer layer-4">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L4</span><span class="layer-label">Expert Nuance</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>The FRAND requirement creates conceptual complexity: what counts as "reasonable" pricing for data access? The regulation doesn't specify a formula — interpretation will emerge through enforcement cases and guidance.</p>
+          <p style="margin-top:0.75rem;">The cloud switching provisions directly challenge hyperscaler business models. AWS, Azure, and GCP have historically benefited from egress fees and proprietary APIs that make migration painful. The Data Act requires this to be genuinely feasible — with architectural implications for how data platforms are designed (vendor-neutral APIs, portable data formats, no proprietary lock-in at the schema level).</p>
+          <p style="margin-top:0.75rem;"><strong>ScaleFree's published position:</strong> Data Vault 2.0 is well-suited for Data Act compliance because its layered architecture maintains data provenance at every step, and its vendor-neutral design principles (methodology, not platform-specific) support portability. This is a key advantage for BI consultants advising European clients.</p>
+        </div></div>
+      </div>
+    </div><!-- /four-layers s2 -->
+
+    <div class="pm-panel" style="margin-top:1.5rem; max-width:100%; overflow:hidden;">
+      <div class="pm-panel-header">EU DATA ACT vs GDPR — THE CONTRAST</div>
+      <div class="pm-panel-body">
+        <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table" style="min-width:500px;">
+          <thead>
+            <tr>
+              <th style="word-break:break-word; overflow-wrap:break-word;"></th>
+              <th style="word-break:break-word; overflow-wrap:break-word; color:#06b6d4;">GDPR</th>
+              <th style="word-break:break-word; overflow-wrap:break-word; color:#f0b82a;">EU Data Act</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Data type</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Personal data (any data about an identified or identifiable person)</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Non-personal machine-generated data (IoT, industrial sensors)</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word;">The right</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Data subject rights (access, erasure, rectification)</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">User data access rights (get your device data, share it freely)</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Can they overlap?</td>
+              <td colspan="2" style="word-break:break-word; overflow-wrap:break-word; color:#f0b82a;">Yes — if IoT data identifies a person, BOTH apply simultaneously. Car location data = personal (GDPR) + machine-generated (Data Act). Both.</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <div style="margin-top:1rem; padding:0.75rem; background:rgba(200,146,10,0.08); border-left:3px solid rgba(200,146,10,0.5); border-radius:4px;">
+          <p style="font-size:0.9rem; color:var(--text-secondary);">DV connection: <code>record_source</code> on every row traces data origin — supports demonstrating data provenance for sharing obligations. Layered architecture creates a documented transformation chain auditable for data sharing agreements. Vendor-neutral design supports portability requirements.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /s2 -->
+
+
+  <!-- ═══════════════════════════════ S3: DORA ═══════════════════════════════ -->
+  <div class="section" id="s3" data-label="DORA" data-color="26,107,60">
+
+    <div class="section-header">
+      <div class="section-tag" style="background:rgba(26,107,60,0.15); border-color:rgba(26,107,60,0.4); color:#2ecc71;">DORA</div>
+      <span class="tier-badge tier-core">CORE</span>
+    </div>
+
+    <div class="hook hook-default" style="--hook-color:26,107,60;">
+      <div class="hook-text">A trading firm's SQL Server goes down at 9:47 AM on a Monday. Positions can't be marked. Risk reports can't run. The Data Vault is intact — but the loading pipeline has a configuration bug and won't restart. Under DORA, which applied from <em>January 17, 2025</em>, that's not just an operational embarrassment. It's a <em>reportable incident</em> with regulatory consequences.</div>
+    </div>
+
+    <div class="language-bridge">
+      <div class="lb-label">LANGUAGE BRIDGE</div>
+      <div class="lb-content">
+        <p><strong>"Digital"</strong> — specifically about information and communication technology (ICT) systems — servers, software, networks, cloud providers, SaaS tools. Not "digital" in the vague marketing sense.</p>
+        <p style="margin-top:0.75rem;"><strong>"Operational"</strong> — the ongoing, day-to-day functioning of a system, as opposed to a one-time event or a design quality.</p>
+        <p style="margin-top:0.75rem;"><strong>"Resilience"</strong> — the ability to absorb shocks and <em>recover</em>, not just the ability to avoid them. Like a building designed to flex in an earthquake (resilient), not just one designed to avoid earthquakes (avoidance). A resilient system doesn't promise zero failures; it promises to keep functioning or recover quickly when failures occur.</p>
+        <p style="margin-top:0.75rem;">So: <strong>DORA</strong> = the EU rule that financial entities must keep their digital systems running — or recover fast — even when things go wrong. And they must prove it.</p>
+      </div>
+    </div>
+
+    <div class="pm-panel" style="max-width:100%; overflow:hidden;">
+      <div class="pm-panel-header">WHO DORA APPLIES TO</div>
+      <div class="pm-panel-body">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:1rem; overflow:hidden;">
+          <div style="background:rgba(26,107,60,0.12); border:1px solid rgba(26,107,60,0.35); border-radius:8px; padding:1rem;">
+            <div style="color:#2ecc71; font-family:'Orbitron',sans-serif; font-size:0.7rem; letter-spacing:0.1em; margin-bottom:0.5rem;">FINANCIAL ENTITIES</div>
+            <p style="font-size:0.85rem; color:var(--text-secondary);">Banks, investment firms, insurers, payment institutions, crypto asset service providers, central counterparties, central securities depositories</p>
+          </div>
+          <div style="background:rgba(26,107,60,0.12); border:1px solid rgba(26,107,60,0.35); border-radius:8px; padding:1rem;">
+            <div style="color:#2ecc71; font-family:'Orbitron',sans-serif; font-size:0.7rem; letter-spacing:0.1em; margin-bottom:0.5rem;">CRITICAL ICT PROVIDERS</div>
+            <p style="font-size:0.85rem; color:var(--text-secondary);">Cloud providers, data analytics firms, software companies whose failure could impact the financial system — including data consultancies serving banks</p>
+          </div>
+        </div>
+        <div style="margin-top:1rem; padding:0.75rem; background:rgba(26,107,60,0.08); border-left:3px solid rgba(26,107,60,0.5); border-radius:4px;">
+          <p style="font-size:0.9rem; color:var(--text-secondary);">The second category matters: if ScaleFree is doing data consultancy work for a bank, DORA's third-party risk requirements apply to that relationship. The bank must assess and manage the resilience risk that ScaleFree represents.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="four-layers" id="s3-layers" style="margin-top:1.5rem;">
+      <div class="layers-header">
+        <div class="layer-dots">
+          <div class="layer-dot l1 active" onclick="jumpToLayer('s3-layers', 0)"></div>
+          <div class="layer-dot l2" onclick="jumpToLayer('s3-layers', 1)"></div>
+          <div class="layer-dot l3" onclick="jumpToLayer('s3-layers', 2)"></div>
+          <div class="layer-dot l4" onclick="jumpToLayer('s3-layers', 3)"></div>
+        </div>
+        <div class="layers-label">4-LAYER EXPLANATION // TAP TO EXPAND</div>
+      </div>
+
+      <div class="layer layer-1 open">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L1</span><span class="layer-label">Plain Language</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>DORA tells banks and financial firms: you must have a plan for when your technology fails — not just for fires and floods, but for cyberattacks, software bugs, cloud outages, and supplier failures. And you must be able to prove it to regulators.</p>
+          <p style="margin-top:0.75rem;">It's the financial sector's answer to the question: "What happens if your IT breaks?"</p>
+        </div></div>
+      </div>
+
+      <div class="layer layer-2">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L2</span><span class="layer-label">With Mechanism</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>DORA has five pillars:</p>
+          <ol style="list-style:decimal; padding-left:1.5rem; margin-top:0.75rem;">
+            <li style="margin-bottom:0.5rem;"><strong>ICT risk management framework</strong> — identify assets, assess risks, implement controls</li>
+            <li style="margin-bottom:0.5rem;"><strong>Incident classification and reporting</strong> — major ICT incidents must be reported to financial regulators</li>
+            <li style="margin-bottom:0.5rem;"><strong>Digital operational resilience testing</strong> — regular testing including penetration tests for significant institutions</li>
+            <li style="margin-bottom:0.5rem;"><strong>ICT third-party risk management</strong> — document all supplier relationships, monitor ongoing risk</li>
+            <li style="margin-bottom:0.5rem;"><strong>Information sharing</strong> — financial entities can share cyber threat intelligence with each other</li>
+          </ol>
+        </div></div>
+      </div>
+
+      <div class="layer layer-3">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L3</span><span class="layer-label">Technical Detail</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>DORA applied from <strong>January 17, 2025</strong>, giving financial firms two years from adoption to comply (entered into force January 2023, obligations applied from January 2025).</p>
+          <p style="margin-top:0.75rem;">Key obligations for data infrastructure:</p>
+          <ul style="list-style:none; padding:0; margin-top:0.5rem;">
+            <li style="margin-bottom:0.5rem;"><span style="color:#2ecc71;">Article 6:</span> Maintain a register of all ICT assets and their interdependencies — know what you have and how it connects.</li>
+            <li style="margin-bottom:0.5rem;"><span style="color:#2ecc71;">Article 17:</span> Classify and report ICT incidents by severity to the relevant financial supervisory authority.</li>
+            <li style="margin-bottom:0.5rem;"><span style="color:#2ecc71;">Article 25:</span> Digital operational resilience testing proportionate to firm size. For large institutions: TLPT (Threat-Led Penetration Testing) — red team exercises against live production systems.</li>
+            <li style="margin-bottom:0.5rem;"><span style="color:#2ecc71;">Articles 28–44:</span> Third-party risk. Critical ICT Third-Party Providers (CTPPs) may face direct EU-level oversight — supervisory authorities can examine cloud providers directly.</li>
+          </ul>
+        </div></div>
+      </div>
+
+      <div class="layer layer-4">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L4</span><span class="layer-label">Expert Nuance</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>The CTPP framework (Articles 28–44) is novel: EU financial regulators can now directly examine the ICT practices of US cloud providers serving European banks. AWS, Microsoft Azure, and Google Cloud are likely among the first designees. Their EU sovereign cloud offerings are partly a response to this oversight exposure — "look, we have EU-controlled infrastructure" — but the CLOUD Act problem (US government can compel access to data wherever it's stored) remains unresolved.</p>
+          <p style="margin-top:0.75rem;">For ScaleFree specifically: as a data consultancy working with financial clients, DORA's third-party provisions mean clients must document and manage the risk that ScaleFree's people and tools represent. This is not a barrier — it's a differentiator. A consultancy that understands DORA, can articulate its architecture in DORA terms, and has standardized delivery methods (like datavault4dbt) is easier for a bank to onboard under DORA compliance than a consultancy that doesn't.</p>
+        </div></div>
+      </div>
+    </div><!-- /four-layers s3 -->
+
+    <div class="concept-callout" style="margin-top:1.5rem;">
+      <div class="ic-label">KEY INSIGHT: DATA VAULT AND DORA</div>
+      <div class="ic-content">
+        <p>Data Vault's insert-only architecture directly supports DORA's incident reconstruction requirements — and this is a genuine professional advantage:</p>
+        <ul style="list-style:none; padding:0; margin-top:0.75rem;">
+          <li style="margin-bottom:0.6rem; padding-left:1rem; border-left:2px solid rgba(251,191,36,0.4);"><strong>Temporal reconstruction:</strong> <code>load_date</code> timestamps on every Satellite row mean you can reconstruct the exact state of any data at any point in time. For a DORA incident investigation: what did the system know at 09:45?</li>
+          <li style="margin-bottom:0.6rem; padding-left:1rem; border-left:2px solid rgba(251,191,36,0.4);"><strong>ICT asset tracing:</strong> <code>record_source</code> on every row identifies the source ICT component. You can trace a data anomaly back to its origin system.</li>
+          <li style="margin-bottom:0.6rem; padding-left:1rem; border-left:2px solid rgba(251,191,36,0.4);"><strong>Non-destructive history:</strong> Satellite append-only design means the evidence trail cannot be accidentally destroyed by a normal data update. No UPDATE statement exists.</li>
+          <li style="padding-left:1rem; border-left:2px solid rgba(251,191,36,0.4);"><strong>Documented data flow:</strong> Staging → Raw Vault → Business Vault → Mart is a documented transformation chain. Regulators don't just want to know what happened — they want to see the chain of custody.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /s3 -->
+
+
+  <!-- ═══════════════════════════════ S4: ePRIVACY ═══════════════════════════════ -->
+  <div class="section" id="s4" data-label="ePrivacy" data-color="143,26,26">
+
+    <div class="section-header">
+      <div class="section-tag" style="background:rgba(143,26,26,0.15); border-color:rgba(143,26,26,0.4); color:#e05b5b;">ePRIVACY</div>
+      <span class="tier-badge tier-important">IMPORTANT</span>
+    </div>
+
+    <div class="hook hook-default" style="--hook-color:143,26,26;">
+      <div class="hook-text">Every cookie banner you've ever clicked — "Accept All / Reject All / Manage Preferences" — exists because of one regulation. <em>Not GDPR.</em> ePrivacy. They're different laws. GDPR is about what you do with personal data once you have it. ePrivacy is about whether you're allowed to place that cookie <em>in the first place.</em></div>
+    </div>
+
+    <div class="language-bridge">
+      <div class="lb-label">LANGUAGE BRIDGE</div>
+      <div class="lb-content">
+        <p><strong>"e"</strong> = electronic. <strong>"Privacy"</strong> = the right to be left alone, to control what others know about you in a given moment.</p>
+        <p style="margin-top:0.75rem;"><strong>ePrivacy</strong> = privacy in the context of electronic communications — not privacy in general, but specifically the moment when data moves over a network, gets stored on a device, or when you receive an unsolicited marketing message.</p>
+        <p style="margin-top:0.75rem;">Think of it as the <em>traffic law for data in motion</em>, not the property law for data at rest. GDPR governs what you do with data after you have it. ePrivacy governs whether you were allowed to collect it the way you did.</p>
+      </div>
+    </div>
+
+    <div class="pm-panel" style="max-width:100%; overflow:hidden;">
+      <div class="pm-panel-header">WHAT ePRIVACY COVERS (THAT GDPR DOESN'T)</div>
+      <div class="pm-panel-body">
+        <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table" style="min-width:400px;">
+          <thead>
+            <tr>
+              <th style="word-break:break-word; overflow-wrap:break-word; color:#e05b5b;">Area</th>
+              <th style="word-break:break-word; overflow-wrap:break-word;">What ePrivacy covers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; white-space:nowrap;">Cookies and tracking</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">You must get consent before placing non-essential cookies or fingerprinting a browser</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; white-space:nowrap;">Electronic marketing</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Opt-in required for email and SMS marketing (opt-out was the old pre-2002 standard)</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; white-space:nowrap;">Communications confidentiality</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Content and metadata of electronic communications (calls, messages) are protected — even from providers</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; white-space:nowrap;">Device access</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Accessing information stored on someone's device (browser localStorage, device sensors) requires consent</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="four-layers" id="s4-layers" style="margin-top:1.5rem;">
+      <div class="layers-header">
+        <div class="layer-dots">
+          <div class="layer-dot l1 active" onclick="jumpToLayer('s4-layers', 0)"></div>
+          <div class="layer-dot l2" onclick="jumpToLayer('s4-layers', 1)"></div>
+          <div class="layer-dot l3" onclick="jumpToLayer('s4-layers', 2)"></div>
+          <div class="layer-dot l4" onclick="jumpToLayer('s4-layers', 3)"></div>
+        </div>
+        <div class="layers-label">4-LAYER EXPLANATION // TAP TO EXPAND</div>
+      </div>
+
+      <div class="layer layer-1 open">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L1</span><span class="layer-label">Plain Language</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>ePrivacy says: before you put a cookie on someone's browser, before you send them a marketing email, before you log their phone call metadata — you need their permission. It's the "please don't track me without asking" law.</p>
+        </div></div>
+      </div>
+
+      <div class="layer layer-2">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L2</span><span class="layer-label">With Mechanism</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>ePrivacy operates as <em>lex specialis</em> — the specific law for electronic communications. When both GDPR and ePrivacy apply to the same situation, ePrivacy takes precedence on its specific question.</p>
+          <p style="margin-top:0.75rem;">For cookies: ePrivacy governs the consent-before-placing question. GDPR governs what you do with the data afterward. You need both to be right. Cookie banner? That's ePrivacy. Data retention policy? That's GDPR.</p>
+          <p style="margin-top:0.75rem;"><em>Lex specialis</em> is the same principle from Roman law you encountered in the GDPR context: the more specific law takes precedence over the more general law for the specific situation it addresses.</p>
+        </div></div>
+      </div>
+
+      <div class="layer layer-3">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L3</span><span class="layer-label">Technical Detail</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>As a Directive, ePrivacy varies by national implementation. The core concepts: "terminal equipment" (your device) cannot have information stored on it without clear consent, except for strictly necessary purposes.</p>
+          <p style="margin-top:0.75rem;"><strong>Exempt (strictly necessary):</strong> session management cookies, shopping cart cookies, authentication cookies — these keep the service functioning.</p>
+          <p style="margin-top:0.75rem;"><strong>Require consent:</strong> analytics cookies (Google Analytics), advertising cookies, personalization cookies, third-party tracking pixels.</p>
+          <p style="margin-top:0.75rem;">Germany's implementation (TDDDG (formerly TTDSG), in force December 2021) has specific requirements around cookie consent that affect what data legitimately enters an analytics pipeline. If a client's DV ingests website analytics, the consent chain upstream of data collection matters.</p>
+        </div></div>
+      </div>
+
+      <div class="layer layer-4">
+        <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L4</span><span class="layer-label">Expert Nuance</span><span class="layer-toggle">&darr;</span></div>
+        <div class="layer-content"><div class="layer-content-inner">
+          <p>The ePrivacy Regulation — meant to modernize the Directive and align it with GDPR — was <strong>formally withdrawn by the EU Commission in February 2025</strong> after 8 years of failed negotiations. The advertising industry, telecom operators, and privacy advocates had irreconcilable positions. An 8-year stalemate in the Council ended with withdrawal.</p>
+          <p style="margin-top:0.75rem;">The Commission proposed a "Digital Omnibus" package in late 2025 that may fold some ePrivacy territory into a broader legislative revision. Whether this succeeds in the 2025–2027 legislative cycle is genuinely uncertain.</p>
+          <p style="margin-top:0.75rem;"><strong>What this means in practice:</strong> Know the Directive exists. Know it's the cookie law. Know the Regulation was withdrawn. Know cookie consent requirements remain, just unevenly implemented across member states. This is current affairs, not textbook content — it signals awareness of the regulatory space.</p>
+        </div></div>
+      </div>
+    </div><!-- /four-layers s4 -->
+
+  </div><!-- /s4 -->
+
+
+  <!-- ═══════════════════════════════ S5: COMPARATIVE TABLE ═══════════════════════════════ -->
+  <div class="section" id="s5" data-label="Comparison" data-color="80,40,120">
+
+    <div class="section-header">
+      <div class="section-tag" style="background:rgba(80,40,120,0.15); border-color:rgba(80,40,120,0.4); color:#a78bfa;">COMPARISON</div>
+      <span class="tier-badge tier-core">CORE</span>
+    </div>
+
+    <div class="hook hook-default" style="--hook-color:80,40,120;">
+      <div class="hook-text">Four regulations. Four different answers to four different questions. Same underlying need: <em>prove you can be trusted with data.</em></div>
+    </div>
+
+    <div class="pm-panel" style="max-width:100%; overflow:hidden;">
+      <div class="pm-panel-header">THE FULL LANDSCAPE AT A GLANCE</div>
+      <div class="pm-panel-body">
+        <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table" style="min-width:620px; font-size:0.82rem;">
+          <thead>
+            <tr>
+              <th style="word-break:break-word; overflow-wrap:break-word;"></th>
+              <th style="word-break:break-word; overflow-wrap:break-word; color:#06b6d4;">GDPR</th>
+              <th style="word-break:break-word; overflow-wrap:break-word; color:#f0b82a;">EU Data Act</th>
+              <th style="word-break:break-word; overflow-wrap:break-word; color:#2ecc71;">DORA</th>
+              <th style="word-break:break-word; overflow-wrap:break-word; color:#e05b5b;">ePrivacy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; font-weight:600;">In force</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">May 2018</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Sep 2025 (most)</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Jan 2025</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">2003 (Directive); Regulation withdrawn Feb 2025</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; font-weight:600;">Instrument</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Regulation</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Regulation</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Regulation</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Directive (fragmented)</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; font-weight:600;">Scope</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Personal data</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Non-personal IoT/machine data</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">ICT systems in financial sector</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Electronic comms + cookies</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; font-weight:600;">Who must comply</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Anyone processing EU personal data</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Connected device manufacturers + data holders</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Financial entities + critical ICT providers</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Website operators + e-marketing senders</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; font-weight:600;">DV relevance</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">High</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Medium-high</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">High (financial clients)</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Low-medium</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; font-weight:600;">Your background</td>
+              <td style="word-break:break-word; overflow-wrap:break-word; color:#06b6d4;">Strong (practiced 2016-18)</td>
+              <td style="word-break:break-word; overflow-wrap:break-word; color:var(--text-secondary);">New</td>
+              <td style="word-break:break-word; overflow-wrap:break-word; color:var(--text-secondary);">New</td>
+              <td style="word-break:break-word; overflow-wrap:break-word; color:var(--text-secondary);">Moderate</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="pm-panel" style="margin-top:1.5rem; max-width:100%; overflow:hidden;">
+      <div class="pm-panel-header">THE ONE-LINE VERSION — MEMORIZE THESE</div>
+      <div class="pm-panel-body">
+        <div style="display:grid; gap:0.75rem; overflow:hidden;">
+          <div style="display:flex; align-items:center; gap:1rem; padding:0.75rem; background:rgba(6,182,212,0.05); border-left:3px solid rgba(6,182,212,0.5); border-radius:4px;">
+            <div style="font-family:'Orbitron',sans-serif; font-size:0.7rem; color:#06b6d4; white-space:nowrap; min-width:80px;">GDPR</div>
+            <div style="color:var(--text-secondary); font-size:0.9rem; word-break:break-word;">"What rights do people have over their personal data?"</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:1rem; padding:0.75rem; background:rgba(200,146,10,0.05); border-left:3px solid rgba(200,146,10,0.5); border-radius:4px;">
+            <div style="font-family:'Orbitron',sans-serif; font-size:0.7rem; color:#f0b82a; white-space:nowrap; min-width:80px;">DATA ACT</div>
+            <div style="color:var(--text-secondary); font-size:0.9rem; word-break:break-word;">"Who can access the data your devices generate?"</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:1rem; padding:0.75rem; background:rgba(26,107,60,0.05); border-left:3px solid rgba(26,107,60,0.5); border-radius:4px;">
+            <div style="font-family:'Orbitron',sans-serif; font-size:0.7rem; color:#2ecc71; white-space:nowrap; min-width:80px;">DORA</div>
+            <div style="color:var(--text-secondary); font-size:0.9rem; word-break:break-word;">"Can the financial system's IT keep working under pressure?"</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:1rem; padding:0.75rem; background:rgba(143,26,26,0.05); border-left:3px solid rgba(143,26,26,0.5); border-radius:4px;">
+            <div style="font-family:'Orbitron',sans-serif; font-size:0.7rem; color:#e05b5b; white-space:nowrap; min-width:80px;">ePRIVACY</div>
+            <div style="color:var(--text-secondary); font-size:0.9rem; word-break:break-word;">"Did you ask before you placed that cookie?"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pm-panel" style="margin-top:1.5rem; max-width:100%; overflow:hidden;">
+      <div class="pm-panel-header">DATA LINEAGE — THE COMMON THREAD</div>
+      <div class="pm-panel-body">
+        <p style="color:var(--text-secondary); margin-bottom:1rem;">Data lineage is required by every one of these regulations simultaneously. It's not a feature — it's the baseline expectation.</p>
+        <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table" style="min-width:500px; font-size:0.82rem;">
+          <thead>
+            <tr>
+              <th style="word-break:break-word; overflow-wrap:break-word;">Regulation</th>
+              <th style="word-break:break-word; overflow-wrap:break-word;">What it requires</th>
+              <th style="word-break:break-word; overflow-wrap:break-word;">DV delivers via</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; color:#06b6d4;">GDPR Art. 30</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Records of processing — know where every piece of personal data lives</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;"><code>record_source</code>, PII Satellite isolation</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; color:#2ecc71;">DORA Art. 6</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Map information assets, identify dependencies, document data flows</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;"><code>record_source</code>, layered architecture, staging log</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; color:#f0b82a;">Data Act</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Provenance for IoT and shared data — demonstrate data origin</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;"><code>record_source</code>, <code>load_date</code>, layered provenance chain</td>
+            </tr>
+            <tr>
+              <td style="word-break:break-word; overflow-wrap:break-word; color:#a78bfa;">EU AI Act Art. 10</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Document data provenance and transformation steps for AI training data</td>
+              <td style="word-break:break-word; overflow-wrap:break-word;">Raw Vault (untransformed) + Business Vault (transformed) separation</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <div style="margin-top:1rem; padding:0.75rem; background:rgba(80,40,120,0.08); border-left:3px solid rgba(80,40,120,0.4); border-radius:4px;">
+          <p style="font-size:0.9rem; color:var(--text-secondary);">This is not a compliance feature added to Data Vault — it is the base architecture. <code>record_source</code> and <code>load_date</code> on every single row were architectural choices, not regulatory additions. Other modeling approaches can achieve lineage, but it requires extra metadata layers. In Data Vault, it is built in.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /s5 -->
+
+
+  <!-- ═══════════════════════════════ S6: KEY CONCEPTS ═══════════════════════════════ -->
+  <div class="section" id="s6" data-label="Concept Summary" data-color="20,100,140">
+
+    <div class="section-header">
+      <div class="section-tag" style="background:rgba(20,100,140,0.15); border-color:rgba(20,100,140,0.4); color:#38bdf8;">KEY CONCEPTS</div>
+      <span class="tier-badge tier-core">CORE</span>
+    </div>
+
+    <div class="hook hook-default" style="--hook-color:20,100,140;">
+      <div class="hook-text">These are <em>consultant</em> framings — not lawyer framings. The goal isn't legal precision. It's demonstrating that you understand the regulatory landscape well enough to help clients navigate it through <em>architecture decisions</em>, not legal opinions.</div>
+    </div>
+
+    <div class="concept-callout">
+      <div class="ic-label">ON THE FULL REGULATORY STACK</div>
+      <div class="ic-content">
+        <p>"GDPR gets all the attention, but European clients are dealing with a stack of overlapping regulations — the Data Act for IoT data portability, DORA for financial ICT resilience, and the AI Act on top. What they all share is a requirement for data lineage and auditability. That's what Data Vault delivers by design, not as a feature added later."</p>
+      </div>
+    </div>
+
+    <div class="concept-callout" style="margin-top:1rem;">
+      <div class="ic-label">ON THE EU DATA ACT</div>
+      <div class="ic-content">
+        <p>"The Data Act is a significant but often overlooked regulation for data engineering. It creates data access and portability rights for IoT data that didn't exist before September 2025, and it requires cloud switching without vendor lock-in. Data Vault's vendor-neutral design and layered architecture map directly to both requirements — and ScaleFree has published explicitly on this alignment."</p>
+      </div>
+    </div>
+
+    <div class="concept-callout" style="margin-top:1rem;">
+      <div class="ic-label">ON DORA</div>
+      <div class="ic-content">
+        <p>"DORA is especially interesting from a Data Vault perspective. Financial firms must demonstrate their ICT systems can be reconstructed after an incident — regulators want to see the exact state of data at any point in time. Data Vault's insert-only design and load_date timestamps mean you can do exactly that without any additional infrastructure. The compliance capability is the base architecture."</p>
+      </div>
+    </div>
+
+    <div class="concept-callout" style="margin-top:1rem;">
+      <div class="ic-label">ON ePRIVACY</div>
+      <div class="ic-content">
+        <p>"ePrivacy is the cookie law — technically the lex specialis for electronic communications, taking precedence over GDPR for consent before placing tracking technologies. Worth noting: the Regulation that was meant to modernize it was withdrawn in February 2025, so we're still running on the 2002 Directive with national implementations. For a Data Vault client ingesting web analytics or telecom data, ePrivacy determines what data legitimately enters the pipeline upstream — PII Satellite isolation handles it downstream."</p>
+      </div>
+    </div>
+
+    <div class="concept-callout" style="margin-top:1rem;">
+      <div class="ic-label">THE PROFESSIONAL EDGE — LEGAL LITERACY</div>
+      <div class="ic-content">
+        <p>A legal background changes how these regulations read — from checklists to structural patterns. The pattern is that Data Vault's architectural choices — record_source, load_date, insert-only, layered separation — weren't designed as compliance features, but they're exactly what regulators are asking for across GDPR, DORA, the Data Act, and the AI Act. That's not coincidence. It's the same underlying principle: if you can reconstruct what happened and where data came from, you can prove compliance.</p>
+      </div>
+    </div>
+
+    <div class="explore-opener" onclick="toggleExplore(this)" style="margin-top:1.5rem;">
+      <span class="explore-icon">+</span>
+      <span>The ePrivacy Regulation withdrawal</span>
+    </div>
+    <div class="explore-panel">
+      <p>The ePrivacy Regulation was formally withdrawn in February 2025 after about eight years of failed negotiations &mdash; the Commission accepted that consensus between the advertising industry, telecom operators, and privacy advocates wasn&rsquo;t achievable in the current cycle. A Digital Omnibus package is in discussion, but it&rsquo;s early.</p>
+      <p style="margin-top:0.75rem;">In practice, cookie consent requirements remain in place via the 2002 ePrivacy Directive, just implemented unevenly across member states. The Directive still applies &mdash; the Regulation that was supposed to replace it never materialized.</p>
+    </div>
+
+    <div class="explore-opener" onclick="toggleExplore(this)" style="margin-top:1rem;">
+      <span class="explore-icon">+</span>
+      <span>DGA (Data Governance Act) vs the Data Act</span>
+    </div>
+    <div class="explore-panel">
+      <p>These are two different regulations that are commonly confused:</p>
+      <ul style="list-style:none; padding:0; margin-top:0.75rem;">
+        <li style="margin-bottom:0.5rem; padding-left:1rem; border-left:2px solid rgba(0,180,255,0.3);"><strong>DGA (Regulation 2022/868, in force Sep 2023):</strong> Enables re-use of <em>public sector data</em> through trusted intermediaries. Three pillars: public sector data re-use, data intermediation services, data altruism. For the DV: provenance metadata needed for data arriving from public sector sources.</li>
+        <li style="padding-left:1rem; border-left:2px solid rgba(200,146,10,0.3);"><strong>Data Act (Regulation 2023/2854, in force Sep 2025):</strong> IoT device data access rights, FRAND sharing, cloud portability. The one covered in this tutorial.</li>
+      </ul>
+      <p style="margin-top:0.75rem;">One-line disambiguation: DGA = <em>public sector</em> data intermediation. Data Act = <em>connected device</em> data access rights. Both part of the EU data strategy; different subject matter.</p>
+    </div>
+
+  </div><!-- /s6 -->
+
+
+  <!-- ═══════════════════════════════ S7: EXERCISE ═══════════════════════════════ -->
+  <div class="section" id="s7" data-label="Exercise" data-color="40,120,80">
+
+    <div class="section-header">
+      <div class="section-tag exercise-t">EXERCISE</div>
+      <span class="tier-badge tier-core">CORE</span>
+    </div>
+
+    <div class="hook hook-default" style="--hook-color:40,120,80;">
+      <div class="hook-text">Three scenarios. Four regulations. You've got the map — now navigate it.</div>
+    </div>
+
+    <div class="exercise-section" id="exercise-1">
+      <div class="exercise-header">Exercise 1 — Which Regulation Applies?</div>
+      <div class="exercise-body">
+        <p style="color:var(--text-secondary); margin-bottom:1.25rem;">Match each scenario to the regulation that primarily applies. Some scenarios may have more than one correct answer — pick the most specific one.</p>
+
+        <div class="match-row" data-correct="DORA">
+          <div class="match-scenario">A trading firm's cloud analytics platform goes down for 6 hours due to a software bug. Their financial supervisor asks for a written incident report detailing root cause and recovery steps.</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— select —</option>
+            <option value="GDPR">GDPR</option>
+            <option value="EU Data Act">EU Data Act</option>
+            <option value="DORA">DORA</option>
+            <option value="ePrivacy">ePrivacy</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="EU Data Act">
+          <div class="match-scenario">A user asks a connected car manufacturer for a full export of all driving data their vehicle has generated — speed, routes, fuel consumption — over the past 12 months.</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— select —</option>
+            <option value="GDPR">GDPR</option>
+            <option value="EU Data Act">EU Data Act</option>
+            <option value="DORA">DORA</option>
+            <option value="ePrivacy">ePrivacy</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="ePrivacy">
+          <div class="match-scenario">A retail brand sends promotional emails to 80,000 addresses scraped from a public directory. None of the recipients ever signed up for their mailing list.</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— select —</option>
+            <option value="GDPR">GDPR</option>
+            <option value="EU Data Act">EU Data Act</option>
+            <option value="DORA">DORA</option>
+            <option value="ePrivacy">ePrivacy</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="GDPR">
+          <div class="match-scenario">A hospital data analytics platform processes patient records. One patient submits a request asking to see all data the platform holds about them. The platform must respond within 30 days.</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— select —</option>
+            <option value="GDPR">GDPR</option>
+            <option value="EU Data Act">EU Data Act</option>
+            <option value="DORA">DORA</option>
+            <option value="ePrivacy">ePrivacy</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="DORA">
+          <div class="match-scenario">A bank's data consultancy (ScaleFree) is asked to provide documentation proving their data delivery processes are stable, recoverable, and use standardized, reproducible methods — as part of the bank's third-party ICT risk assessment.</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— select —</option>
+            <option value="GDPR">GDPR</option>
+            <option value="EU Data Act">EU Data Act</option>
+            <option value="DORA">DORA</option>
+            <option value="ePrivacy">ePrivacy</option>
+          </select>
+        </div>
+
+        <button class="check-btn" onclick="checkExercise1()">CHECK ANSWERS</button>
+        <div class="feedback" id="feedback-ex1"></div>
+      </div>
+    </div><!-- /exercise-1 -->
+
+    <div class="exercise-section" id="exercise-2" style="margin-top:1.5rem;">
+      <div class="exercise-header">Exercise 2 — Spot the Misconception</div>
+      <div class="exercise-body">
+        <p style="color:var(--text-secondary); margin-bottom:1.25rem;">One of these four statements contains a misconception. Which one?</p>
+
+        <div class="match-row" data-correct="A">
+          <div class="match-scenario">"DORA applies to all companies that use digital technology, not just financial firms — if your IT systems fail, DORA requires you to report it."</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— is this correct or wrong? —</option>
+            <option value="A">This is WRONG</option>
+            <option value="B">This is CORRECT</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="B">
+          <div class="match-scenario">"The EU Data Act covers data generated by IoT devices, even if that data isn't personal under GDPR — it fills the gap GDPR leaves for non-personal machine-generated data."</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— is this correct or wrong? —</option>
+            <option value="A">This is WRONG</option>
+            <option value="B">This is CORRECT</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="B">
+          <div class="match-scenario">"ePrivacy is currently a Directive, not a Regulation — the proposed Regulation was withdrawn in February 2025, so national implementations vary across EU member states."</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— is this correct or wrong? —</option>
+            <option value="A">This is WRONG</option>
+            <option value="B">This is CORRECT</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="A">
+          <div class="match-scenario">"If IoT device data identifies a person, only the EU Data Act applies — because the Data Act is the newer law and supersedes GDPR for connected device data."</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— is this correct or wrong? —</option>
+            <option value="A">This is WRONG</option>
+            <option value="B">This is CORRECT</option>
+          </select>
+        </div>
+
+        <button class="check-btn" onclick="checkExercise2()">CHECK ANSWERS</button>
+        <div class="feedback" id="feedback-ex2"></div>
+      </div>
+    </div><!-- /exercise-2 -->
+
+    <div class="exercise-section" id="exercise-3" style="margin-top:1.5rem;">
+      <div class="exercise-header">Exercise 3 — DV to DORA Bridge</div>
+      <div class="exercise-body">
+        <p style="color:var(--text-secondary); margin-bottom:1.25rem;">A fintech client's supervisory authority is conducting a DORA audit. They want to know: <em>at 09:45 on the day of a system incident, what was the state of the client's position data?</em></p>
+        <p style="color:var(--text-secondary); margin-bottom:1.25rem;">Which Data Vault features support answering that question? Match each feature to what it provides in this scenario.</p>
+
+        <div class="match-row" data-correct="Temporal reconstruction">
+          <div class="match-scenario"><code>load_date</code> timestamp on every Satellite row</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— what does this provide? —</option>
+            <option value="Temporal reconstruction">Temporal reconstruction — query state at exactly 09:45</option>
+            <option value="ICT asset tracing">ICT asset tracing — which source system generated this</option>
+            <option value="Non-destructive history">Non-destructive history — evidence can't be accidentally deleted</option>
+            <option value="Raw evidence chain">Raw evidence chain — data before any business rules applied</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="ICT asset tracing">
+          <div class="match-scenario"><code>record_source</code> on every Hub, Link, and Satellite row</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— what does this provide? —</option>
+            <option value="Temporal reconstruction">Temporal reconstruction — query state at exactly 09:45</option>
+            <option value="ICT asset tracing">ICT asset tracing — which source system generated this</option>
+            <option value="Non-destructive history">Non-destructive history — evidence can't be accidentally deleted</option>
+            <option value="Raw evidence chain">Raw evidence chain — data before any business rules applied</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="Non-destructive history">
+          <div class="match-scenario">Insert-only Satellite design (no UPDATE operations exist)</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— what does this provide? —</option>
+            <option value="Temporal reconstruction">Temporal reconstruction — query state at exactly 09:45</option>
+            <option value="ICT asset tracing">ICT asset tracing — which source system generated this</option>
+            <option value="Non-destructive history">Non-destructive history — evidence can't be accidentally deleted</option>
+            <option value="Raw evidence chain">Raw evidence chain — data before any business rules applied</option>
+          </select>
+        </div>
+
+        <div class="match-row" data-correct="Raw evidence chain">
+          <div class="match-scenario">Staging layer — separate from Business Vault, preserved before business rules applied</div>
+          <select class="match-select" style="max-width:100%; box-sizing:border-box;">
+            <option value="">— what does this provide? —</option>
+            <option value="Temporal reconstruction">Temporal reconstruction — query state at exactly 09:45</option>
+            <option value="ICT asset tracing">ICT asset tracing — which source system generated this</option>
+            <option value="Non-destructive history">Non-destructive history — evidence can't be accidentally deleted</option>
+            <option value="Raw evidence chain">Raw evidence chain — data before any business rules applied</option>
+          </select>
+        </div>
+
+        <button class="check-btn" onclick="checkExercise3()">CHECK ANSWERS</button>
+        <div class="feedback" id="feedback-ex3"></div>
+      </div>
+    </div><!-- /exercise-3 -->
+
+    <div class="completion-banner" id="completion-banner" style="display:none; margin-top:2rem;">
+      <div style="font-family:'Orbitron',sans-serif; font-size:1rem; color:var(--success-color); margin-bottom:0.5rem; letter-spacing:0.1em;">CHAPTER 07 // COMPLETE</div>
+      <p style="color:var(--text-secondary);">You can navigate the regulatory landscape. Four regulations, four different questions — and you know which features of the Data Vault answer each one.</p>
+    </div>
+
+  </div><!-- /s7 -->
+
+
+  <!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+  <div class="tutorial-footer">
+    <div style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:var(--text-dim); letter-spacing:0.15em;">CHAPTER 07 // COMPLIANCE DAY 2A</div>
+    <div style="margin-top:0.5rem; color:var(--text-secondary); font-size:0.9rem;">EU Data Act · DORA · ePrivacy — three regulations, three slices of the data world</div>
+    <div style="margin-top:1rem; color:var(--text-dim); font-size:0.8rem;">Next: Chapter 8 — Data Sovereignty, Cross-Border Transfers, Audit Frameworks</div>
+  </div>
+
+</div><!-- /container -->
+
+</div><!-- /page-content -->
+
+<script>
+/* ===================================================
+   STAR CONSTELLATION PARTICLE FIELD
+   =================================================== */
+(function() {
+  var canvas = document.getElementById('particle-field');
+  var ctx = canvas.getContext('2d');
+  var w, h;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var STAR_COUNT = 110;
+  var HUB_FRACTION = 0.15;
+  var CONNECT_DIST = 140;
+  var MOUSE_RADIUS = 200;
+  var MOUSE_STRENGTH = 0.015;
+
+  var starColors = [
+    { r: 16, g: 185, b: 129 },
+    { r: 59, g: 130, b: 246 },
+    { r: 245, g: 158, b: 11 },
+    { r: 0, g: 180, b: 255 },
+    { r: 6, g: 182, b: 212 },
+    { r: 139, g: 92, b: 246 },
+    { r: 168, g: 85, b: 247 }
+  ];
+
+  var stars = [];
+  for (var i = 0; i < STAR_COUNT; i++) {
+    var isHub = Math.random() < HUB_FRACTION;
+    var col = starColors[Math.floor(Math.random() * starColors.length)];
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      baseSize: isHub ? (2.5 + Math.random() * 2) : (0.8 + Math.random() * 1.2),
+      opacity: isHub ? (0.6 + Math.random() * 0.4) : (0.25 + Math.random() * 0.35),
+      r: col.r, g: col.g, b: col.b,
+      isHub: isHub,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.008 + Math.random() * 0.012,
+      driftAngle: Math.random() * Math.PI * 2,
+      driftSpeed: 0.08 + Math.random() * 0.15,
+      driftTurn: (Math.random() - 0.5) * 0.005
+    });
+  }
+
+  var mouse = { x: 0, y: 0, active: false };
+
+  function isOverContent(el) {
+    if (!el) return false;
+    while (el) {
+      if (el.classList) {
+        if (el.classList.contains('section') || el.classList.contains('container') ||
+            el.classList.contains('holo-nav') || el.classList.contains('pm-panel') ||
+            el.classList.contains('hook') || el.classList.contains('four-layers') ||
+            el.classList.contains('data-panel') || el.classList.contains('exercise-section') ||
+            el.classList.contains('concept-callout') || el.classList.contains('language-bridge') ||
+            el.classList.contains('contrast-panel') || el.classList.contains('disambig-panel') ||
+            el.classList.contains('code-panel') || el.classList.contains('explore-panel') ||
+            el.classList.contains('title-section') || el.classList.contains('pipeline-flow')) {
+          return true;
+        }
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = !isOverContent(e.target);
+  });
+  document.addEventListener('mouseleave', function() { mouse.active = false; });
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      p.pulse += p.pulseSpeed;
+      p.driftAngle += p.driftTurn;
+      p.x += Math.cos(p.driftAngle) * p.driftSpeed;
+      p.y += Math.sin(p.driftAngle) * p.driftSpeed;
+
+      if (mouse.active) {
+        var dx = mouse.x - p.x;
+        var dy = mouse.y - p.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS && dist > 1) {
+          var force = (1 - dist / MOUSE_RADIUS) * MOUSE_STRENGTH;
+          p.x += dx * force;
+          p.y += dy * force;
+        }
+      }
+
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      for (var j = i + 1; j < stars.length; j++) {
+        var dx = stars[i].x - stars[j].x;
+        var dy = stars[i].y - stars[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          var alpha = (1 - dist / CONNECT_DIST) * 0.12;
+          if (stars[i].isHub || stars[j].isHub) alpha *= 1.8;
+          ctx.beginPath();
+          ctx.moveTo(stars[i].x, stars[i].y);
+          ctx.lineTo(stars[j].x, stars[j].y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (mouse.active) {
+      for (var i = 0; i < stars.length; i++) {
+        var p = stars[i];
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          var mFade = 1 - mDist / MOUSE_RADIUS;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + (mFade * mFade * 0.2) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      var pulseVal = 0.6 + 0.4 * Math.sin(p.pulse);
+      var currentOpacity = p.opacity * pulseVal;
+      var currentSize = p.baseSize * (0.85 + 0.15 * Math.sin(p.pulse));
+
+      var proximityBoost = 1;
+      if (mouse.active) {
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          proximityBoost = 1 + (1 - mDist / MOUSE_RADIUS) * 1.5;
+        }
+      }
+
+      var boostedOpacity = Math.min(currentOpacity * proximityBoost, 1);
+
+      var glowRadius = currentSize * (p.isHub ? 8 : 5);
+      var grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      grd.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.3) + ')');
+      grd.addColorStop(0.4, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.08) + ')');
+      grd.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + Math.min(p.r + 60, 255) + ',' + Math.min(p.g + 60, 255) + ',' + Math.min(p.b + 60, 255) + ',' + boostedOpacity + ')';
+      ctx.fill();
+
+      if (p.isHub) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, currentSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (boostedOpacity * 0.7) + ')';
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+/* ===================================================
+   SECTION VISIBILITY + NAV
+   =================================================== */
+var sections = document.querySelectorAll('.section');
+var navNodes = document.querySelectorAll('.nav-node');
+var navConnectors = document.querySelectorAll('.nav-connector');
+var progressFill = document.getElementById('progress-fill');
+var navLabel = document.getElementById('nav-current-label');
+var lcarsSegs = document.querySelectorAll('.lcars-seg');
+var ambientEl = document.getElementById('ambient-glow');
+
+var usesCSSTimeline = CSS.supports && CSS.supports('animation-timeline', 'view()');
+
+if (!usesCSSTimeline) {
+  var sectionObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+      else entry.target.classList.remove('visible');
+    });
+  }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' });
+  sections.forEach(function(s) { sectionObserver.observe(s); });
+}
+
+
+var sectionColors = [];
+sections.forEach(function(s) {
+  var dc = s.getAttribute('data-color');
+  if (dc) {
+    var parts = dc.split(',');
+    sectionColors.push({ r: parseInt(parts[0]), g: parseInt(parts[1]), b: parseInt(parts[2]) });
+  } else {
+    sectionColors.push({ r: 0, g: 180, b: 255 });
+  }
+});
+
+var lastActiveIndex = -1;
+function updateNav() {
+  var activeIdx = 0;
+  var scrollY = window.scrollY + window.innerHeight * 0.35;
+  sections.forEach(function(s, i) { if (s.offsetTop <= scrollY) activeIdx = i; });
+
+  if (activeIdx !== lastActiveIndex) {
+    lastActiveIndex = activeIdx;
+    navNodes.forEach(function(n, i) {
+      n.classList.remove('active', 'completed');
+      if (i === activeIdx) n.classList.add('active');
+      else if (i < activeIdx) n.classList.add('completed');
+    });
+    navConnectors.forEach(function(c, i) {
+      if (i < activeIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+    var currentSection = sections[activeIdx];
+    if (currentSection) navLabel.textContent = currentSection.getAttribute('data-label') || '';
+    lcarsSegs.forEach(function(seg, i) {
+      seg.classList.remove('active', 'completed');
+      if (i === activeIdx) seg.classList.add('active');
+      else if (i < activeIdx) seg.classList.add('completed');
+    });
+    var c = sectionColors[activeIdx];
+    if (c && ambientEl) {
+      ambientEl.style.setProperty('--ambient-c1', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.06)');
+      ambientEl.style.setProperty('--ambient-c2', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.03)');
+      ambientEl.style.setProperty('--ambient-c3', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.02)');
+    }
+  }
+
+  var activeSection = sections[lastActiveIndex];
+  var nextSection = sections[lastActiveIndex + 1];
+  if (activeSection) {
+    var secTop = activeSection.offsetTop;
+    var secBottom = nextSection ? nextSection.offsetTop : document.documentElement.scrollHeight;
+    var secHeight = secBottom - secTop;
+    var currentY = window.scrollY + window.innerHeight * 0.35;
+    var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+    fill = Math.max(0, Math.min(100, fill));
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+    lcarsSegs.forEach(function(seg, i) {
+      if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+      else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+      else seg.style.removeProperty('--seg-fill');
+    });
+  }
+
+  var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  var scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) scrolled = 100;
+  progressFill.style.width = Math.min(scrolled, 100) + '%';
+}
+
+
+/* ===================================================
+   SCROLL PROGRESS + WORD REVEAL
+   =================================================== */
+function updateScrollProgress() {
+  var viewH = window.innerHeight;
+  sections.forEach(function(section) {
+    var rect = section.getBoundingClientRect();
+    var progress = 1 - (rect.top / viewH);
+    progress = Math.max(0, Math.min(1, progress));
+    section.style.setProperty('--scroll-progress', progress);
+    section.querySelectorAll('.hook-text').forEach(function(hook) {
+      var count = parseInt(hook.getAttribute('data-word-count')) || 1;
+      var litCount = Math.floor(progress * count * 1.3);
+      hook.querySelectorAll('.word').forEach(function(word, i) {
+        if (i < litCount) word.classList.add('lit');
+        else word.classList.remove('lit');
+      });
+    });
+  });
+}
+
+
+/* ===================================================
+   PARALLAX
+   =================================================== */
+var depthShapes = document.querySelectorAll('.depth-shape');
+var depthRates = [0.03, 0.05, 0.02, 0.04];
+function updateParallax() {
+  var scrollY = window.scrollY;
+  depthShapes.forEach(function(shape, i) {
+    shape.style.transform = 'translateY(' + (-scrollY * depthRates[i]) + 'px)';
+  });
+}
+
+
+/* ===================================================
+   UNIFIED SCROLL
+   =================================================== */
+var scrollTicking = false;
+function onScroll() {
+  if (!scrollTicking) {
+    requestAnimationFrame(function() {
+      updateNav();
+      updateScrollProgress();
+      updateParallax();
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('load', function() { updateNav(); updateScrollProgress(); });
+
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    var y = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
+
+
+/* ===================================================
+   4-LAYER TOGGLE
+   =================================================== */
+function toggleLayer(header) {
+  var layer = header.parentElement;
+  layer.classList.toggle('open');
+  var container = layer.closest('.four-layers');
+  if (container) updateLayerDots(container);
+}
+
+function jumpToLayer(containerId, layerIndex) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var layers = container.querySelectorAll('.layer');
+  layers.forEach(function(l, i) {
+    if (i <= layerIndex) l.classList.add('open');
+    else l.classList.remove('open');
+  });
+  updateLayerDots(container);
+}
+
+function updateLayerDots(container) {
+  var layers = container.querySelectorAll('.layer');
+  var dots = container.querySelectorAll('.layer-dot');
+  layers.forEach(function(l, i) {
+    if (dots[i]) {
+      if (l.classList.contains('open')) dots[i].classList.add('active');
+      else dots[i].classList.remove('active');
+    }
+  });
+}
+
+
+/* ===================================================
+   EXPLORE MORE
+   =================================================== */
+function toggleExplore(opener) {
+  var panel = opener.nextElementSibling;
+  var isOpen = opener.classList.toggle('open');
+  if (panel) panel.classList.toggle('open', isOpen);
+}
+
+
+
+/* ===================================================
+   EXERCISE COMPLETION TRACKING
+   =================================================== */
+var exercisesCompleted = { ex1: false, ex2: false, ex3: false };
+
+function checkAllComplete() {
+  if (exercisesCompleted.ex1 && exercisesCompleted.ex2 && exercisesCompleted.ex3) {
+    var banner = document.getElementById('completion-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      setTimeout(function() { banner.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 150);
+    }
+  }
+}
+
+
+/* ===================================================
+   SHARED HELPER: evaluate match-row exercises
+   Returns { correct, total, allAnswered }
+   =================================================== */
+function evaluateMatchRows(containerSelector) {
+  var rows = document.querySelectorAll(containerSelector + ' .match-row');
+  var correct = 0, total = rows.length, allAnswered = true;
+
+  rows.forEach(function(row) {
+    var select   = row.querySelector('.match-select');
+    var expected = row.getAttribute('data-correct');
+    var selected = select ? select.value : '';
+
+    if (!selected) {
+      allAnswered = false;
+      row.style.borderColor = 'var(--border-subtle)';
+      row.style.background  = '';
+      return;
+    }
+    if (selected === expected) {
+      correct++;
+      row.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+      row.style.background  = 'rgba(34, 197, 94, 0.04)';
+    } else {
+      row.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      row.style.background  = 'rgba(239, 68, 68, 0.04)';
+    }
+  });
+
+  return { correct: correct, total: total, allAnswered: allAnswered };
+}
+
+
+/* ===================================================
+   EXERCISE 1: REGULATION MATCHING
+   5 scenarios → GDPR / EU Data Act / DORA / ePrivacy
+   =================================================== */
+function checkExercise1() {
+  var fid = document.getElementById('feedback-ex1');
+  var result = evaluateMatchRows('#exercise-1');
+
+  if (!result.allAnswered) {
+    fid.className   = 'feedback incorrect';
+    fid.textContent = 'Select a regulation for every scenario before checking.';
+    fid.style.display = 'block';
+    return;
+  }
+
+  if (result.correct === result.total) {
+    fid.className   = 'feedback correct';
+    fid.textContent = result.correct + '/' + result.total + ' correct. You can map regulations to scenarios.';
+    fid.style.display = 'block';
+    exercisesCompleted.ex1 = true;
+    checkAllComplete();
+  } else {
+    fid.className   = 'feedback incorrect';
+    fid.textContent = result.correct + '/' + result.total + ' correct. Hint: DORA = financial ICT resilience. EU Data Act = IoT data access rights. ePrivacy = cookies and electronic marketing. GDPR = personal data subject rights.';
+    fid.style.display = 'block';
+    if (result.correct >= 4) { exercisesCompleted.ex1 = true; checkAllComplete(); }
+  }
+}
+
+
+/* ===================================================
+   EXERCISE 2: SPOT THE MISCONCEPTION
+   4 statements, each in a match-row with data-correct="A" (wrong) or "B" (correct).
+   All four must be classified correctly.
+   =================================================== */
+function checkExercise2() {
+  var fid = document.getElementById('feedback-ex2');
+  var result = evaluateMatchRows('#exercise-2');
+
+  if (!result.allAnswered) {
+    fid.className   = 'feedback incorrect';
+    fid.textContent = 'Classify all four statements before checking.';
+    fid.style.display = 'block';
+    return;
+  }
+
+  if (result.correct === result.total) {
+    fid.className   = 'feedback correct';
+    fid.textContent = result.correct + '/' + result.total + ' correct. The two wrong statements: (1) DORA applies to ALL companies — it applies to financial entities only. (2) The newer Data Act supersedes GDPR for personal IoT data — both apply simultaneously.';
+    fid.style.display = 'block';
+    exercisesCompleted.ex2 = true;
+    checkAllComplete();
+  } else {
+    fid.className   = 'feedback incorrect';
+    fid.textContent = result.correct + '/' + result.total + ' correct. Check again: DORA scope is financial-sector-only. GDPR is not displaced by newer regulations for personal data — it coexists.';
+    fid.style.display = 'block';
+    if (result.correct >= 3) { exercisesCompleted.ex2 = true; checkAllComplete(); }
+  }
+}
+
+
+/* ===================================================
+   EXERCISE 3: DV TO DORA BRIDGE
+   4 match-rows: DV feature → what it provides for DORA
+   =================================================== */
+function checkExercise3() {
+  var fid = document.getElementById('feedback-ex3');
+  var result = evaluateMatchRows('#exercise-3');
+
+  if (!result.allAnswered) {
+    fid.className   = 'feedback incorrect';
+    fid.textContent = 'Match all four DV features before checking.';
+    fid.style.display = 'block';
+    return;
+  }
+
+  if (result.correct === result.total) {
+    fid.className   = 'feedback correct';
+    fid.textContent = result.correct + '/' + result.total + ' correct. You can explain Data Vault compliance value in DORA terms.';
+    fid.style.display = 'block';
+    exercisesCompleted.ex3 = true;
+    checkAllComplete();
+  } else {
+    fid.className   = 'feedback incorrect';
+    fid.textContent = result.correct + '/' + result.total + ' correct. Hint: load_date = time travel (temporal reconstruction). record_source = ICT asset origin. Insert-only = nothing gets overwritten. Staging = raw evidence before transformation.';
+    fid.style.display = 'block';
+    if (result.correct >= 3) { exercisesCompleted.ex3 = true; checkAllComplete(); }
+  }
+}
+
+
+/* ===================================================
+   WORD-WRAP UTILITY
+   =================================================== */
+function wrapHookWords(hookEl) {
+  var nodes = Array.prototype.slice.call(hookEl.childNodes);
+  var frag = document.createDocumentFragment();
+  nodes.forEach(function(node) {
+    if (node.nodeType === 1 && node.tagName === 'EM') {
+      var span = document.createElement('span');
+      span.className = 'word';
+      span.appendChild(node.cloneNode(true));
+      frag.appendChild(span);
+    } else if (node.nodeType === 3) {
+      var words = node.textContent.split(/(\s+)/);
+      words.forEach(function(w) {
+        if (/^\s+$/.test(w)) { frag.appendChild(document.createTextNode(w)); }
+        else if (w.length > 0) {
+          var span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = w;
+          frag.appendChild(span);
+        }
+      });
+    } else { frag.appendChild(node.cloneNode(true)); }
+  });
+  while (hookEl.firstChild) hookEl.removeChild(hookEl.firstChild);
+  hookEl.appendChild(frag);
+  hookEl.setAttribute('data-word-count', hookEl.querySelectorAll('.word').length);
+}
+
+
+/* ===================================================
+   INIT
+   =================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.four-layers').forEach(function(container) { updateLayerDots(container); });
+  document.querySelectorAll('.hook-text').forEach(function(hook) { wrapHookWords(hook); });
+});
+</script>
+
+<script src="../nav-inject.js"></script>
+
+
+<!-- ═══════ Game UI Elements ═══════ -->
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar -->
+<div id="inventory-toolbar" class="inventory-toolbar">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel -->
+<div id="inventory-panel" class="inventory-panel hidden">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script>
+/* ═══════ Game system init + scroll-based item discovery ═══════ */
+document.addEventListener('DOMContentLoaded', function() {
+  /* Initialize game systems */
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+    if (SV.achievements) SV.achievements.init();
+  }
+
+  var items = ['eu-data-act', 'dora', 'eprivacy', 'regulation-map'];
+  var granted = {};
+
+  /* Restore already-granted items from persistence */
+  if (typeof SV !== 'undefined' && SV.persistence) {
+    var inv = SV.persistence.get('inventory', []);
+    for (var i = 0; i < inv.length; i++) { granted[inv[i].id] = true; }
+  }
+
+  function getScrollPct() {
+    var h = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    return window.scrollY / h;
+  }
+
+  function checkScroll() {
+    var pct = getScrollPct();
+    for (var i = 0; i < items.length; i++) {
+      var threshold = (i + 0.5) / items.length;
+      if (pct >= threshold && !granted[items[i]]) {
+        granted[items[i]] = true;
+        if (typeof SV !== 'undefined' && SV.inventory && SV.inventory.addItem) {
+          SV.inventory.addItem(items[i]);
+        }
+      }
+    }
+  }
+
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  setTimeout(checkScroll, 1500);
+});
+</script>
+
+</body>
+</html>

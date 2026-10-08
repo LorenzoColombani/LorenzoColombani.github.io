@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 1: Ontology — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ===================================================
+   32nd CENTURY HOLOGRAPHIC DESIGN SYSTEM
+   Chapter 1: Ontology — Relational Databases
+   =================================================== */
+
+:root {
+  --bg-deep: #030810;
+  --bg-void: #010409;
+
+  --pm-surface: rgba(8, 20, 42, 0.82);
+  --pm-surface-hover: rgba(12, 28, 54, 0.88);
+  --pm-glass: rgba(0, 180, 255, 0.06);
+  --pm-glass-edge: rgba(0, 180, 255, 0.12);
+
+  /* DV Component Colors */
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+
+  /* Section accent — ontology green */
+  --s-color: #22c55e;
+  --s-glow: rgba(34, 197, 94, 0.25);
+  --s-dim: rgba(34, 197, 94, 0.08);
+
+  /* Text */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --accent-dim: rgba(0, 180, 255, 0.06);
+
+  --accent-color: #fbbf24;
+  --accent-bg: rgba(251, 191, 36, 0.04);
+
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+
+  --border-subtle: rgba(0, 180, 255, 0.08);
+  --border-medium: rgba(0, 180, 255, 0.15);
+  --border-glow: rgba(0, 180, 255, 0.3);
+
+  --holo-cyan: #0ef;
+  --holo-cyan-dim: rgba(0, 238, 255, 0.04);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Exo 2', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* === AMBIENT ATMOSPHERE === */
+#particle-field {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1; pointer-events: none;
+}
+
+body::before {
+  content: ''; position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none; z-index: 0;
+}
+
+.scanline-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 238, 255, 0.007) 2px, rgba(0, 238, 255, 0.007) 4px
+  );
+  pointer-events: none; z-index: 9998;
+}
+
+.scan-bar {
+  position: fixed; left: 0; right: 0; height: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 238, 255, 0.08), transparent);
+  animation: scan-sweep 12s linear infinite;
+  pointer-events: none; z-index: 9997;
+}
+
+@keyframes scan-sweep { from { top: -3px; } to { top: 100vh; } }
+
+.ambient-glow {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 15% 20%, rgba(34, 197, 94, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 85% 60%, rgba(6, 182, 212, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 90%, rgba(168, 85, 247, 0.03) 0%, transparent 70%);
+}
+
+/* === PAGE CONTENT === */
+.page-content {
+  position: relative; z-index: 2;
+  max-width: 800px; margin: 0 auto;
+  padding: 20px 24px 80px;
+}
+
+/* === TITLE SECTION === */
+.title-section {
+  text-align: center;
+  padding: 60px 20px 48px;
+  margin-bottom: 40px;
+}
+
+.title-section .chapter-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--s-color);
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.title-section h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 700;
+  color: var(--text-bright);
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+
+.title-section .subtitle {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.title-section .meta-bar {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 20px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+/* === SECTION HEADERS === */
+.section { margin-bottom: 48px; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.section-tag {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 4px;
+  white-space: nowrap;
+  background: var(--s-dim);
+  color: var(--s-color);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(34, 197, 94, 0.3), transparent);
+}
+
+.section h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.section p {
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+/* === PM PANELS (glassmorphism) === */
+.pm-panel {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 20px 0;
+  backdrop-filter: blur(16px);
+  position: relative;
+}
+
+.pm-panel::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 20px; right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 180, 255, 0.3), transparent);
+}
+
+/* === TERM CARDS === */
+.term-card {
+  background: var(--pm-surface);
+  border: 1px solid var(--border-medium);
+  border-left: 3px solid var(--hub-color);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin: 20px 0;
+  backdrop-filter: blur(12px);
+}
+
+.term-card .term-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--hub-text);
+  margin-bottom: 4px;
+}
+
+.term-card .etymology {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-bottom: 10px;
+}
+
+.term-card p {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+
+.term-card p:last-child { margin-bottom: 0; }
+
+/* === CONCEPT CALLOUT (amber) === */
+.concept-callout {
+  background: var(--accent-bg);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin: 20px 0;
+}
+
+.concept-callout .callout-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  margin-bottom: 8px;
+}
+
+.concept-callout p, .concept-callout {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-style: italic;
+}
+
+/* === DV CONNECTION (green) === */
+.dv-connection {
+  background: var(--s-dim);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin: 20px 0;
+}
+
+.dv-connection .callout-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--s-color);
+  margin-bottom: 8px;
+}
+
+.dv-connection p {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.dv-connection p:last-child { margin-bottom: 0; }
+
+/* === CHECKPOINT === */
+.checkpoint {
+  background: rgba(0, 180, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.checkpoint strong {
+  color: var(--accent);
+}
+
+/* === BAD EXAMPLE === */
+.bad-example {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  overflow-x: auto;
+  line-height: 1.8;
+}
+
+.bad-example .label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--warning-color);
+  margin-bottom: 8px;
+}
+
+/* === TABLE === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 0.9rem;
+}
+
+th {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-glow);
+  color: var(--accent);
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+  color: var(--text-primary);
+}
+
+tr:last-child td { border-bottom: none; }
+
+tr:hover td { background: rgba(0, 180, 255, 0.03); }
+
+/* === CODE === */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  background: rgba(0, 180, 255, 0.08);
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: var(--hub-text);
+}
+
+/* === EXERCISE === */
+.exercise {
+  background: var(--pm-surface);
+  border: 1px solid var(--s-color);
+  border-radius: 12px;
+  padding: 28px;
+  margin: 28px 0;
+  position: relative;
+}
+
+.exercise::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 30px; right: 30px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--s-color), transparent);
+}
+
+.exercise h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--s-color);
+  margin-bottom: 14px;
+  letter-spacing: 0.06em;
+}
+
+.exercise p, .exercise li {
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+}
+
+.exercise ol { padding-left: 24px; }
+.exercise li { color: var(--text-primary); }
+
+/* === FOOTER === */
+.tutorial-footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-medium);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tutorial-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* === SCROLL REVEAL === */
+.wipe-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.wipe-reveal.materialized {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* === UTILITY === */
+strong { font-weight: 600; }
+em { font-style: italic; color: var(--text-secondary); }
+
+@media (max-width: 600px) {
+  .page-content { padding: 16px 16px 60px; }
+  .title-section { padding: 40px 12px 32px; }
+  .title-section .meta-bar { flex-direction: column; gap: 8px; }
+  .term-card, .pm-panel, .concept-callout, .dv-connection { padding: 16px 18px; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 8px 10px; }
+}
+
+/* ═══════ Game UI: Inventory + Achievements ═══════ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary, rgba(255,255,255,0.5)); }
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim, rgba(255,255,255,0.3)); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.3));
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright, #fff); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright, #fff); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim, rgba(255,255,255,0.3)); font-family: 'Orbitron', sans-serif; }
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+@media (max-width: 600px) {
+  .inventory-toolbar { bottom: 8px; left: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .inventory-panel { width: calc(100vw - 16px); left: 8px; bottom: 60px; }
+}
+
+/* ===================================================
+   LCARS SEGMENTED PROGRESS BAR
+   =================================================== */
+.holo-nav {
+  position: sticky; top: 48px; z-index: 100;
+  background: rgba(3, 8, 16, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px 0 0;
+}
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.nav-nodes {
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; padding: 6px 0;
+}
+.nav-node {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+  color: var(--text-dim); background: rgba(0,180,255,0.04);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer; transition: all 0.3s ease;
+}
+.nav-node:hover { border-color: var(--accent); color: var(--text-secondary); }
+.nav-node.active {
+  background: rgba(0,180,255,0.12); border-color: var(--accent);
+  color: var(--text-bright); box-shadow: 0 0 12px var(--accent-glow);
+}
+.nav-node.completed {
+  background: rgba(0,180,255,0.06); border-color: rgba(0,180,255,0.3);
+  color: var(--text-secondary);
+}
+.nav-connector {
+  width: 16px; height: 2px; background: var(--border-subtle);
+  transition: background 0.3s ease;
+}
+.nav-connector.active { background: var(--accent); }
+.nav-label {
+  text-align: center; font-family: 'Orbitron', monospace;
+  font-size: 9px; color: var(--text-dim); letter-spacing: 0.15em;
+  text-transform: uppercase; padding: 4px 0;
+}
+.lcars-bar {
+  display: flex; align-items: stretch; padding: 6px 24px 4px; gap: 0;
+}
+.lcars-elbow {
+  width: 18px; flex-shrink: 0; background: var(--accent);
+  border-radius: 0 0 0 14px; opacity: 0.35; position: relative;
+  transition: opacity 0.6s ease;
+}
+.lcars-elbow::after {
+  content: ''; position: absolute; bottom: -12px; left: 0;
+  width: 100%; height: 12px; background: var(--accent);
+  border-radius: 0 0 0 8px; opacity: inherit;
+}
+.lcars-segments {
+  display: flex; gap: 3px; flex: 1; height: 32px; padding-left: 4px;
+}
+.lcars-seg {
+  flex: 1; border-radius: 3px;
+  background: linear-gradient(90deg,
+    var(--seg-color) 0%, var(--seg-color) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%),
+    color-mix(in srgb, var(--seg-color) 20%, transparent) 100%
+  );
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0; animation: seg-appear 0.4s ease both;
+}
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; }
+.lcars-seg:nth-child(2) { animation-delay: 0.1s; }
+.lcars-seg:nth-child(3) { animation-delay: 0.15s; }
+.lcars-seg:nth-child(4) { animation-delay: 0.2s; }
+.lcars-seg:nth-child(5) { animation-delay: 0.25s; }
+@keyframes seg-appear {
+  from { opacity: 0; transform: scaleX(0.3); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+.lcars-seg.active {
+  box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent),
+              inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent);
+  color: var(--bg-deep);
+}
+.lcars-seg.completed {
+  --seg-fill: 100%; filter: brightness(0.7); color: var(--bg-deep);
+}
+.lcars-seg:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent);
+}
+.lcars-flow { height: 3px; margin: 0 24px; background: rgba(0,180,255,0.06); }
+.lcars-flow-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--hub-color), var(--accent), var(--sat-color));
+  box-shadow: 0 0 8px rgba(6,182,212,0.4);
+  width: 0%; transition: width 0.5s ease;
+}
+@media (max-width: 600px) {
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .nav-nodes { gap: 2px; }
+  .nav-node { width: 28px; height: 28px; font-size: 8px; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lcars-seg { opacity: 1; }
+}
+
+</style>
+</head>
+<body data-chapter="1" style="padding-top: 52px;">
+
+<!-- Atmospheric layers -->
+<canvas id="particle-field"></canvas>
+<div class="scanline-overlay"><div class="scan-bar"></div></div>
+<div class="ambient-glow"></div>
+
+<div class="page-content">
+
+<nav class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('s1')">1</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s2')">2</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s3')">3</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s4')">4</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s5')">5</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">Ontology</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: var(--s-color)" onclick="scrollToSection('s1')">1</div>
+        <div class="lcars-seg" style="--seg-color: var(--hub-color)" onclick="scrollToSection('s2')">2</div>
+        <div class="lcars-seg" style="--seg-color: var(--link-color)" onclick="scrollToSection('s3')">3</div>
+        <div class="lcars-seg" style="--seg-color: var(--sat-color)" onclick="scrollToSection('s4')">4</div>
+        <div class="lcars-seg" style="--seg-color: var(--accent)" onclick="scrollToSection('s5')">5</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</nav>
+
+  <!-- Title -->
+  <div class="title-section">
+    <div class="chapter-label">Chapter 1 // Ontology</div>
+    <h1>What Exists, and How Do We Talk About It?</h1>
+    <p class="subtitle">Relational databases through the lens of ontology</p>
+    <div class="meta-bar">
+      <span>~20 min read</span>
+      <span>5 sections</span>
+      <span>1 exercise</span>
+    </div>
+  </div>
+
+  <!-- Section 1 -->
+  <div class="section wipe-reveal" id="s1">
+    <div class="section-header">
+      <div class="section-tag">SECTION 1 OF 5</div>
+      <div class="section-line"></div>
+    </div>
+    <h2>You Already Know This (In the Wrong Language)</h2>
+
+    <p>Mapping Aristotle's Categories to Data Vault — Hubs as substance, Satellites as accidents, Links as relation — isn't just a metaphor. It reveals a <strong>structural isomorphism</strong>: two systems, 2,400 years apart, converging on the same architecture because the problem is the same.</p>
+
+    <p>The entire field of relational databases rests on that same ontological foundation. This chapter translates what you already understand into the vocabulary the Data Vault community uses.</p>
+
+    <p>Three new concepts per section. No more.</p>
+
+    <div class="checkpoint">
+      <strong>&#x2713; Checkpoint:</strong> Can you state, in one sentence, why Hubs and Aristotelian substance are structurally equivalent? If yes, you already have the conceptual foundation for everything that follows.
+    </div>
+  </div>
+
+  <!-- Section 2 -->
+  <div class="section wipe-reveal" id="s2">
+    <div class="section-header">
+      <div class="section-tag">SECTION 2 OF 5</div>
+      <div class="section-line"></div>
+    </div>
+    <h2>Tables, Rows, Columns: The Ontological Furniture</h2>
+
+    <p>In 1970, a mathematician named Edgar Codd proposed a way to organize data using <strong>relations</strong> — a term from set theory meaning "a set of tuples that all share the same structure." In plain language: a table where every row has the same columns. That's why it's called a <em>relational</em> database — not because things are "related to each other" (though they are), but because each table is a mathematical relation.</p>
+
+    <div class="term-card">
+      <div class="term-name">Table (also: Relation)</div>
+      <div class="etymology">Latin <em>tabula</em> — a flat board for writing</div>
+      <p>A structured collection of data about one <strong>type</strong> of thing. One table = one category of entity. The Customer table is the category "customer." Think of it as an Aristotelian universal — a class under which particulars fall.</p>
+    </div>
+
+    <div class="term-card">
+      <div class="term-name">Row (also: Record, Tuple)</div>
+      <div class="etymology">From set theory: a tuple is an ordered sequence of values</div>
+      <p>One specific instance of whatever the table represents. One customer. One order. One flight. If the table is the category (universal), the row is the <strong>particular</strong> — the individual substance that falls under it.</p>
+    </div>
+
+    <div class="term-card">
+      <div class="term-name">Column (also: Field, Attribute)</div>
+      <div class="etymology">A property shared by every row in the table</div>
+      <p>Name, City, Email — each is a column. Columns are the <strong>accidents</strong> in the Aristotelian sense: properties that describe a substance but aren't essential to its identity. Marie's city can change from Paris to Lyon; she's still Marie.</p>
+    </div>
+
+    <div class="dv-connection">
+      <div class="callout-label">Data Vault Connection</div>
+      <p>Hubs, Links, and Satellites are all tables. A Hub_Customer is a table. A Sat_Customer_Details is a table. Data Vault tells you <em>which kinds of tables</em> to create and why. The relational database is the medium they live in.</p>
+    </div>
+
+    <div class="checkpoint">
+      <strong>&#x2713; Checkpoint:</strong> If someone says "a relation with 50 tuples and 4 attributes" — can you translate that to plain language? (A table with 50 rows and 4 columns.)
+    </div>
+  </div>
+
+  <!-- Section 3 -->
+  <div class="section wipe-reveal" id="s3">
+    <div class="section-header">
+      <div class="section-tag">SECTION 3 OF 5</div>
+      <div class="section-line"></div>
+    </div>
+    <h2>Keys: What Makes This Thing <em>This</em> Thing?</h2>
+
+    <p>In an RPG, every item in your inventory has a unique ID under the hood. You might have two "Iron Swords" — they look identical — but the game engine tracks them as Item #4021 and Item #4022. Without that ID, the engine can't tell them apart. Drop one, and it might delete both.</p>
+
+    <p>Databases have the same problem, and the same solution.</p>
+
+    <div class="term-card">
+      <div class="term-name">Primary Key (PK)</div>
+      <div class="etymology">A key unlocks one specific door and no other</div>
+      <p><strong>A column that uniquely identifies each row.</strong> No duplicates allowed. No blanks allowed. Customer_ID "001" points to exactly one customer, forever. This is Aristotelian substance made technically precise: what makes this customer <em>this</em> customer is its key.</p>
+    </div>
+
+    <div class="term-card" style="border-left-color: var(--link-color);">
+      <div class="term-name" style="color: var(--link-text);">Foreign Key (FK)</div>
+      <div class="etymology">"Foreign" = belongs to another table, like a foreign passport — a visitor carrying a reference back home</div>
+      <p><strong>A column in one table that points to the primary key of another table.</strong> The Order table has a column called Customer_ID — that's a foreign key pointing to the Customer table. It says: "this order belongs to <em>that</em> customer."</p>
+    </div>
+
+    <p>Without keys, a database is just a collection of spreadsheets. Keys create the web of references that lets you ask cross-cutting questions like "show me all orders from customers in Paris." That following-of-references is called a <strong>JOIN</strong> — which you'll write in Chapter 4.</p>
+
+    <div class="dv-connection">
+      <div class="callout-label">Data Vault Connection</div>
+      <p>Every Hub has a primary key — a <strong>hash key</strong> (generated by running the business key through a hashing algorithm like SHA-256). Links are fundamentally <em>tables of foreign keys</em>: a Link_Customer_Order contains the hash keys of Hub_Customer and Hub_Order, sitting side by side. A Link is pure Aristotelian relation — a record that says "these two things were connected at this point in time."</p>
+    </div>
+
+    <div class="checkpoint">
+      <strong>&#x2713; Checkpoint:</strong> What's the difference between a primary key and a foreign key? (A PK identifies a row in <em>its own</em> table; a FK points to a row in <em>another</em> table.)
+    </div>
+  </div>
+
+  <!-- Section 4 -->
+  <div class="section wipe-reveal" id="s4">
+    <div class="section-header">
+      <div class="section-tag">SECTION 4 OF 5</div>
+      <div class="section-line"></div>
+    </div>
+    <h2>Normalization: Everything in Its Right Place</h2>
+
+    <p><strong>"Normalize"</strong> comes from "make normal" — bring something into conformity with a standard. In databases, it means: <strong>each fact is stored in exactly one place.</strong> No redundancy. No contradiction.</p>
+
+    <p>Why does this matter? Look at this badly-designed table:</p>
+
+    <div class="bad-example">
+      <div class="label">&#x26A0; Redundant Data</div>
+      Order 1001 | Marie | Paris &nbsp;| Widget<br>
+      Order 1002 | Marie | Paris &nbsp;| Gadget<br>
+      Order 1003 | Marie | Lyon &nbsp; | Widget
+    </div>
+
+    <p>Marie appears three times. In rows 1–2 she's in Paris, in row 3 she's in Lyon. Did she move? Typo? <strong>The database can't tell you.</strong> The same fact (Marie's city) is stored in multiple places, and the copies disagree. This is like a D&amp;D character sheet where your HP is written in three different places with three different numbers.</p>
+
+    <p>Normalization fixes this by putting each fact in <strong>one</strong> table where it belongs. Marie's city goes in the Customer table. Orders reference Marie by her key. Change her city once, it's correct everywhere.</p>
+
+    <div class="dv-connection">
+      <div class="callout-label">Data Vault = Normalization Perfected</div>
+      <p>Business keys &#x2192; <strong>Hubs</strong> (and nowhere else). Relationships &#x2192; <strong>Links</strong> (and nowhere else). Descriptive attributes &#x2192; <strong>Satellites</strong> (and nowhere else, split by source/rate-of-change). Every fact, exactly once, in exactly the right table. If a customer moves, you add a new row to Sat_Customer_Details. The Hub doesn't change. The Links don't change.</p>
+    </div>
+
+    <div class="concept-callout">
+      <div class="callout-label">Key Concept</div>
+      <p>"Data Vault takes normalization to its logical conclusion — it separates identity from relationships from descriptive context, so changes in one area never ripple into the others."</p>
+    </div>
+
+    <div class="checkpoint">
+      <strong>&#x2713; Checkpoint:</strong> Why is redundancy dangerous in a database? (Same fact stored in multiple places can lead to contradictions — you lose trust in the data.)
+    </div>
+  </div>
+
+  <!-- Section 5 -->
+  <div class="section wipe-reveal" id="s5">
+    <div class="section-header">
+      <div class="section-tag">SECTION 5 OF 5</div>
+      <div class="section-line"></div>
+    </div>
+    <h2>OLTP vs OLAP: Two Different Games</h2>
+
+    <p>Think of it as the difference between <strong>playing</strong> the game and <strong>analyzing your replays</strong>.</p>
+
+    <p><strong>OLTP (Online Transaction Processing)</strong> is the live game. Your bank processes a transfer. Amazon records your order. A hospital registers a patient. Each operation is small, fast, and specific. Optimized for speed on individual transactions. The "T" stands for <em>Transaction</em> — from Latin <em>transactio</em>, "a driving through." One thing, done, next.</p>
+
+    <p><strong>OLAP (Online Analytical Processing)</strong> is the replay analysis. "What were total sales by region last quarter?" "Which products are trending down with 25–34 year olds?" These are big, complex questions across millions of records. The "A" stands for <em>Analytical</em> — from Greek <em>analusis</em>, "a breaking apart." Taking a huge dataset apart to find patterns.</p>
+
+    <div class="dv-connection">
+      <div class="callout-label">Where Data Vault Lives</div>
+      <p>Source systems (OLTP) &#x2192; <strong>Staging</strong> (temporary landing zone) &#x2192; <strong>Raw Data Vault</strong> (Hubs, Links, Satellites — the warehouse) &#x2192; <strong>Business Vault</strong> (business rules applied) &#x2192; <strong>Information Marts</strong> (star schemas for dashboards). ScaleFree's entire business is building that middle layer — the vault between operational systems and business intelligence.</p>
+    </div>
+
+    <div class="concept-callout">
+      <div class="callout-label">Key Concept</div>
+      <p>"OLTP systems handle individual transactions fast. OLAP systems answer analytical questions across large datasets. Data Vault is an OLAP architecture — it sits between the source systems and the business intelligence layer."</p>
+    </div>
+
+    <div class="checkpoint">
+      <strong>&#x2713; Checkpoint:</strong> Data Vault is an OLAP architecture — designed for analytical workloads, not transactional ones. This distinction is fundamental.
+    </div>
+  </div>
+
+  <!-- The Map -->
+  <div class="section wipe-reveal" id="map">
+    <div class="section-header">
+      <div class="section-tag">THE MAP</div>
+      <div class="section-line"></div>
+    </div>
+    <h2>Your Vocabulary in Three Columns</h2>
+
+    <div class="pm-panel" style="overflow-x: auto;">
+      <table>
+        <tr>
+          <th>What You Know (Philosophy)</th>
+          <th>Database Term</th>
+          <th>Data Vault</th>
+        </tr>
+        <tr><td>Category (universal)</td><td>Table</td><td>Hub, Link, or Satellite</td></tr>
+        <tr><td>Particular (substance)</td><td>Row</td><td>One business key / relationship / attribute snapshot</td></tr>
+        <tr><td>Accident (property)</td><td>Column</td><td>An attribute in a Satellite</td></tr>
+        <tr><td>Essential identity</td><td>Primary Key</td><td>Hash Key in a Hub</td></tr>
+        <tr><td>Relation</td><td>Foreign Key</td><td>The contents of a Link</td></tr>
+        <tr><td>System of categories</td><td>Schema</td><td>Data Vault Model</td></tr>
+        <tr><td>Categorization</td><td>Normalization</td><td>Hub / Link / Satellite separation</td></tr>
+        <tr><td>Day-to-day acts</td><td>OLTP</td><td>Source systems</td></tr>
+        <tr><td>Analysis &amp; reflection</td><td>OLAP</td><td>The Data Vault warehouse</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Exercise -->
+  <div class="section wipe-reveal">
+    <div class="exercise">
+      <h3>Exercise: Build a Data Vault in Your Head</h3>
+      <p>Pick a domain — D&amp;D, a video game you know well, a TV show — and identify:</p>
+      <ol>
+        <li><strong>3 Hubs</strong> — core entities with unique identifiers (business keys)</li>
+        <li><strong>2 Links</strong> — relationships between those entities</li>
+        <li><strong>3 Satellites</strong> — descriptive attributes that change over time</li>
+      </ol>
+      <p>Then ask yourself: which are the primary keys? Where are the foreign keys? Which facts change and which persist?</p>
+      <p>If you can walk through this exercise verbally, you're demonstrating that you <em>think in Data Vault</em> — not that you memorized a definition.</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="tutorial-footer">
+    <span>Chapter 1 of 14 &middot; Data Vault Foundations</span>
+    <a href="02-data-vault-deep-cuts.html">Next: Chapter 2 — Data Vault Deep Cuts &rarr;</a>
+  </div>
+
+</div>
+
+<!-- DV-themed star constellation field (shared) -->
+<script src="../systems/particles.js"></script>
+
+<!-- Scroll reveal -->
+<script>
+(function() {
+  var els = document.querySelectorAll('.wipe-reveal');
+  if (!els.length) return;
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('materialized');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+  els.forEach(function(el) { observer.observe(el); });
+})();
+</script>
+
+<script src="../nav-inject.js"></script>
+
+
+<!-- ═══════ Game UI Elements ═══════ -->
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar -->
+<div id="inventory-toolbar" class="inventory-toolbar">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel -->
+<div id="inventory-panel" class="inventory-panel hidden">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+<script>
+/* ===================================================
+   SECTION NAVIGATION + LCARS PROGRESS
+   =================================================== */
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+(function() {
+  var sections = document.querySelectorAll('.section');
+  var navNodes = document.querySelectorAll('.nav-node');
+  var navConnectors = document.querySelectorAll('.nav-connector');
+  var progressFill = document.getElementById('progress-fill');
+  var navLabel = document.getElementById('nav-current-label');
+  var lcarsSegs = document.querySelectorAll('.lcars-seg');
+
+  var sectionLabels = ['Ontology Basics', 'Tables', 'Rows & Entities', 'Keys', 'Exercise'];
+  var lastActiveIndex = -1;
+
+  function updateNav() {
+    var activeIdx = 0;
+    var scrollY = window.scrollY + window.innerHeight * 0.35;
+    sections.forEach(function(s, i) {
+      if (s.offsetTop <= scrollY) activeIdx = i;
+    });
+
+    if (activeIdx !== lastActiveIndex) {
+      lastActiveIndex = activeIdx;
+      navNodes.forEach(function(n, i) {
+        n.classList.remove('active', 'completed');
+        if (i === activeIdx) n.classList.add('active');
+        else if (i < activeIdx) n.classList.add('completed');
+      });
+      navConnectors.forEach(function(c, i) {
+        if (i < activeIdx) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+      if (navLabel) navLabel.textContent = sectionLabels[activeIdx] || '';
+      lcarsSegs.forEach(function(seg, i) {
+        seg.classList.remove('active', 'completed');
+        if (i === activeIdx) seg.classList.add('active');
+        else if (i < activeIdx) seg.classList.add('completed');
+      });
+    }
+
+    var activeSection = sections[lastActiveIndex];
+    var nextSection = sections[lastActiveIndex + 1];
+    if (activeSection) {
+      var secTop = activeSection.offsetTop;
+      var secBottom = nextSection ? nextSection.offsetTop : document.documentElement.scrollHeight;
+      var secHeight = secBottom - secTop;
+      var currentY = window.scrollY + window.innerHeight * 0.35;
+      var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+      fill = Math.max(0, Math.min(100, fill));
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+      lcarsSegs.forEach(function(seg, i) {
+        if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+        else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+        else seg.style.removeProperty('--seg-fill');
+      });
+    }
+
+    var docH = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = docH > 0 ? (window.scrollY / docH) * 100 : 0;
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) pct = 100;
+    if (progressFill) progressFill.style.width = Math.min(pct, 100) + '%';
+  }
+
+  window.addEventListener('scroll', updateNav, { passive: true });
+  updateNav();
+})();
+</script>
+
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script>
+/* ═══════ Game system init + scroll-based item discovery ═══════ */
+document.addEventListener('DOMContentLoaded', function() {
+  /* Initialize game systems */
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+    if (SV.achievements) SV.achievements.init();
+  }
+
+  var items = ['table-vs-row', 'primary-key', 'entity-noun', 'career-story'];
+  var granted = {};
+
+  /* Restore already-granted items from persistence */
+  if (typeof SV !== 'undefined' && SV.persistence) {
+    var inv = SV.persistence.get('inventory', []);
+    for (var i = 0; i < inv.length; i++) { granted[inv[i].id] = true; }
+  }
+
+  function getScrollPct() {
+    var h = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    return window.scrollY / h;
+  }
+
+  function checkScroll() {
+    var pct = getScrollPct();
+    for (var i = 0; i < items.length; i++) {
+      var threshold = (i + 0.5) / items.length;
+      if (pct >= threshold && !granted[items[i]]) {
+        granted[items[i]] = true;
+        if (typeof SV !== 'undefined' && SV.inventory && SV.inventory.addItem) {
+          SV.inventory.addItem(items[i]);
+        }
+      }
+    }
+  }
+
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  setTimeout(checkScroll, 1500);
+});
+</script>
+
+</body>
+</html>

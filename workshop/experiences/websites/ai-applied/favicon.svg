@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <clipPath id="circle-clip">
+      <circle cx="100" cy="100" r="96"/>
+    </clipPath>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <!-- Circle base -->
+  <circle cx="100" cy="100" r="96" fill="#011F5B" stroke="#000000" stroke-width="1.5" stroke-opacity="0.3" filter="url(#shadow)"/>
+  <!-- Red bottom ~25% of circle (y=148 to bottom) -->
+  <rect x="0" y="148" width="200" height="52" fill="#A90533" clip-path="url(#circle-clip)"/>
+  <!-- White dividing line -->
+  <line x1="4" y1="148" x2="196" y2="148" stroke="#FFFFFF" stroke-width="1.5" clip-path="url(#circle-clip)"/>
+  <!-- Text centered in blue area (y=4 to y=148, center ~y=76) -->
+  <text x="100" y="58" text-anchor="middle" dominant-baseline="central" fill="#FFFFFF" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="700" font-size="26" letter-spacing="0.5">Wharton</text>
+  <text x="100" y="86" text-anchor="middle" dominant-baseline="central" fill="#FFFFFF" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="700" font-size="26" letter-spacing="0.5">Alumni</text>
+  <text x="100" y="114" text-anchor="middle" dominant-baseline="central" fill="#FFFFFF" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="700" font-size="26" letter-spacing="0.5">AI Studio</text>
+</svg>

@@ -1,0 +1,2464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 9: AI Act and Data Vault — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #030810;
+  --bg-void: #010409;
+  --pm-surface: rgba(8, 20, 42, 0.82);
+  --pm-surface-hover: rgba(12, 28, 54, 0.88);
+  --pm-glass: rgba(0, 180, 255, 0.06);
+  --pm-glass-edge: rgba(0, 180, 255, 0.12);
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+  /* Tools color palette */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --accent-dim: rgba(0, 180, 255, 0.06);
+  --accent-color: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --accent-bg: rgba(251, 191, 36, 0.04);
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.3);
+  --sql-select: #22c55e;
+  --sql-select-dim: rgba(34, 197, 94, 0.08);
+  --sql-select-glow: rgba(34, 197, 94, 0.25);
+  --border-subtle: rgba(0, 180, 255, 0.08);
+  --border-medium: rgba(0, 180, 255, 0.15);
+  --border-glow: rgba(0, 180, 255, 0.3);
+  --border-active: rgba(0, 180, 255, 0.45);
+  --holo-cyan: #0ef;
+  --holo-cyan-dim: rgba(0, 238, 255, 0.04);
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Exo 2', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#particle-field {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.scanline-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 238, 255, 0.007) 2px, rgba(0, 238, 255, 0.007) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.scan-bar {
+  position: fixed;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 238, 255, 0.08), transparent);
+  animation: scan-sweep 12s linear infinite;
+  pointer-events: none;
+  z-index: 9997;
+}
+
+@keyframes scan-sweep {
+  0% { top: -3px; }
+  100% { top: 100vh; }
+}
+
+.page-content { position: relative; z-index: 2; }
+
+/* NAVIGATION */
+.holo-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(3, 8, 16, 0.9);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.nav-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+.nav-nodes { display: flex; align-items: center; gap: 4px; padding: 12px 0 8px; }
+.nav-node {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--accent-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+  opacity: 0;
+  animation: node-appear 0.4s ease both;
+}
+.nav-node:hover { border-color: var(--accent); color: var(--hub-text); background: rgba(0, 180, 255, 0.1); box-shadow: 0 0 18px rgba(0, 180, 255, 0.2); }
+.nav-node.active { opacity: 1; border-color: var(--accent); color: var(--bg-deep); background: var(--accent); box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.15); animation: node-appear 0.4s ease both, node-pulse 3s ease-in-out 0.4s infinite; }
+.nav-node.completed { opacity: 1; border-color: var(--sql-select); color: var(--sql-select); background: rgba(34, 197, 94, 0.08); }
+.nav-connector { flex: 1; height: 1px; background: var(--border-subtle); min-width: 6px; transition: all 0.6s; }
+.nav-connector.active { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+@keyframes node-pulse { 0%, 100% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.1); } 50% { box-shadow: 0 0 28px rgba(0, 180, 255, 0.5), 0 0 55px rgba(0, 180, 255, 0.2); } }
+@keyframes node-appear { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+.nav-node:nth-child(1) { animation-delay: 0.1s; }
+.nav-node:nth-child(3) { animation-delay: 0.15s; }
+.nav-node:nth-child(5) { animation-delay: 0.2s; }
+.nav-node:nth-child(7) { animation-delay: 0.25s; }
+.nav-node:nth-child(9) { animation-delay: 0.3s; }
+.nav-node:nth-child(11) { animation-delay: 0.35s; }
+.nav-node:nth-child(13) { animation-delay: 0.4s; }
+.nav-node:nth-child(15) { animation-delay: 0.45s; }
+.nav-node:nth-child(17) { animation-delay: 0.5s; }
+.nav-label { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); text-align: center; padding: 2px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* LCARS SEGMENTED PROGRESS BAR */
+.lcars-bar { display: flex; align-items: stretch; padding: 6px 24px 4px; gap: 0; }
+.lcars-elbow { width: 18px; flex-shrink: 0; background: var(--accent); border-radius: 0 0 0 14px; opacity: 0.35; position: relative; transition: opacity 0.6s ease; }
+.lcars-elbow::after { content: ''; position: absolute; bottom: -12px; left: 0; width: 100%; height: 12px; background: var(--accent); border-radius: 0 0 0 8px; opacity: inherit; }
+.lcars-segments { display: flex; gap: 3px; flex: 1; height: 32px; padding-left: 4px; }
+.lcars-seg {
+  flex: 1; border-radius: 3px;
+  background: linear-gradient(90deg, var(--seg-color) 0%, var(--seg-color) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) 100%);
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255, 255, 255, 0.5); cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0; animation: seg-appear 0.4s ease both;
+}
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; } .lcars-seg:nth-child(2) { animation-delay: 0.1s; } .lcars-seg:nth-child(3) { animation-delay: 0.15s; } .lcars-seg:nth-child(4) { animation-delay: 0.2s; } .lcars-seg:nth-child(5) { animation-delay: 0.25s; } .lcars-seg:nth-child(6) { animation-delay: 0.3s; } .lcars-seg:nth-child(7) { animation-delay: 0.35s; } .lcars-seg:nth-child(8) { animation-delay: 0.4s; } .lcars-seg:nth-child(9) { animation-delay: 0.45s; }
+@keyframes seg-appear { from { opacity: 0; transform: scaleX(0.3); } to { opacity: 1; transform: scaleX(1); } }
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+.lcars-seg.active { box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent), inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent); color: var(--bg-deep); }
+.lcars-seg.completed { --seg-fill: 100%; filter: brightness(0.7); color: var(--bg-deep); }
+.lcars-seg:hover { filter: brightness(1.2); box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent); }
+.lcars-flow { height: 3px; margin: 0 24px; background: rgba(0, 180, 255, 0.06); }
+.lcars-flow-fill { height: 100%; background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); width: 0%; transition: width 0.5s ease; }
+/* CONTAINER */
+.container { max-width: 800px; margin: 0 auto; padding: 92px 28px 140px; }
+
+/* TITLE */
+.title-section { margin-bottom: 72px; padding-bottom: 48px; border-bottom: 1px solid var(--border-subtle); opacity: 0; animation: matter-form 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+@keyframes matter-form { 0% { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(6px); } 40% { filter: blur(2px); } 70% { filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+.title-label { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; display: flex; align-items: center; gap: 12px; }
+.title-label::before { content: ''; width: 32px; height: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.title-section h1 { font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.15; color: var(--text-bright); margin-bottom: 18px; letter-spacing: 0.02em; text-shadow: 0 0 40px rgba(16, 185, 129, 0.12); }
+.title-section .subtitle { font-size: 17px; color: var(--text-secondary); font-weight: 400; line-height: 1.75; max-width: 620px; }
+.meta-chips { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.meta-chip { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; background: var(--holo-cyan-dim); color: var(--text-dim); border: 1px solid var(--border-subtle); transition: all 0.4s; opacity: 0; animation: chip-appear 0.5s ease both; }
+.meta-chip:hover { border-color: var(--border-medium); color: var(--text-secondary); box-shadow: 0 0 12px rgba(0, 180, 255, 0.08); }
+.meta-chip:nth-child(1) { animation-delay: 0.6s; } .meta-chip:nth-child(2) { animation-delay: 0.7s; } .meta-chip:nth-child(3) { animation-delay: 0.8s; } .meta-chip:nth-child(4) { animation-delay: 0.9s; } .meta-chip:nth-child(5) { animation-delay: 1.0s; } .meta-chip:nth-child(6) { animation-delay: 1.1s; } .meta-chip:nth-child(7) { animation-delay: 1.2s; }
+@keyframes chip-appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* SECTIONS */
+.section { margin-bottom: 88px; }
+@supports (animation-timeline: view()) {
+  .section { animation: scroll-materialize both linear; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+  @keyframes scroll-materialize { 0% { opacity: 0; transform: translateY(30px) scale(0.97); filter: blur(4px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+}
+@supports not (animation-timeline: view()) {
+  .section { opacity: 0; transform: translateY(30px); transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94); filter: blur(4px); }
+  .section.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+.section-tag { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bg-deep); padding: 5px 16px; border-radius: 4px; white-space: nowrap; }
+.section-tag.accent-t { background: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+.section-tag.exercise-t { background: linear-gradient(135deg, var(--sql-select), var(--accent)); box-shadow: 0 0 16px var(--success-glow); }
+.section-tag.hub-t { background: var(--hub-color); box-shadow: 0 0 14px var(--hub-glow); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+h2 { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 600; line-height: 1.3; color: var(--text-bright); margin-bottom: 22px; letter-spacing: 0.01em; }
+h3 { font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 600; color: var(--text-bright); margin: 38px 0 14px; letter-spacing: 0.02em; }
+p { margin-bottom: 16px; }
+strong { font-weight: 600; color: var(--text-bright); }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; background: var(--accent-dim); color: var(--hub-text); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-subtle); }
+/* TIER BADGES */
+.tier-badge { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 10px; border-radius: 10px; margin-left: 12px; vertical-align: middle; }
+.tier-core { background: var(--hub-dim); color: var(--hub-text); border: 1px solid rgba(6, 182, 212, 0.2); }
+.tier-important { background: var(--etl-dim); color: var(--etl-text); border: 1px solid rgba(245, 158, 11, 0.2); }
+.tier-bonus { background: var(--sat-dim); color: var(--sat-text); border: 1px solid rgba(168, 85, 247, 0.15); opacity: 0.8; }
+
+/* PM PANELS */
+.pm-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 26px 30px; margin: 26px 0; position: relative; overflow: hidden; backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); transition: border-color 0.5s, box-shadow 0.5s, transform 0.5s; }
+.pm-panel:hover { border-color: var(--border-glow); box-shadow: 0 0 30px rgba(0, 180, 255, 0.06), inset 0 0 40px rgba(0, 180, 255, 0.02); transform: translateY(-1px); }
+.pm-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.35; }
+.pm-panel::after { content: ''; position: absolute; top: -1px; left: 0; width: 60px; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; animation: edge-charge 6s ease-in-out infinite; }
+@keyframes edge-charge { 0% { left: -60px; opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { left: calc(100% + 60px); opacity: 0; } }
+
+/* HOOK PANELS */
+.hook { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.hook::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+.hook::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50px; pointer-events: none; }
+.hook-default::before { background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.hook-default::after { background: linear-gradient(90deg, rgba(0,180,255,0.06), transparent); }
+.hook .hook-text { font-size: 17.5px; font-weight: 400; color: var(--text-bright); line-height: 1.75; margin: 0; }
+.hook-default .hook-text em { color: var(--hub-text); text-shadow: 0 0 12px var(--hub-glow); font-style: normal; }
+
+/* LANGUAGE BRIDGE */
+.language-bridge { background: var(--pm-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 24px 28px; margin: 26px 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.bridge-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--link-text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.bridge-label::before { content: ''; width: 16px; height: 2px; background: var(--link-color); box-shadow: 0 0 6px var(--link-glow); }
+.language-bridge p { font-size: 15px; color: var(--text-secondary); margin-bottom: 10px; }
+.language-bridge p:last-child { margin-bottom: 0; }
+.bridge-word { color: var(--link-text); font-weight: 600; }
+/* 4-LAYER EXPLANATION */
+.four-layers { margin: 30px 0; border: 1px solid var(--border-medium); border-radius: 16px; overflow: hidden; background: var(--pm-surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.four-layers-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px 12px; }
+.four-layers-title { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); }
+.layer-dots { display: flex; gap: 8px; }
+.layer-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--border-subtle); background: transparent; transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); cursor: pointer; }
+.layer-dot.l1 { border-color: var(--success-color); } .layer-dot.l2 { border-color: var(--hub-color); } .layer-dot.l3 { border-color: var(--link-color); } .layer-dot.l4 { border-color: var(--sat-color); }
+.layer-dot.active { transform: scale(1.4); }
+.layer-dot.l1.active { background: var(--success-color); box-shadow: 0 0 10px var(--success-glow); }
+.layer-dot.l2.active { background: var(--hub-color); box-shadow: 0 0 10px var(--hub-glow); }
+.layer-dot.l3.active { background: var(--link-color); box-shadow: 0 0 10px var(--link-glow); }
+.layer-dot.l4.active { background: var(--sat-color); box-shadow: 0 0 10px var(--sat-glow); }
+.layer { border-top: 1px solid var(--border-subtle); overflow: hidden; }
+.layer-header { display: flex; align-items: center; gap: 14px; padding: 14px 28px; cursor: pointer; user-select: none; transition: background 0.4s; }
+.layer-header:hover { background: rgba(0, 180, 255, 0.03); }
+.layer-badge { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 14px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.layer-1 .layer-badge { background: var(--success-color); color: var(--bg-deep); }
+.layer-2 .layer-badge { background: var(--hub-color); color: var(--bg-deep); }
+.layer-3 .layer-badge { background: var(--link-color); color: var(--bg-deep); }
+.layer-4 .layer-badge { background: var(--sat-color); color: var(--bg-deep); }
+.layer-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); flex: 1; }
+.layer-toggle { font-size: 12px; color: var(--text-dim); transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.layer.open .layer-toggle { transform: rotate(180deg); }
+.layer-content { max-height: 0; overflow: hidden; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.layer.open .layer-content { max-height: 600px; }
+.layer-content-inner { padding: 0 28px 22px; font-size: 15px; line-height: 1.8; color: var(--text-secondary); animation: layer-fade 0.5s ease; }
+@keyframes layer-fade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.layer-content-inner p { margin-bottom: 10px; font-size: 15px; }
+.layer-content-inner p:last-child { margin-bottom: 0; }
+/* DATA TABLES */
+.data-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; margin: 26px 0; overflow: hidden; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; }
+.data-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3; }
+.data-panel-header { padding: 12px 24px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); }
+.data-panel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; animation: dot-glow 3s ease-in-out infinite; }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+.data-panel-dot.hub { background: var(--hub-color); box-shadow: 0 0 8px var(--hub-color); }
+.data-panel-dot.result { background: var(--sql-select); box-shadow: 0 0 8px var(--sql-select); }
+.data-panel-title { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; flex: 1; }
+.data-panel-title.snow-title { color: var(--snow-text); }
+.data-panel-title.result-title { color: var(--sql-select); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.data-table td { font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 10px 16px; border-bottom: 1px solid rgba(0, 180, 255, 0.04); color: var(--text-secondary); transition: background 0.3s; }
+.data-table tr:hover td { background: rgba(0, 180, 255, 0.03); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table td.pk { color: var(--hub-text); font-weight: 500; }
+.data-table td.dbt-val { color: var(--dbt-text); font-weight: 500; }
+.data-table td.etl-val { color: var(--etl-text); font-weight: 500; }
+.data-table td.val { color: var(--text-secondary); }
+/* CONCEPT CALLOUT */
+.concept-callout { background: var(--accent-bg); border: 1px solid rgba(251, 191, 36, 0.12); border-radius: 14px; padding: 22px 26px; margin: 28px 0; position: relative; overflow: hidden; }
+.concept-callout::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent-color); box-shadow: 0 0 8px var(--accent-glow); border-radius: 3px 0 0 3px; }
+.concept-callout::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50px; background: linear-gradient(90deg, rgba(251,191,36,0.04), transparent); pointer-events: none; }
+.concept-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-color); margin-bottom: 10px; text-shadow: 0 0 10px var(--accent-glow); }
+.concept-callout blockquote { font-size: 15px; color: var(--text-bright); font-weight: 400; margin: 0; line-height: 1.75; font-style: italic; border: none; padding: 0; }
+
+/* CONTRASTIVE PANEL */
+.contrast-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 26px 0; border: 1px solid var(--border-medium); border-radius: 14px; overflow: hidden; background: var(--pm-surface); }
+.contrast-side { padding: 24px 26px; }
+.contrast-side:first-child { border-right: 1px solid var(--border-subtle); }
+.contrast-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+.contrast-side p { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+.contrast-side p:last-child { margin-bottom: 0; }
+
+/* DISAMBIGUATION PANEL */
+.disambig-panel { border: 2px solid rgba(245, 158, 11, 0.2); border-radius: 16px; padding: 28px 30px; margin: 30px 0; background: var(--pm-surface); position: relative; overflow: hidden; }
+.disambig-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, var(--etl-color), transparent); opacity: 0.4; }
+.disambig-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--etl-text); margin-bottom: 16px; text-shadow: 0 0 10px var(--etl-glow); }
+.disambig-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; }
+.disambig-item { padding: 16px 18px; border-radius: 10px; }
+.disambig-item h4 { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.disambig-item p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+/* CODE BLOCKS */
+.code-panel { background: rgba(2, 6, 14, 0.9); border: 1px solid var(--border-subtle); border-radius: 12px; margin: 22px 0; overflow: hidden; }
+.code-header { padding: 8px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.code-dot { width: 7px; height: 7px; border-radius: 50%; }
+.code-dot.r { background: #ef4444; } .code-dot.y { background: #f59e0b; } .code-dot.g { background: #22c55e; }
+.code-filename { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); margin-left: 8px; }
+.code-body { padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; color: var(--text-secondary); white-space: pre-wrap; }
+
+/* EXPLORE MORE */
+.explore-opener { display: flex; align-items: center; gap: 10px; padding: 12px 18px; margin: 24px 0 0; background: rgba(10, 25, 47, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.12); border-radius: 12px; cursor: pointer; transition: all 0.35s ease; user-select: none; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 180, 255, 0.15); }
+.explore-opener:hover { background: rgba(10, 25, 47, 0.85); border-color: var(--accent); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 180, 255, 0.1); transform: translateY(-1px); }
+.explore-opener .explore-icon { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--accent); flex-shrink: 0; transition: transform 0.35s ease, background 0.35s ease; }
+.explore-opener.open .explore-icon { transform: rotate(45deg); background: var(--accent); color: var(--bg-deep); }
+.explore-opener .explore-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: color 0.3s ease; }
+.explore-opener:hover .explore-label { color: var(--text-primary); }
+.explore-opener .explore-hint { font-family: 'Orbitron', monospace; font-size: 7px; font-weight: 600; letter-spacing: 0.12em; color: var(--accent); opacity: 0.5; margin-left: auto; transition: opacity 0.3s ease; }
+.explore-opener:hover .explore-hint { opacity: 1; }
+.explore-panel { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.explore-panel.open { max-height: 800px; }
+.explore-panel-inner { padding: 20px 22px 16px; margin: 6px 0 20px; background: rgba(10, 25, 47, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.08); border-radius: 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 180, 255, 0.1); animation: explore-slide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes explore-slide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.explore-panel-inner p { font-size: 14px; line-height: 1.65; color: var(--text-secondary); margin: 0 0 10px; }
+.explore-panel-inner p:last-child { margin: 0; }
+.explore-panel-inner strong { color: var(--text-primary); }
+/* EXERCISE */
+.exercise-section { background: var(--pm-surface); border: 2px solid var(--sql-select); border-radius: 18px; padding: 34px; margin: 52px 0; position: relative; overflow: hidden; box-shadow: 0 0 35px var(--sql-select-glow), 0 0 70px rgba(34,197,94,0.04); }
+.exercise-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--sql-select), transparent); animation: exercise-glow 4s ease-in-out infinite; }
+@keyframes exercise-glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+.exercise-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sql-select); margin-bottom: 16px; text-shadow: 0 0 10px var(--sql-select-glow); }
+.exercise-section h2 { font-size: 22px; margin-bottom: 10px; }
+.match-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 1px solid var(--border-subtle); border-radius: 10px; margin: 8px 0; }
+.match-label { font-size: 14px; color: var(--text-bright); min-width: 180px; flex-shrink: 0; }
+.match-select { flex: 1; font-family: 'Exo 2', sans-serif; font-size: 13px; background: rgba(2, 6, 14, 0.8); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 8px 12px; color: var(--text-primary); outline: none; cursor: pointer; transition: border-color 0.3s; }
+.match-select:focus { border-color: var(--accent); }
+.match-select option { background: var(--bg-deep); color: var(--text-primary); }
+.match-feedback { font-size: 12px; min-width: 20px; text-align: center; }
+.check-btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sql-select); background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 10px; padding: 10px 24px; cursor: pointer; margin-top: 14px; transition: all 0.4s; }
+.check-btn:hover { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.45); box-shadow: 0 0 20px rgba(34,197,94,0.2); }
+.feedback { margin-top: 14px; padding: 16px 20px; border-radius: 12px; font-size: 14px; display: none; animation: feedback-appear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes feedback-appear { from { opacity: 0; transform: translateY(-10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.feedback.correct { display: block; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); color: var(--sql-select); }
+.feedback.incorrect { display: block; background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); color: #f97316; }
+
+/* PIPELINE FLOW */
+.pipeline-flow { display: flex; align-items: center; gap: 0; margin: 30px 0; padding: 20px; overflow-x: auto; }
+.pipeline-node { padding: 12px 16px; border-radius: 10px; font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; text-align: center; white-space: nowrap; min-width: 80px; border: 1px solid; }
+.pipeline-arrow { font-size: 16px; color: var(--text-dim); padding: 0 4px; flex-shrink: 0; }
+
+/* COMPLETION */
+.completion-banner { display: none; background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.06)); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 14px; padding: 24px 28px; margin-top: 28px; text-align: center; animation: matter-form 0.8s ease forwards; }
+.completion-banner h3 { font-family: 'Orbitron', sans-serif; font-size: 18px; color: var(--sql-select); margin-bottom: 8px; text-shadow: 0 0 15px var(--sql-select-glow); }
+.completion-banner p { font-size: 14px; color: var(--text-secondary); margin: 0; }
+
+.tutorial-footer { margin-top: 80px; padding: 24px 0; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+
+/* AMBIENT + PARALLAX */
+.ambient-glow { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 0; transition: background 1.5s ease; background: radial-gradient(ellipse 600px 400px at 15% 20%, var(--ambient-c1, rgba(16, 185, 129, 0.06)) 0%, transparent 70%), radial-gradient(ellipse 500px 500px at 85% 60%, var(--ambient-c2, rgba(139, 92, 246, 0.04)) 0%, transparent 70%), radial-gradient(ellipse 400px 300px at 50% 90%, var(--ambient-c3, rgba(245, 158, 11, 0.03)) 0%, transparent 70%); }
+.parallax-layer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape.shape-1 { width: 300px; height: 300px; top: 10%; left: 5%; }
+.depth-shape.shape-2 { width: 200px; height: 200px; top: 40%; right: 10%; }
+.depth-shape.shape-3 { width: 250px; height: 250px; top: 70%; left: 60%; }
+.depth-shape.shape-4 { width: 180px; height: 180px; top: 30%; left: 40%; }
+/* WORD REVEAL */
+.hook-text .word { opacity: 0.2; transition: opacity 0.25s ease; }
+.section.visible .hook-text .word, .hook-text .word.lit { opacity: 1; }
+@supports (animation-timeline: view()) {
+  .section h2 { background: linear-gradient(90deg, var(--text-bright) 0%, var(--text-bright) 50%, var(--text-dim) 50.5%, var(--text-dim) 100%); background-size: 200% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: heading-sweep both linear; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+  @keyframes heading-sweep { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+}
+
+@supports not (animation-timeline: view()) {
+  .section .data-table tr { opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  .section.visible .data-table tr { opacity: 1; transform: translateY(0); }
+  .section.visible .data-table tr:nth-child(1) { transition-delay: 0ms; } .section.visible .data-table tr:nth-child(2) { transition-delay: 60ms; } .section.visible .data-table tr:nth-child(3) { transition-delay: 120ms; } .section.visible .data-table tr:nth-child(4) { transition-delay: 180ms; } .section.visible .data-table tr:nth-child(5) { transition-delay: 240ms; } .section.visible .data-table tr:nth-child(6) { transition-delay: 300ms; }
+}
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .container { padding: 88px 18px 100px; }
+  .title-section h1 { font-size: 28px; }
+  h2 { font-size: 20px; }
+  .pm-panel { padding: 20px 22px; }
+  .hook { padding: 22px 24px; }
+  .exercise-section { padding: 24px 20px; }
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .contrast-panel { grid-template-columns: 1fr; }
+  .contrast-side:first-child { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+  .disambig-grid { grid-template-columns: 1fr; }
+  .disambig-vs { padding: 8px 0; }
+  .pipeline-flow { flex-wrap: wrap; justify-content: center; }
+  .match-row { flex-wrap: wrap; }
+  .match-label { min-width: 140px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.1ms !important; }
+  .section { opacity: 1; transform: none; filter: none; }
+  .title-section { opacity: 1; animation: none; }
+  .nav-node { opacity: 1; }
+  .meta-chip { opacity: 1; }
+  .lcars-seg { opacity: 1; }
+  .hook-text .word { opacity: 1; }
+  .data-table tr { opacity: 1; transform: none; }
+  .ambient-glow { transition: none; }
+  .section h2 { -webkit-text-fill-color: var(--text-bright); background: none; }
+}
+<!-- Chapter 8.5: EU AI Act & Data Vault — Specific CSS (DOET rebuild) -->
+:root {
+  --ai-blue: #0066cc; --ai-blue-rgb: 0, 102, 204;
+  --risk-red: #ff3b30; --risk-red-rgb: 255, 59, 48;
+  --risk-amber: #ff9f0a; --risk-amber-rgb: 255, 159, 10;
+  --risk-green: #30d158; --risk-green-rgb: 48, 209, 88;
+  --ai-purple: #af52de; --ai-purple-rgb: 175, 82, 222;
+  --dv-cyan: #00d4ff; --dv-cyan-rgb: 0, 212, 255;
+  --legal-gold: #ffd60a; --legal-gold-rgb: 255, 214, 10;
+  --topic-glow: var(--ai-blue-rgb);
+}
+
+body::before {
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(var(--risk-red-rgb), 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 50%, rgba(var(--ai-purple-rgb), 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 85%, rgba(var(--dv-cyan-rgb), 0.06) 0%, transparent 60%);
+}
+
+.lcars-flow-fill {
+  background: linear-gradient(90deg,
+    rgba(var(--risk-red-rgb), 1) 0%,
+    rgba(var(--ai-blue-rgb), 1) 18%,
+    rgba(var(--risk-amber-rgb), 1) 34%,
+    rgba(var(--dv-cyan-rgb), 1) 50%,
+    rgba(var(--ai-purple-rgb), 1) 65%,
+    rgba(var(--dv-cyan-rgb), 0.8) 78%,
+    rgba(var(--legal-gold-rgb), 1) 88%,
+    rgba(var(--risk-green-rgb), 1) 100%
+  );
+}
+
+/* ═══ SECTION TAG VARIANTS ═══ */
+.section-tag.spaghetti-t { background: rgba(var(--risk-red-rgb), 0.08); color: rgb(var(--risk-red-rgb)); border: 1px solid rgba(var(--risk-red-rgb), 0.2); }
+.section-tag.regulation-t { background: rgba(var(--ai-blue-rgb), 0.08); color: rgb(var(--ai-blue-rgb)); border: 1px solid rgba(var(--ai-blue-rgb), 0.2); }
+.section-tag.risk-t { background: rgba(var(--risk-amber-rgb), 0.08); color: rgb(var(--risk-amber-rgb)); border: 1px solid rgba(var(--risk-amber-rgb), 0.2); }
+.section-tag.article-t { background: rgba(var(--dv-cyan-rgb), 0.08); color: rgb(var(--dv-cyan-rgb)); border: 1px solid rgba(var(--dv-cyan-rgb), 0.2); }
+.section-tag.compliance-t { background: rgba(var(--ai-purple-rgb), 0.08); color: rgb(var(--ai-purple-rgb)); border: 1px solid rgba(var(--ai-purple-rgb), 0.2); }
+.section-tag.arch-t { background: rgba(0,180,216, 0.08); color: rgb(0,180,216); border: 1px solid rgba(0,180,216, 0.2); }
+.section-tag.position-t { background: rgba(var(--legal-gold-rgb), 0.08); color: rgb(var(--legal-gold-rgb)); border: 1px solid rgba(var(--legal-gold-rgb), 0.2); }
+.section-tag.exercise-t { background: rgba(var(--risk-green-rgb), 0.08); color: rgb(var(--risk-green-rgb)); border: 1px solid rgba(var(--risk-green-rgb), 0.2); }
+
+/* ═══ HOOK VARIANTS ═══ */
+.hook-spaghetti::before { background: linear-gradient(135deg, rgb(var(--risk-red-rgb)), transparent); }
+.hook-spaghetti::after { background: radial-gradient(circle at 100% 0%, rgba(var(--risk-red-rgb), 0.25) 0%, transparent 70%); }
+.hook-spaghetti .hook-text em { color: rgb(var(--risk-red-rgb)); text-shadow: 0 0 12px rgba(var(--risk-red-rgb), 0.25); }
+
+.hook-regulation::before { background: linear-gradient(135deg, rgb(var(--ai-blue-rgb)), transparent); }
+.hook-regulation::after { background: radial-gradient(circle at 100% 0%, rgba(var(--ai-blue-rgb), 0.25) 0%, transparent 70%); }
+.hook-regulation .hook-text em { color: rgb(var(--ai-blue-rgb)); text-shadow: 0 0 12px rgba(var(--ai-blue-rgb), 0.25); }
+
+.hook-article::before { background: linear-gradient(135deg, rgb(var(--dv-cyan-rgb)), transparent); }
+.hook-article::after { background: radial-gradient(circle at 100% 0%, rgba(var(--dv-cyan-rgb), 0.25) 0%, transparent 70%); }
+.hook-article .hook-text em { color: rgb(var(--dv-cyan-rgb)); text-shadow: 0 0 12px rgba(var(--dv-cyan-rgb), 0.25); }
+
+.hook-tension::before { background: linear-gradient(135deg, rgb(var(--ai-purple-rgb)), transparent); }
+.hook-tension::after { background: radial-gradient(circle at 100% 0%, rgba(var(--ai-purple-rgb), 0.25) 0%, transparent 70%); }
+.hook-tension .hook-text em { color: rgb(var(--ai-purple-rgb)); text-shadow: 0 0 12px rgba(var(--ai-purple-rgb), 0.25); }
+
+/* ═══ DATA PANEL DOT VARIANTS ═══ */
+.data-panel-dot.spaghetti-dot { background: rgb(var(--risk-red-rgb)); box-shadow: 0 0 6px rgba(var(--risk-red-rgb), 0.4); }
+.data-panel-dot.regulation-dot { background: rgb(var(--ai-blue-rgb)); box-shadow: 0 0 6px rgba(var(--ai-blue-rgb), 0.4); }
+.data-panel-dot.risk-dot { background: rgb(var(--risk-amber-rgb)); box-shadow: 0 0 6px rgba(var(--risk-amber-rgb), 0.4); }
+.data-panel-dot.article-dot { background: rgb(var(--dv-cyan-rgb)); box-shadow: 0 0 6px rgba(var(--dv-cyan-rgb), 0.4); }
+.data-panel-dot.compliance-dot { background: rgb(var(--ai-purple-rgb)); box-shadow: 0 0 6px rgba(var(--ai-purple-rgb), 0.4); }
+.data-panel-dot.arch-dot { background: rgb(0,180,216); box-shadow: 0 0 6px rgba(0,180,216, 0.4); }
+
+/* ═══ PARALLAX DEPTH SHAPES ═══ */
+.depth-shape.shape-1 { background: radial-gradient(circle, rgb(var(--risk-red-rgb)), transparent 70%); }
+.depth-shape.shape-2 { background: radial-gradient(circle, rgb(var(--ai-blue-rgb)), transparent 70%); }
+.depth-shape.shape-3 { background: radial-gradient(circle, rgb(var(--risk-amber-rgb)), transparent 70%); }
+.depth-shape.shape-4 { background: radial-gradient(circle, rgb(var(--ai-purple-rgb)), transparent 70%); }
+.depth-shape.shape-5 { background: radial-gradient(circle, rgb(var(--dv-cyan-rgb)), transparent 70%); }
+
+/* ═══ IS / IS NOT BLOCK (DOET Anti-Affordance) ═══ */
+.is-isnot {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.is-isnot-header {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.is-item {
+  padding: 0.4rem 0 0.4rem 0.75rem;
+  border-left: 2px solid;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.is-item.is-yes { border-left-color: rgba(48, 209, 88, 0.6); }
+.is-item.is-no { border-left-color: rgba(255, 59, 48, 0.5); }
+.is-item strong {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  font-weight: 700;
+  margin-right: 0.3rem;
+}
+.is-item.is-yes strong { color: #30d158; }
+.is-item.is-no strong { color: #ff3b30; }
+
+/* ═══ WORKED EXAMPLE PANEL (DOET Bridge) ═══ */
+.worked-example {
+  background: rgba(255, 214, 10, 0.03);
+  border: 1px solid rgba(255, 214, 10, 0.12);
+  border-left: 3px solid rgba(255, 214, 10, 0.5);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.worked-example-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255, 214, 10, 0.7);
+  margin-bottom: 1rem;
+}
+.worked-example p { font-size: 0.92rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.worked-example .scenario { font-style: italic; color: var(--text-primary); margin-bottom: 0.75rem; }
+.worked-example .answer { color: rgba(255, 214, 10, 0.9); font-weight: 600; }
+.worked-example .reasoning {
+  font-size: 0.85rem; color: var(--text-dim);
+  padding-left: 1rem; border-left: 1px solid rgba(255, 214, 10, 0.15); margin-top: 0.5rem;
+}
+
+/* ═══ ROW-LEVEL SPECIFIC FEEDBACK (DOET) ═══ */
+.row-feedback {
+  font-size: 0.82rem; line-height: 1.45; padding: 0.4rem 0.75rem; margin-top: 0.4rem; border-radius: 6px; display: none;
+}
+.row-feedback.feedback-correct {
+  display: block; background: rgba(48, 209, 88, 0.06); color: rgba(48, 209, 88, 0.85); border-left: 2px solid rgba(48, 209, 88, 0.4);
+}
+.row-feedback.feedback-incorrect {
+  display: block; background: rgba(255, 59, 48, 0.06); color: rgba(255, 149, 128, 0.9); border-left: 2px solid rgba(255, 59, 48, 0.4);
+}
+
+/* ═══ MAPPING ROWS (Article 10 → DV) ═══ */
+.mapping-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+  padding: 10px 14px;
+  background: var(--pm-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.mapping-left {
+  font-size: 14px;
+  color: rgb(var(--risk-amber-rgb));
+  font-weight: 500;
+}
+.mapping-arrow {
+  font-size: 20px;
+  color: rgb(var(--dv-cyan-rgb));
+  opacity: 0.7;
+  font-family: 'JetBrains Mono', monospace;
+}
+.mapping-right {
+  font-size: 14px;
+  color: rgb(var(--dv-cyan-rgb));
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+}
+
+/* ═══ TENSION CARDS ═══ */
+.tension-card {
+  margin: 16px 0;
+  padding: 16px 18px;
+  background: var(--pm-surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid rgb(var(--ai-purple-rgb));
+  border-radius: 6px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.tension-card.tension-type { border-left-color: #ef4444; }
+.tension-card.alignment-type { border-left-color: rgb(var(--risk-green-rgb)); }
+.tension-card.difference-type { border-left-color: rgb(var(--risk-amber-rgb)); }
+.tension-card.synergy-type { border-left-color: rgb(var(--dv-cyan-rgb)); }
+.tension-card.unresolved-type { border-left-color: rgb(var(--ai-purple-rgb)); }
+.tension-label {
+  font-family: 'Orbitron', 'Exo 2', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.tension-label.label-tension { color: #ef4444; }
+.tension-label.label-alignment { color: rgb(var(--risk-green-rgb)); }
+.tension-label.label-difference { color: rgb(var(--risk-amber-rgb)); }
+.tension-label.label-synergy { color: rgb(var(--dv-cyan-rgb)); }
+.tension-label.label-unresolved { color: rgb(var(--ai-purple-rgb)); }
+.tension-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 4px 0;
+  line-height: 1.6;
+}
+.tension-card strong {
+  color: var(--text-primary);
+}
+
+/* ═══ WRITE EXERCISE ═══ */
+.write-exercise {
+  margin: 24px 0 8px;
+}
+.write-exercise h4 {
+  font-family: 'Orbitron', 'Exo 2', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(var(--dv-cyan-rgb));
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.write-exercise > p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.sql-input {
+  width: 100%;
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  background: rgba(0, 10, 20, 0.6);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 16px;
+  resize: vertical;
+  tab-size: 4;
+}
+.sql-input:focus {
+  border-color: rgb(var(--dv-cyan-rgb));
+  outline: none;
+  box-shadow: 0 0 12px rgba(var(--dv-cyan-rgb), 0.12);
+}
+.sql-input::placeholder { color: var(--text-dim); font-size: 13px; }
+.write-answer {
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(var(--risk-green-rgb), 0.06);
+  border: 1px solid rgba(var(--risk-green-rgb), 0.25);
+  border-radius: 6px;
+}
+.write-answer-label {
+  font-family: 'Orbitron', 'Exo 2', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--success-color);
+  margin-bottom: 8px;
+}
+.sql-answer {
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--success-color);
+  white-space: pre-wrap;
+  margin: 0;
+}
+.reveal-btn {
+  margin-top: 10px;
+}
+
+/* ═══ ARCHITECTURE FLOW ═══ */
+.arch-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--pm-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+.arch-node {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+.arch-node.source { background: rgba(var(--risk-amber-rgb), 0.08); color: rgb(var(--risk-amber-rgb)); border: 1px solid rgba(var(--risk-amber-rgb), 0.2); }
+.arch-node.staging { background: rgba(var(--risk-red-rgb), 0.08); color: rgb(var(--risk-red-rgb)); border: 1px solid rgba(var(--risk-red-rgb), 0.2); }
+.arch-node.vault { background: rgba(var(--dv-cyan-rgb), 0.08); color: rgb(var(--dv-cyan-rgb)); border: 1px solid rgba(var(--dv-cyan-rgb), 0.2); }
+.arch-node.mart { background: rgba(var(--risk-green-rgb), 0.08); color: rgb(var(--risk-green-rgb)); border: 1px solid rgba(var(--risk-green-rgb), 0.3); box-shadow: 0 0 8px rgba(var(--risk-green-rgb), 0.2); }
+.arch-node.model { background: rgba(var(--ai-purple-rgb), 0.08); color: rgb(var(--ai-purple-rgb)); border: 1px solid rgba(var(--ai-purple-rgb), 0.2); }
+.arch-node.logging { background: rgba(var(--legal-gold-rgb), 0.08); color: rgb(var(--legal-gold-rgb)); border: 1px solid rgba(var(--legal-gold-rgb), 0.2); }
+.arch-arrow {
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
+/* ═══ MATCH ROW OVERRIDE — long scenario labels need to wrap ═══ */
+.match-label {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+.match-select {
+  flex: 0 0 auto;
+  min-width: 150px;
+}
+
+@media (max-width: 600px) {
+  .mapping-row { grid-template-columns: 1fr; gap: 6px; text-align: center; }
+  .mapping-arrow { display: block; font-size: 16px; }
+  .sql-input { font-size: 13px; padding: 12px; }
+  .sql-answer { font-size: 13px; }
+  .arch-flow { flex-direction: column; }
+  .arch-arrow { transform: rotate(90deg); }
+  .is-isnot { padding: 1rem; }
+  .worked-example { padding: 1rem; }
+}
+
+/* ═══════ Game UI: Inventory + Achievements ═══════ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary, rgba(255,255,255,0.5)); }
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim, rgba(255,255,255,0.3)); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.3));
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright, #fff); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright, #fff); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim, rgba(255,255,255,0.3)); font-family: 'Orbitron', sans-serif; }
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+@media (max-width: 600px) {
+  .inventory-toolbar { bottom: 8px; left: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .inventory-panel { width: calc(100vw - 16px); left: 8px; bottom: 60px; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+
+</style>
+</head>
+<body data-chapter="9" style="padding-top: 52px;">
+<canvas id="particle-field"></canvas>
+<div class="scanline-overlay"></div>
+<div class="scan-bar"></div>
+<div class="ambient-glow" id="ambient-glow"></div>
+<div class="parallax-layer" id="parallax-layer">
+  <div class="depth-shape shape-1"></div>
+  <div class="depth-shape shape-2"></div>
+  <div class="depth-shape shape-3"></div>
+  <div class="depth-shape shape-4"></div>
+</div>
+
+<div class="page-content">
+
+<!-- Chapter 8.5: EU AI Act & Data Vault — Content (DOET rebuild) -->
+
+<nav class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('s1')">1</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s2')">2</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s3')">3</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s4')">4</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s5')">5</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s6')">6</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s7')">7</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s8')">EX</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">The Problem</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: #ff3b30" onclick="scrollToSection('s1')">1</div>
+        <div class="lcars-seg" style="--seg-color: #0066cc" onclick="scrollToSection('s2')">2</div>
+        <div class="lcars-seg" style="--seg-color: #ff9f0a" onclick="scrollToSection('s3')">3</div>
+        <div class="lcars-seg" style="--seg-color: #00d4ff" onclick="scrollToSection('s4')">4</div>
+        <div class="lcars-seg" style="--seg-color: #af52de" onclick="scrollToSection('s5')">5</div>
+        <div class="lcars-seg" style="--seg-color: #00b4d8" onclick="scrollToSection('s6')">6</div>
+        <div class="lcars-seg" style="--seg-color: #ffd60a" onclick="scrollToSection('s7')">7</div>
+        <div class="lcars-seg" style="--seg-color: #30d158" onclick="scrollToSection('s8')">EX</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</nav>
+
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="title-section">
+  <div class="title-label">CHAPTER 8.5 // EU AI ACT</div>
+  <h1>The EU AI Act<br>&amp; Data Vault</h1>
+  <p class="subtitle">The regulation that turns your data warehouse into compliance infrastructure.</p>
+  <div class="meta-chips">
+    <span class="meta-chip">AI Spaghetti</span>
+    <span class="meta-chip">Risk Tiers</span>
+    <span class="meta-chip">Article 10</span>
+    <span class="meta-chip">AI-Mart</span>
+    <span class="meta-chip">GDPR + AI Act</span>
+    <span class="meta-chip">ScaleFree</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 1 — THE PROBLEM (AI Spaghetti)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s1" data-label="The Problem" data-color="255,59,48">
+  <div class="section-header">
+    <div class="section-tag spaghetti-t">AI SPAGHETTI</div>
+    <span class="tier-badge tier-important">Important</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-spaghetti">
+    <p class="hook-text">A bank has 3 teams pulling the same customer data from 3 different sources, training 3 different AI models &mdash; and <em>nobody documented</em> which data was used, which version, or whether anyone checked for bias. ScaleFree calls this <em>AI Spaghetti</em>. The EU AI Act makes it a <em>compliance violation</em>.</p>
+  </div>
+
+  <div class="pm-panel">
+    <div class="pm-panel-header">WHAT AI SPAGHETTI ACTUALLY LOOKS LIKE</div>
+    <div class="pm-panel-body">
+      <p>Team A pulls customer transaction data from the core banking system, trains a fraud detection model. Team B pulls the same customer data from a different extract, trains a credit scoring model. Team C pulls customer data from a CRM export, trains a churn predictor. None of them documented which data they used, which version, or whether anyone checked for bias.</p>
+      <p style="margin-top: 10px;">Team A&rsquo;s fraud model uses a customer table from January. Team B&rsquo;s credit model uses the same table from March. The January version had 50,000 rows with a labeling error in the &ldquo;high risk&rdquo; column. Nobody caught it because nobody tracks which version went where.</p>
+      <p style="margin-top: 10px;">An auditor asks: &ldquo;What data trained this fraud model?&rdquo; The answer is a shrug and a Slack thread from 6 months ago.</p>
+    </div>
+  </div>
+
+  <div class="pm-panel">
+    <div class="pm-panel-header">LONE WOLF DEPLOYMENTS</div>
+    <div class="pm-panel-body">
+      <p>A data scientist pulls data directly from Salesforce, trains a model on their laptop, deploys it to production. Bypasses the entire data warehouse. Now you have GDPR exposure (was there a legal basis for this processing?) AND AI Act exposure (where&rsquo;s the documentation for Article 10?). Nobody in the data team even knows this model exists.</p>
+    </div>
+  </div>
+
+  <div class="pm-panel">
+    <div class="pm-panel-header">THE FIX</div>
+    <div class="pm-panel-body">
+      <p>Route <strong>all</strong> data &mdash; including AI training data &mdash; through the Data Vault layers. Source &rarr; Staging &rarr; Raw Vault &rarr; Business Vault &rarr; AI-Mart. Every row has <code>record_source</code> (where it came from) and <code>load_date</code> (when it arrived). Every transformation is documented by the layer it passes through.</p>
+      <p style="margin-top: 10px;">The spaghetti becomes a pipeline with a paper trail.</p>
+    </div>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">What&rsquo;s the AI Act&rsquo;s actual name and legal form?</span>
+    <span class="explore-hint">Explore</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p><strong>Regulation (EU) 2024/1689</strong> &mdash; entered into force 1 August 2024. The world&rsquo;s first comprehensive legal framework for artificial intelligence.</p>
+      <p style="margin-top: 8px;">Despite being called an &ldquo;Act,&rdquo; it&rsquo;s technically a <strong>Regulation</strong> &mdash; directly binding in all 27 member states, no national transposition needed. Same legal form as GDPR. Extraterritorial scope &mdash; applies to any organization whose AI system&rsquo;s output is used within the EU, regardless of where that organization is based.</p>
+    </div>
+  </div>
+
+</div><!-- /section 1 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 2 — THE PLAYERS (Provider/Deployer + Regulation/Directive)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s2" data-label="The Players" data-color="0,102,204">
+  <div class="section-header">
+    <div class="section-tag regulation-t">THE PLAYERS</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-regulation">
+    <p class="hook-text">The AI Act doesn&rsquo;t regulate <em>AI itself</em>. It regulates the <em>people</em> who build and use AI systems &mdash; proportional to the risk those systems pose.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">LANGUAGE BRIDGE</div>
+    <div class="bridge-content">
+      <p><strong>&ldquo;Provider&rdquo;</strong> &mdash; the entity that develops the AI system or places it on the market. The one who designed the thing. Think: the factory.</p>
+      <p style="margin-top: 10px;"><strong>&ldquo;Deployer&rdquo;</strong> &mdash; the entity that uses the AI system professionally in their business context. Think: the driver.</p>
+      <p style="margin-top: 10px;">Example: HEC Paris buys an AI admissions tool (deployer). The company that built and sold the tool is the provider. If HEC then fine-tunes the model significantly, they might <em>become</em> a provider too. A company can be both simultaneously.</p>
+      <p style="margin-top: 10px;">Providers carry the heavier compliance burden &mdash; conformity assessments, documentation, post-market monitoring. Deployers must implement human oversight, inform users, and keep logs.</p>
+    </div>
+  </div>
+
+  <div class="is-isnot">
+    <div class="is-isnot-header">IS / IS NOT &mdash; Provider and Deployer</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> Provider IS the entity that develops the AI system or places it on the market.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> Provider IS NOT necessarily a tech company. HEC Paris could become a provider if they fine-tune an AI tool significantly.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> Deployer IS the entity that uses the AI system professionally in their business.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> Deployer IS NOT a consumer using AI casually &mdash; the AI Act&rsquo;s deployer definition requires professional use.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> A company IS NOT always one or the other &mdash; it can be both simultaneously.</div>
+    </div>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">LANGUAGE BRIDGE</div>
+    <div class="bridge-content">
+      <p><strong>&ldquo;Regulation&rdquo; vs &ldquo;Directive&rdquo;</strong> &mdash; The AI Act is technically a Regulation. That matters: a <strong>Regulation</strong> is directly binding in all 27 member states, no national transposition needed. A <strong>Directive</strong> (like the old Data Protection Directive 95/46/EC that GDPR replaced) requires each country to write its own implementing law.</p>
+      <p style="margin-top: 10px;">The AI Act, like GDPR, is a Regulation &mdash; same text applies in France, Germany, Ireland, everywhere. No room for 27 different interpretations.</p>
+    </div>
+  </div>
+
+  <div class="is-isnot">
+    <div class="is-isnot-header">IS / IS NOT &mdash; Regulation vs Directive</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> A Regulation IS directly binding in all member states from the day it takes effect.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> A Regulation IS NOT a Directive &mdash; Directives require each country to write implementing national law.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> The AI Act IS a Regulation (like GDPR) &mdash; one text, 27 countries, no transposition.</div>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-callout-label">KEY CONCEPT</div>
+    <p>&ldquo;The AI Act doesn&rsquo;t regulate AI itself &mdash; it regulates the people who build and use AI systems, proportional to the risk those systems pose.&rdquo;</p>
+  </div>
+
+</div><!-- /section 2 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 3 — THE TIERS (Four Risk Tiers)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s3" data-label="The Tiers" data-color="255,159,10">
+  <div class="section-header">
+    <div class="section-tag risk-t">RISK TIERS</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="four-layers" id="risk-tiers-layers">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; The Four Risk Tiers</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('risk-tiers-layers', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('risk-tiers-layers', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('risk-tiers-layers', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('risk-tiers-layers', 3)"></div>
+      </div>
+    </div>
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L1</span><span class="layer-label">Plain language &mdash; for anyone</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>Think of it like fire safety codes. A candle on your desk &mdash; no rules. A restaurant kitchen &mdash; must label the fire exit. A hospital &mdash; fire alarms, sprinkler systems, evacuation plans, annual inspections. A building full of explosives &mdash; you can&rsquo;t build that at all.</p>
+        <p style="margin-top: 8px;">The AI Act works the same way: four levels based on how much damage the AI can do to people&rsquo;s lives. The higher the risk, the more rules you follow.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L2</span><span class="layer-label">With mechanism &mdash; how it works</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p><strong>Unacceptable Risk</strong> &mdash; Social scoring by a government (rating citizens&rsquo; behavior to restrict services) &mdash; banned outright, Article 5. Subliminal manipulation also banned. No compliance path &mdash; these are prohibited.</p>
+        <p style="margin-top: 8px;"><strong>High Risk</strong> &mdash; A bank&rsquo;s AI deciding who gets a loan, or an HR tool screening CVs. These touch people&rsquo;s livelihoods: conformity assessments, documented data governance (Article 10), human oversight, and a human who can override the AI.</p>
+        <p style="margin-top: 8px;"><strong>Limited Risk</strong> &mdash; A chatbot on a retail website. Just has to tell the user &ldquo;you&rsquo;re talking to an AI.&rdquo; Deepfakes and AI-generated content also fall here &mdash; transparency labels required.</p>
+        <p style="margin-top: 8px;"><strong>Minimal Risk</strong> &mdash; A spam filter, a video game NPC. No obligations at all.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L3</span><span class="layer-label">Technical &mdash; full detail</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p><strong>Article 5</strong> prohibitions are already in force since Feb 2025 &mdash; social scoring and subliminal manipulation are banned now.</p>
+        <p style="margin-top: 8px;">Two routes to high-risk classification:</p>
+        <p style="margin-top: 6px;"><strong>Annex II</strong> (product safety) &mdash; AI embedded in already-regulated products: medical devices, vehicles, machinery, toys. Enforcement: <strong>August 2027</strong>.</p>
+        <p style="margin-top: 6px;"><strong>Annex III</strong> (standalone) &mdash; AI systems in 8 specific sensitive domains (see table below). These trigger Article 10 data governance. Enforcement: <strong>August 2026</strong>.</p>
+        <p style="margin-top: 8px;">The staggered timeline matters: <strong>financial services clients</strong> (Annex III Domain 5) must comply a full year before <strong>manufacturing clients</strong> with product-embedded AI (Annex II).</p>
+      </div></div>
+    </div>
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L4</span><span class="layer-label">Expert &mdash; nuance &amp; edge cases</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>Annex III Domain 5 (credit scoring, insurance risk) is where most ScaleFree <strong>financial services clients</strong> land &mdash; the domain triggering Article 10 obligations. Manufacturing clients may hit Domain 2 (critical infrastructure).</p>
+        <p style="margin-top: 8px;"><strong>Digital Omnibus proposal</strong> (Nov 2025): The Commission proposed delaying Annex III enforcement by up to 16 months because harmonised standards aren&rsquo;t ready. Not yet adopted. Germany&rsquo;s Federal Cabinet approved the KI-MIG in February 2026, designating the Bundesnetzagentur as primary AI market surveillance authority &mdash; though the law is still completing its parliamentary process.</p>
+        <p style="margin-top: 8px;">ScaleFree&rsquo;s clients are in limbo: the law exists, the enforcement timeline is shifting, and the companies that built compliant infrastructure early get competitive advantage regardless of when the deadline lands.</p>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="is-isnot">
+    <div class="is-isnot-header">IS / IS NOT &mdash; Risk Tiers</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> High-risk IS a classification based on potential impact on people&rsquo;s rights, health, or livelihoods &mdash; not whether the AI is &ldquo;dangerous&rdquo; in everyday terms.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> Unacceptable IS NOT just &ldquo;very high-risk.&rdquo; There is no compliance path &mdash; these systems are banned outright.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> Limited IS systems whose only AI Act risk is lack of transparency (chatbots, deepfakes).</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> Limited IS NOT a &ldquo;lighter version&rdquo; of High. They are structurally different categories &mdash; Limited needs a disclosure label, not conformity assessments.</div>
+    </div>
+  </div>
+
+  <!-- Annex III table -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">ANNEX III &mdash; 8 HIGH-RISK DOMAINS</div>
+    <div class="pm-panel-body">
+      <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Domain</th>
+              <th>Examples</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>Biometrics</td><td>Remote biometric identification, emotion recognition</td></tr>
+            <tr><td>2</td><td>Critical infrastructure</td><td>Safety components in digital infrastructure, road traffic, utilities</td></tr>
+            <tr><td>3</td><td>Education</td><td>School admissions, learning evaluation, test proctoring</td></tr>
+            <tr><td>4</td><td>Employment</td><td>Recruitment, CV screening, promotion/termination, performance monitoring</td></tr>
+            <tr><td>5</td><td>Essential services</td><td>Credit scoring, insurance risk, public benefit eligibility</td></tr>
+            <tr><td>6</td><td>Law enforcement</td><td>Risk of victimization, evidence reliability, reoffending risk</td></tr>
+            <tr><td>7</td><td>Migration &amp; border</td><td>Visa/asylum examination, security/health risk assessment</td></tr>
+            <tr><td>8</td><td>Justice &amp; democracy</td><td>Legal research AI, election influence</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enforcement timeline -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">ENFORCEMENT TIMELINE</div>
+    <div class="pm-panel-body">
+      <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>What Happens</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1 Aug 2024</td><td>AI Act enters into force</td><td>Done</td></tr>
+            <tr><td>2 Feb 2025</td><td>Prohibited practices banned (Art. 5) + AI literacy (Art. 4)</td><td>In effect</td></tr>
+            <tr><td>2 Aug 2025</td><td>GPAI obligations + national authorities operational</td><td>In effect</td></tr>
+            <tr><td>2 Aug 2026</td><td>High-risk system obligations enforceable (Annex III)</td><td>Upcoming</td></tr>
+            <tr><td>2 Aug 2027</td><td>Product-embedded AI (Annex II) + legacy GPAI compliance</td><td>Future</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">What are the penalties? How do they compare to GDPR?</span>
+    <span class="explore-hint">Explore</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Violation</th>
+              <th>Max Fine</th>
+              <th>Turnover %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Prohibited practices (Art. 5)</td><td>EUR 35,000,000</td><td>7%</td></tr>
+            <tr><td>High-risk non-compliance (Arts. 9&ndash;15)</td><td>EUR 15,000,000</td><td>3%</td></tr>
+            <tr><td>Incorrect information</td><td>EUR 7,500,000</td><td>1%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top: 10px; font-size: 13px; color: var(--text-dim);">Compare: GDPR&rsquo;s maximum is EUR 20M / 4%. The AI Act&rsquo;s top tier is nearly <strong>double</strong>. The EU is signaling that AI non-compliance is treated more seriously than data protection non-compliance.</p>
+    </div>
+  </div>
+
+</div><!-- /section 3 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 4 — THE CONNECTION (Article 10 → DV Mapping)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s4" data-label="The Connection" data-color="0,212,255">
+  <div class="section-header">
+    <div class="section-tag article-t">ARTICLE 10</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-article">
+    <p class="hook-text"><em>Article 10</em> is the article that turns a data warehouse into <em>compliance infrastructure</em>. Every requirement it lists maps to something Data Vault <em>already does</em>.</p>
+  </div>
+
+  <div class="four-layers" id="article-10-layers">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; Article 10 and Data Vault</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('article-10-layers', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('article-10-layers', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('article-10-layers', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('article-10-layers', 3)"></div>
+      </div>
+    </div>
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L1</span><span class="layer-label">Plain language &mdash; for anyone</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>Say a bank trains an AI to score loan applications. Article 10 says: you must know where that training data came from (which source system, when it was extracted). You must document every transformation (how raw data became the features the model consumed). You must check whether the data is biased. And you must keep immutable records of all of this for the auditor.</p>
+        <p style="margin-top: 8px;">Data Vault does every one of these things as part of its base design &mdash; not as an add-on.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L2</span><span class="layer-label">With mechanism &mdash; how it works</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p><strong>Origin tracking</strong> &mdash; DV puts <code>record_source</code> and <code>load_date</code> on every single row. Article 10 requires knowing where data came from &mdash; DV provides it by default.</p>
+        <p style="margin-top: 8px;"><strong>Transformation documentation</strong> &mdash; Data passes through staging, raw vault, business vault, and mart &mdash; each layer is a documented step.</p>
+        <p style="margin-top: 8px;"><strong>Bias examination</strong> &mdash; Profiling queries on the Business Vault (e.g., &ldquo;what percentage of this training set is female vs male?&rdquo;).</p>
+        <p style="margin-top: 8px;"><strong>Immutable records</strong> &mdash; Satellites are append-only. Yesterday&rsquo;s data is still there next to today&rsquo;s data. You never overwrite history.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L3</span><span class="layer-label">Technical &mdash; full detail</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>The full Article 10 &rarr; DV mapping:</p>
+        <div class="mapping-row">
+          <div class="mapping-left">Data provenance &mdash; 10(2)(aa)</div>
+          <div class="mapping-arrow">&rarr;</div>
+          <div class="mapping-right">record_source + load_date on every row</div>
+        </div>
+        <div class="mapping-row">
+          <div class="mapping-left">Transformation docs &mdash; 10(2)(c)</div>
+          <div class="mapping-arrow">&rarr;</div>
+          <div class="mapping-right">Layered arch: staging &rarr; raw vault &rarr; BV &rarr; mart</div>
+        </div>
+        <div class="mapping-row">
+          <div class="mapping-left">Bias examination &mdash; 10(2)(f)</div>
+          <div class="mapping-arrow">&rarr;</div>
+          <div class="mapping-right">Profiling queries on Business Vault</div>
+        </div>
+        <div class="mapping-row">
+          <div class="mapping-left">Data quality &mdash; 10(3)</div>
+          <div class="mapping-arrow">&rarr;</div>
+          <div class="mapping-right">Validation gates at AI-Mart / Feature Mart</div>
+        </div>
+        <div class="mapping-row">
+          <div class="mapping-left">Contextual appropriateness &mdash; 10(4)</div>
+          <div class="mapping-arrow">&rarr;</div>
+          <div class="mapping-right">Multi-source integration + record_source tracking</div>
+        </div>
+        <div class="mapping-row">
+          <div class="mapping-left">Immutability for audit &mdash; Arts. 11-12</div>
+          <div class="mapping-arrow">&rarr;</div>
+          <div class="mapping-right">Append-only Satellite design</div>
+        </div>
+        <div class="mapping-row">
+          <div class="mapping-left">Logging &mdash; Art. 12</div>
+          <div class="mapping-arrow">&rarr;</div>
+          <div class="mapping-right">AI Log Loading back into the warehouse</div>
+        </div>
+        <div class="mapping-row">
+          <div class="mapping-left">Metadata and semantics &mdash; 10(2)(d)</div>
+          <div class="mapping-arrow">&rarr;</div>
+          <div class="mapping-right">Data catalog / semantic layer on Business Vault</div>
+        </div>
+      </div></div>
+    </div>
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L4</span><span class="layer-label">Expert &mdash; nuance &amp; edge cases</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p><strong>Article 10(5)</strong> opens a narrow door: you can process special category data &mdash; race, health, religion &mdash; for bias detection purposes, even though GDPR Article 9 normally prohibits it. But it&rsquo;s a <em>dependent derogation</em> &mdash; it activates GDPR Art. 9(2)(g), not a standalone override. Only when anonymized or synthetic data won&rsquo;t do the job, and strict safeguards apply.</p>
+        <p style="margin-top: 8px;">This matters for ScaleFree clients: checking whether a credit scoring model discriminates by ethnicity requires looking at ethnicity data &mdash; Article 10(5) is the legal basis.</p>
+        <p style="margin-top: 8px;"><strong>Article 10(6):</strong> Even non-training systems (rule-based expert systems that don&rsquo;t learn from data) must still govern their testing datasets. The compliance chain is universal.</p>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="pm-panel">
+    <div class="pm-panel-header">SCALEFREE&rsquo;S AI-MART</div>
+    <div class="pm-panel-body">
+      <p>A specialized Information Mart at the very top of the DV stack, right before data reaches the AI model. This is where quality checks happen, bias audits run, and representativeness is validated. Data gets &ldquo;cleaned, integrated, and approved by data experts&rdquo; before the model ever sees it.</p>
+      <p style="margin-top: 10px;">The AI-Mart is the <strong>compliance enforcement point</strong> &mdash; not the Raw Vault (which stores everything as-is), not the Business Vault (which integrates but doesn&rsquo;t gatekeep for AI purposes).</p>
+    </div>
+  </div>
+
+  <div class="pm-panel">
+    <div class="pm-panel-header">AI LOG LOADING</div>
+    <div class="pm-panel-body">
+      <p>After the AI model runs, ScaleFree recommends loading its logs back into the warehouse: what data went in, what features were derived, what the model parameters were, what decisions it made, with what confidence scores. This creates the Article 12 audit trail.</p>
+      <p style="margin-top: 10px;">The warehouse becomes a <strong>closed loop</strong> &mdash; data flows out to the AI, and the AI&rsquo;s behavior flows back in.</p>
+    </div>
+  </div>
+
+  <div class="is-isnot">
+    <div class="is-isnot-header">IS / IS NOT &mdash; Article 10 and AI-Mart</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> AI-Mart IS the top Information Mart layer of the existing DV stack &mdash; same warehouse, governed output layer.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> AI-Mart IS NOT a separate database, a separate product, or a bolt-on.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> Article 10 IS a data governance requirement &mdash; about the DATA used to train the AI.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> Article 10 IS NOT a requirement about the AI model itself, its architecture, or its output accuracy.</div>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-callout-label">KEY CONCEPT</div>
+    <p>&ldquo;Article 10 requires data provenance, transformation documentation, bias examination, and immutable audit trails. Data Vault delivers all of these by design &mdash; record_source, load_date, layered architecture, append-only Satellites. The compliance capability is the base architecture, not a bolt-on.&rdquo;</p>
+  </div>
+
+</div><!-- /section 4 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 5 — THE TENSION (GDPR + AI Act Dual Compliance)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s5" data-label="The Tension" data-color="175,82,222">
+  <div class="section-header">
+    <div class="section-tag compliance-t">DUAL COMPLIANCE</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-tension">
+    <p class="hook-text">GDPR says <em>delete the data</em>. The AI Act says <em>keep the records</em>. Both are law. Both apply to the same system. Here&rsquo;s what that actually looks like.</p>
+  </div>
+
+  <div class="tension-card tension-type">
+    <div class="tension-label label-tension">TENSION</div>
+    <p><strong>1. Bias detection needs sensitive data</strong></p>
+    <p>A German insurance company&rsquo;s credit scoring AI rejects 40% more applicants from certain postal codes. To check whether the model discriminates by ethnicity, someone needs to look at ethnicity data. But GDPR Article 9 says: no processing special category data without explicit consent or another legal basis.</p>
+    <p style="margin-top: 8px;">Article 10(5) of the AI Act creates a narrow exception: process sensitive data for bias detection &mdash; but only when anonymized or synthetic data won&rsquo;t work, and only with strict safeguards (access controls, time limits, deletion after use).</p>
+    <p style="margin-top: 8px;">In practice: the bias audit team gets temporary, logged access to ethnicity data in the Business Vault, runs profiling queries, documents the results, and access is revoked. The PII Satellite holds the sensitive data; access is controlled at the mart level.</p>
+  </div>
+
+  <div class="tension-card alignment-type">
+    <div class="tension-label label-alignment">ALIGNMENT</div>
+    <p><strong>2. Automated decisions need human oversight</strong></p>
+    <p>A bank&rsquo;s AI auto-rejects a loan application. Under GDPR Article 22: the applicant has the right not to be subject to a solely automated decision with legal effects. Under AI Act Article 14: the deployer must implement human oversight &mdash; a person who can understand, override, and stop the AI.</p>
+    <p style="margin-top: 8px;">Both laws push the same direction. ScaleFree&rsquo;s architecture supports this: the AI-Mart logs every decision with its inputs and confidence score, so the human reviewer has the data to actually override meaningfully &mdash; not just rubber-stamp.</p>
+  </div>
+
+  <div class="tension-card difference-type">
+    <div class="tension-label label-difference">DIFFERENCE</div>
+    <p><strong>3. Transparency has two different audiences</strong></p>
+    <p>A company deploys a chatbot that recommends financial products. GDPR says: tell the <strong>individual</strong> that their data is being processed, by whom, for what purpose, and their rights. AI Act says: tell the <strong>deployer</strong> how the system works, what its limitations are, and what data it was trained on.</p>
+    <p style="margin-top: 8px;">Both transparency obligations must be satisfied, but they point in different directions &mdash; one toward the end user, one toward the organization. A company that only does GDPR transparency (privacy notice) hasn&rsquo;t touched AI Act transparency (technical documentation).</p>
+  </div>
+
+  <div class="tension-card synergy-type">
+    <div class="tension-label label-synergy">SYNERGY</div>
+    <p><strong>4. Documentation builds on GDPR foundations</strong></p>
+    <p>A company already maintains GDPR Article 30 records of processing activities. AI Act Articles 11-12 require technical documentation and logging for high-risk AI. The underlying data documentation overlaps significantly &mdash; both need to know what data exists, where it comes from, who accesses it.</p>
+    <p style="margin-top: 8px;">A company with solid GDPR Article 30 records has maybe 60% of the AI Act documentation foundation already built. The DV architecture helps here: <code>record_source</code>, <code>load_date</code>, and the layered transformation trail serve both.</p>
+  </div>
+
+  <div class="tension-card unresolved-type">
+    <div class="tension-label label-unresolved">UNRESOLVED</div>
+    <p><strong>5. Delete vs. keep &mdash; the hard one</strong></p>
+    <p>A customer whose data was used to train the insurance company&rsquo;s credit scoring model submits a GDPR Article 17 right-to-erasure request. GDPR says: delete their personal data. The AI Act says: maintain audit trails of your training data for regulatory review.</p>
+    <p style="margin-top: 8px;">You must prove what data trained the model AND delete this person&rsquo;s data. Nobody has fully resolved this in court yet.</p>
+    <p style="margin-top: 8px;">The emerging approach: delete from the PII Satellite (satisfies GDPR), keep pseudonymized metadata in non-PII Satellites &mdash; &ldquo;a 34-year-old male from postal code 10115 was in the training set&rdquo; without the name or identifiers (satisfies AI Act audit trail). If technically feasible, retrain the model without that individual&rsquo;s data.</p>
+  </div>
+
+  <div class="is-isnot">
+    <div class="is-isnot-header">IS / IS NOT &mdash; GDPR + AI Act</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> GDPR + AI Act IS two separate legal obligations that apply simultaneously and compound each other.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> GDPR + AI Act IS NOT one replaces the other. The AI Act does not create a GDPR exemption for AI systems.</div>
+      <div class="is-item is-yes"><strong>IS:</strong> PII Satellite isolation IS the architectural mechanism to delete personal data (GDPR) while retaining pseudonymized audit records (AI Act).</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> PII Satellite isolation IS NOT a full solution &mdash; model retraining is still required if feasible.</div>
+    </div>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">Incident reporting: GDPR vs AI Act timelines?</span>
+    <span class="explore-hint">Explore</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p><strong>Two clocks:</strong> GDPR data breach notification = 72 hours to the supervisory authority. AI Act serious incident = 15 days to the market surveillance authority (2 days if critical infrastructure).</p>
+      <p style="margin-top: 8px;">A single event &mdash; say, a data breach that exposes AI training data &mdash; can trigger <strong>both clocks</strong> simultaneously. ~90% of Annex III high-risk AI involves personal data. A single system might need both a DPIA (GDPR) and a conformity assessment (AI Act).</p>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-callout-label">KEY CONCEPT</div>
+    <p>&ldquo;GDPR and the AI Act compound each other &mdash; most high-risk AI processes personal data, so you need both. Data Vault handles this through PII Satellite isolation &mdash; delete for GDPR, retain pseudonymized audit trail for AI Act.&rdquo;</p>
+  </div>
+
+</div><!-- /section 5 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 6 — THE ARCHITECTURE (ScaleFree Stack)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s6" data-label="The Architecture" data-color="0,180,216">
+  <div class="section-header">
+    <div class="section-tag arch-t">ARCHITECTURE</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="four-layers" id="arch-layers">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; ScaleFree&rsquo;s AI Architecture</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('arch-layers', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('arch-layers', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('arch-layers', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('arch-layers', 3)"></div>
+      </div>
+    </div>
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L1</span><span class="layer-label">Plain language &mdash; for anyone</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>ScaleFree&rsquo;s position is simple: if your company uses AI, all the data feeding that AI must flow through the governed data warehouse. No data scientist pulls data from Salesforce on their laptop. No team builds a side pipeline from a CSV export. Everything goes through the same layers, with the same documentation, the same audit trail.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L2</span><span class="layer-label">With mechanism &mdash; the 4 recommendations</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p><strong>1. AI-Mart</strong> as the last governed layer before data reaches any AI model &mdash; where quality, bias, and representativeness get checked.</p>
+        <p style="margin-top: 8px;"><strong>2. AI Log Loading</strong> &mdash; after the model runs, feed its logs (inputs, outputs, confidence scores, parameters) back into the warehouse.</p>
+        <p style="margin-top: 8px;"><strong>3. Data lineage as compliance infrastructure</strong> &mdash; not a nice-to-have. Article 10 makes it a legal requirement.</p>
+        <p style="margin-top: 8px;"><strong>4. Access controls at the mart level</strong> &mdash; not everyone gets to pull data for AI training; access is logged and governed.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L3</span><span class="layer-label">Technical &mdash; the full pipeline</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <div class="arch-flow">
+          <div class="arch-node source">Source</div>
+          <div class="arch-arrow">&rarr;</div>
+          <div class="arch-node staging">Staging</div>
+          <div class="arch-arrow">&rarr;</div>
+          <div class="arch-node vault">Raw Vault</div>
+          <div class="arch-arrow">&rarr;</div>
+          <div class="arch-node vault">Business Vault</div>
+          <div class="arch-arrow">&rarr;</div>
+          <div class="arch-node mart">AI-Mart</div>
+          <div class="arch-arrow">&rarr;</div>
+          <div class="arch-node model">AI Model</div>
+          <div class="arch-arrow">&rarr;</div>
+          <div class="arch-node logging">AI Log Loading</div>
+        </div>
+        <p style="margin-top: 10px;">ScaleFree&rsquo;s framing to clients: &ldquo;If you cannot explain why your AI gave a specific answer or which data it used, you could face fines up to EUR 15 million or 3% of global turnover.&rdquo; That line converts architectural decisions into budget approvals.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L4</span><span class="layer-label">Expert &mdash; company context</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>Christof Wenzeritt (co-CEO) ran a Feb 2026 webinar on the &ldquo;AI-Enabling Data Platform&rdquo; &mdash; DV 2.0 as the foundation for trustworthy AI. a senior consultant speaks at conferences about trustworthy AI.</p>
+        <p style="margin-top: 8px;">The argument isn&rsquo;t that DV was <em>designed</em> for AI &mdash; it wasn&rsquo;t. The argument is that DV&rsquo;s existing properties (lineage via <code>record_source</code>, historization via append-only Satellites, separation of concerns via Hub/Link/Sat) happen to be exactly what the AI Act requires. <strong>Compliance as a side effect of good architecture.</strong></p>
+        <p style="margin-top: 8px;">Lina Sibbel (ScaleFree team) presented in Oct 2025 on agentic AI: treating AI agents as identity-bearing entities with role-based access control &mdash; the agent gets a record in the Hub just like any other business entity.</p>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="pm-panel">
+    <div class="pm-panel-header">AI LITERACY &mdash; ARTICLE 4</div>
+    <div class="pm-panel-body">
+      <p>Applies to <strong>ALL</strong> AI systems, not just high-risk. Already in effect since Feb 2025. No standalone fine &mdash; but non-compliance is an aggravating factor if you violate other provisions.</p>
+      <p style="margin-top: 10px;">For BI consultants working with European clients, understanding the AI Act isn&rsquo;t optional professional development &mdash; it&rsquo;s a legal obligation. When advising clients on AI-enabling data platforms, consultants are expected to know the regulatory requirements.</p>
+    </div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-callout-label">KEY CONCEPT</div>
+    <p>&ldquo;ScaleFree positions Data Vault 2.0 as the foundation for AI Act compliance. The AI-Mart is the compliance enforcement point &mdash; the last governed layer before data reaches the AI model. Quality checks, bias auditing, and representativeness validation all happen there. And AI logs get loaded back into the warehouse for Article 12 audit trails.&rdquo;</p>
+  </div>
+
+</div><!-- /section 6 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 7 — THE PROFESSIONAL ADVANTAGE
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s7" data-label="Professional Advantage" data-color="255,214,10">
+  <div class="section-header">
+    <div class="section-tag position-t">THE PROFESSIONAL ADVANTAGE</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-callout-label">KEY CONCEPT &mdash; THE PROFESSIONAL ADVANTAGE</div>
+    <p>The ability to translate between legal obligation and architectural implementation is rare. When Article 10 requires bias examination, that means profiling queries on the Business Vault and validation gates on the AI-Mart. That translation layer &mdash; from regulation to architecture &mdash; is what European clients increasingly need from their data consultants.</p>
+  </div>
+
+</div><!-- /section 7 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 8 — EXERCISES
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s8" data-label="Exercises" data-color="48,209,88">
+  <div class="section-header">
+    <div class="section-tag exercise-t">EXERCISES</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- ── EXERCISE 1: Risk Tier Classification ── -->
+
+  <div class="worked-example">
+    <div class="worked-example-label">WORKED EXAMPLE</div>
+    <p class="scenario">&ldquo;A hospital&rsquo;s AI system analyses radiology scans and flags potential cancer for a radiologist to review.&rdquo;</p>
+    <p class="answer"><strong>High Risk</strong> (Annex III Domain 1 &mdash; Biometrics / Annex II if embedded in a medical device)</p>
+    <p class="reasoning">The AI output directly influences a clinical decision that can affect a patient&rsquo;s life. Even though a human reviews it, the AI&rsquo;s flag shapes what the radiologist looks for. The stakes (life/health) place it firmly in high-risk. It is not Unacceptable (no social scoring or manipulation), not Limited (not merely informational), not Minimal (consequences are significant).</p>
+  </div>
+
+  <div class="exercise-section" id="exercise-1">
+    <h3>Exercise 1 &mdash; Risk Tier Classification</h3>
+    <p>Match each scenario to the correct risk tier: Unacceptable / High / Limited / Minimal.</p>
+
+    <div class="match-row" data-correct="High">
+      <div class="match-label">A social media platform&rsquo;s algorithm decides which job ads to show users based on age and gender</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Unacceptable">Unacceptable</option>
+        <option value="High">High</option>
+        <option value="Limited">Limited</option>
+        <option value="Minimal">Minimal</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Limited">
+      <div class="match-label">A chatbot answers customer service questions about product returns</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Unacceptable">Unacceptable</option>
+        <option value="High">High</option>
+        <option value="Limited">Limited</option>
+        <option value="Minimal">Minimal</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Unacceptable">
+      <div class="match-label">A government system scores citizens&rsquo; social behavior to determine access to public services</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Unacceptable">Unacceptable</option>
+        <option value="High">High</option>
+        <option value="Limited">Limited</option>
+        <option value="Minimal">Minimal</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="High">
+      <div class="match-label">A bank&rsquo;s AI evaluates loan applications and determines creditworthiness</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Unacceptable">Unacceptable</option>
+        <option value="High">High</option>
+        <option value="Limited">Limited</option>
+        <option value="Minimal">Minimal</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Minimal">
+      <div class="match-label">A video game uses AI to generate NPC dialogue</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Unacceptable">Unacceptable</option>
+        <option value="High">High</option>
+        <option value="Limited">Limited</option>
+        <option value="Minimal">Minimal</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise1()">CHECK ANSWERS</button>
+    <div class="feedback" id="feedback-1"></div>
+  </div>
+
+  <!-- ── EXERCISE 2: Article 10 → DV Feature Matching ── -->
+
+  <div class="worked-example">
+    <div class="worked-example-label">WORKED EXAMPLE</div>
+    <p class="scenario">Article 10 requirement: &ldquo;The high-risk AI system shall use data that is relevant, sufficiently representative, and to the best extent possible, free of errors.&rdquo;</p>
+    <p class="answer"><strong>Validation gates at AI-Mart / Feature Mart</strong></p>
+    <p class="reasoning">&ldquo;Relevant, representative, free of errors&rdquo; means you CHECK before the AI sees the data. That check cannot happen in the Raw Vault (stores everything as-is) or the Business Vault (integrates but does not gatekeep for AI). The AI-Mart is the last governed layer &mdash; where quality, representativeness, and bias audits run.</p>
+  </div>
+
+  <div class="exercise-section" id="exercise-2">
+    <h3>Exercise 2 &mdash; Article 10 &rarr; DV Feature Matching</h3>
+    <p>Match each Article 10 requirement to the Data Vault feature that addresses it.</p>
+
+    <div class="match-row" data-correct="record_source + load_date">
+      <div class="match-label">Data must have documented origin &mdash; source system, collection date</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="record_source + load_date">record_source + load_date</option>
+        <option value="Layered architecture">Layered architecture</option>
+        <option value="Profiling queries on BV">Profiling queries on BV</option>
+        <option value="Append-only Satellites">Append-only Satellites</option>
+        <option value="Validation gates at AI-Mart">Validation gates at AI-Mart</option>
+        <option value="AI Log Loading">AI Log Loading</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Layered architecture">
+      <div class="match-label">All data preparation steps must be documented</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="record_source + load_date">record_source + load_date</option>
+        <option value="Layered architecture">Layered architecture</option>
+        <option value="Profiling queries on BV">Profiling queries on BV</option>
+        <option value="Append-only Satellites">Append-only Satellites</option>
+        <option value="Validation gates at AI-Mart">Validation gates at AI-Mart</option>
+        <option value="AI Log Loading">AI Log Loading</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Profiling queries on BV">
+      <div class="match-label">Data must be examined for biases</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="record_source + load_date">record_source + load_date</option>
+        <option value="Layered architecture">Layered architecture</option>
+        <option value="Profiling queries on BV">Profiling queries on BV</option>
+        <option value="Append-only Satellites">Append-only Satellites</option>
+        <option value="Validation gates at AI-Mart">Validation gates at AI-Mart</option>
+        <option value="AI Log Loading">AI Log Loading</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Append-only Satellites">
+      <div class="match-label">Records must be preserved for regulatory review</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="record_source + load_date">record_source + load_date</option>
+        <option value="Layered architecture">Layered architecture</option>
+        <option value="Profiling queries on BV">Profiling queries on BV</option>
+        <option value="Append-only Satellites">Append-only Satellites</option>
+        <option value="Validation gates at AI-Mart">Validation gates at AI-Mart</option>
+        <option value="AI Log Loading">AI Log Loading</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Validation gates at AI-Mart">
+      <div class="match-label">Data quality must be verified before AI consumption</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="record_source + load_date">record_source + load_date</option>
+        <option value="Layered architecture">Layered architecture</option>
+        <option value="Profiling queries on BV">Profiling queries on BV</option>
+        <option value="Append-only Satellites">Append-only Satellites</option>
+        <option value="Validation gates at AI-Mart">Validation gates at AI-Mart</option>
+        <option value="AI Log Loading">AI Log Loading</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="AI Log Loading">
+      <div class="match-label">AI system usage must be logged with timestamps</div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="record_source + load_date">record_source + load_date</option>
+        <option value="Layered architecture">Layered architecture</option>
+        <option value="Profiling queries on BV">Profiling queries on BV</option>
+        <option value="Append-only Satellites">Append-only Satellites</option>
+        <option value="Validation gates at AI-Mart">Validation gates at AI-Mart</option>
+        <option value="AI Log Loading">AI Log Loading</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise2()">CHECK ANSWERS</button>
+    <div class="feedback" id="feedback-2"></div>
+  </div>
+
+  <!-- ── EXERCISE 3: Dual Compliance Scenario (Write) ── -->
+
+  <div class="worked-example">
+    <div class="worked-example-label">WORKED EXAMPLE</div>
+    <p class="scenario">A bank&rsquo;s AI approves or rejects mortgage applications. A customer complains their application was rejected without explanation.</p>
+    <p class="answer"><strong>GDPR Art. 22 + AI Act Art. 14 &mdash; Alignment</strong></p>
+    <p class="reasoning"><strong>GDPR:</strong> Article 22 &mdash; the customer has the right not to be subject to solely automated decisions with legal effect. They can request human review.<br>
+    <strong>AI Act:</strong> Article 14 &mdash; the deployer must implement human oversight. A person must be able to understand and override the AI.<br>
+    <strong>Tension?</strong> None &mdash; both push the same direction. The bank needs a human reviewer who can actually understand and override the AI, AND the customer has a right to request that review.<br>
+    <strong>Architecture:</strong> AI-Mart logs each decision with inputs and confidence score &mdash; the human reviewer has the data to override meaningfully.</p>
+  </div>
+
+  <div class="exercise-section" id="exercise-3">
+    <h3>Exercise 3 &mdash; Dual Compliance Scenario</h3>
+    <p>A German insurance company uses an AI to assess health insurance risk (Annex III high-risk). The AI is trained on data from their Data Vault. A customer submits a GDPR Article 17 right-to-erasure request.</p>
+    <p style="margin-top: 8px;">Walk through: <strong>(a)</strong> which AI Act obligations apply, <strong>(b)</strong> which GDPR obligations apply, <strong>(c)</strong> what the conflict is, and <strong>(d)</strong> how you&rsquo;d advise the client.</p>
+
+    <div class="write-exercise" id="write-3">
+      <h4>YOUR ANSWER</h4>
+      <textarea class="sql-input" rows="10" placeholder="(a) AI Act obligations:&#10;(b) GDPR obligations:&#10;(c) The conflict:&#10;(d) Your advice:"></textarea>
+      <button class="check-btn reveal-btn" onclick="showAnswer('write-3-answer')">REVEAL REFERENCE ANSWER</button>
+      <div class="write-answer" id="write-3-answer" style="display:none;">
+        <div class="write-answer-label">REFERENCE ANSWER</div>
+        <pre class="sql-answer">(a) AI Act obligations:
+- Article 10 data governance: training data must have documented
+  lineage (provenance, quality, bias checks).
+- Article 12 logging: system must automatically keep operation records.
+- Article 14 human oversight: deployer must have a person who can
+  understand and override the AI's risk assessments.
+
+(b) GDPR obligations:
+- Right to erasure (Art. 17): customer can request deletion.
+- Data minimization (Art. 5(1)(c)): only necessary data collected.
+- Lawful basis (Art. 6 + Art. 9 for health data): needed a valid
+  legal basis to use health data for AI training.
+
+(c) The conflict:
+AI Act requires immutable audit trail of training data — "show the
+regulator what data trained this model." GDPR requires deletion on
+request. You cannot show "this data trained the model" if you've
+deleted the data. Both obligations point in opposite directions.
+
+(d) Advice — PII Satellite isolation:
+- DELETE identifiable data from PII Satellite (satisfies GDPR Art. 17).
+- PRESERVE pseudonymized records in non-PII Satellites:
+  "a 42-year-old female in postal code 80331 was in the training set,
+  loaded 2025-06-15 from source Y" — no name, no re-identifiable
+  attributes (satisfies AI Act audit trail).
+- If feasible: retrain the model without this individual's data.
+- If not feasible: document why (cost, model size) and what steps
+  were taken to mitigate. Document in conformity assessment file.</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="completion-banner" id="completion-banner">
+    All exercises complete! Chapter 8.5 finished.
+  </div>
+
+</div><!-- /section 8 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="tutorial-footer">
+  <div class="footer-label">CHAPTER 09 // AI ACT AND DATA VAULT</div>
+  <div class="footer-subtitle">The regulation that turns your data warehouse into compliance infrastructure.</div>
+  <div class="footer-next">Next: <a href="10-sql-create-table.html">Chapter 10 &mdash; SQL CREATE TABLE</a></div>
+</div>
+
+</div><!-- /container -->
+
+</div><!-- /page-content -->
+
+<script>
+/* ===================================================
+   STAR CONSTELLATION PARTICLE FIELD
+   =================================================== */
+(function() {
+  var canvas = document.getElementById('particle-field');
+  var ctx = canvas.getContext('2d');
+  var w, h;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var STAR_COUNT = 110;
+  var HUB_FRACTION = 0.15;
+  var CONNECT_DIST = 140;
+  var MOUSE_RADIUS = 200;
+  var MOUSE_STRENGTH = 0.015;
+
+  var starColors = [
+    { r: 16, g: 185, b: 129 },
+    { r: 59, g: 130, b: 246 },
+    { r: 245, g: 158, b: 11 },
+    { r: 0, g: 180, b: 255 },
+    { r: 6, g: 182, b: 212 },
+    { r: 139, g: 92, b: 246 },
+    { r: 168, g: 85, b: 247 }
+  ];
+
+  var stars = [];
+  for (var i = 0; i < STAR_COUNT; i++) {
+    var isHub = Math.random() < HUB_FRACTION;
+    var col = starColors[Math.floor(Math.random() * starColors.length)];
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      baseSize: isHub ? (2.5 + Math.random() * 2) : (0.8 + Math.random() * 1.2),
+      opacity: isHub ? (0.6 + Math.random() * 0.4) : (0.25 + Math.random() * 0.35),
+      r: col.r, g: col.g, b: col.b,
+      isHub: isHub,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.008 + Math.random() * 0.012,
+      driftAngle: Math.random() * Math.PI * 2,
+      driftSpeed: 0.08 + Math.random() * 0.15,
+      driftTurn: (Math.random() - 0.5) * 0.005
+    });
+  }
+
+  var mouse = { x: 0, y: 0, active: false };
+
+  function isOverContent(el) {
+    if (!el) return false;
+    while (el) {
+      if (el.classList) {
+        if (el.classList.contains('section') || el.classList.contains('container') ||
+            el.classList.contains('holo-nav') || el.classList.contains('pm-panel') ||
+            el.classList.contains('hook') || el.classList.contains('four-layers') ||
+            el.classList.contains('data-panel') || el.classList.contains('exercise-section') ||
+            el.classList.contains('concept-callout') || el.classList.contains('language-bridge') ||
+            el.classList.contains('contrast-panel') || el.classList.contains('disambig-panel') ||
+            el.classList.contains('code-panel') || el.classList.contains('explore-panel') ||
+            el.classList.contains('title-section') || el.classList.contains('pipeline-flow')) {
+          return true;
+        }
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = !isOverContent(e.target);
+  });
+  document.addEventListener('mouseleave', function() { mouse.active = false; });
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      p.pulse += p.pulseSpeed;
+      p.driftAngle += p.driftTurn;
+      p.x += Math.cos(p.driftAngle) * p.driftSpeed;
+      p.y += Math.sin(p.driftAngle) * p.driftSpeed;
+
+      if (mouse.active) {
+        var dx = mouse.x - p.x;
+        var dy = mouse.y - p.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS && dist > 1) {
+          var force = (1 - dist / MOUSE_RADIUS) * MOUSE_STRENGTH;
+          p.x += dx * force;
+          p.y += dy * force;
+        }
+      }
+
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      for (var j = i + 1; j < stars.length; j++) {
+        var dx = stars[i].x - stars[j].x;
+        var dy = stars[i].y - stars[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          var alpha = (1 - dist / CONNECT_DIST) * 0.12;
+          if (stars[i].isHub || stars[j].isHub) alpha *= 1.8;
+          ctx.beginPath();
+          ctx.moveTo(stars[i].x, stars[i].y);
+          ctx.lineTo(stars[j].x, stars[j].y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (mouse.active) {
+      for (var i = 0; i < stars.length; i++) {
+        var p = stars[i];
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          var mFade = 1 - mDist / MOUSE_RADIUS;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + (mFade * mFade * 0.2) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      var pulseVal = 0.6 + 0.4 * Math.sin(p.pulse);
+      var currentOpacity = p.opacity * pulseVal;
+      var currentSize = p.baseSize * (0.85 + 0.15 * Math.sin(p.pulse));
+
+      var proximityBoost = 1;
+      if (mouse.active) {
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          proximityBoost = 1 + (1 - mDist / MOUSE_RADIUS) * 1.5;
+        }
+      }
+
+      var boostedOpacity = Math.min(currentOpacity * proximityBoost, 1);
+
+      var glowRadius = currentSize * (p.isHub ? 8 : 5);
+      var grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      grd.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.3) + ')');
+      grd.addColorStop(0.4, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.08) + ')');
+      grd.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + Math.min(p.r + 60, 255) + ',' + Math.min(p.g + 60, 255) + ',' + Math.min(p.b + 60, 255) + ',' + boostedOpacity + ')';
+      ctx.fill();
+
+      if (p.isHub) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, currentSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (boostedOpacity * 0.7) + ')';
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+/* ===================================================
+   SECTION VISIBILITY + NAV
+   =================================================== */
+var sections = document.querySelectorAll('.section');
+var navNodes = document.querySelectorAll('.nav-node');
+var navConnectors = document.querySelectorAll('.nav-connector');
+var progressFill = document.getElementById('progress-fill');
+var navLabel = document.getElementById('nav-current-label');
+var lcarsSegs = document.querySelectorAll('.lcars-seg');
+var ambientEl = document.getElementById('ambient-glow');
+
+var usesCSSTimeline = CSS.supports && CSS.supports('animation-timeline', 'view()');
+
+if (!usesCSSTimeline) {
+  var sectionObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+      else entry.target.classList.remove('visible');
+    });
+  }, { threshold: 0.01, rootMargin: '200px 0px -40px 0px' });
+  sections.forEach(function(s) { sectionObserver.observe(s); });
+}
+
+
+var sectionColors = [];
+sections.forEach(function(s) {
+  var dc = s.getAttribute('data-color');
+  if (dc) {
+    var parts = dc.split(',');
+    sectionColors.push({ r: parseInt(parts[0]), g: parseInt(parts[1]), b: parseInt(parts[2]) });
+  } else {
+    sectionColors.push({ r: 0, g: 180, b: 255 });
+  }
+});
+
+var lastActiveIndex = -1;
+function updateNav() {
+  var activeIdx = 0;
+  var scrollY = window.scrollY + window.innerHeight * 0.35;
+  sections.forEach(function(s, i) { if (s.offsetTop <= scrollY) activeIdx = i; });
+
+  if (activeIdx !== lastActiveIndex) {
+    lastActiveIndex = activeIdx;
+    navNodes.forEach(function(n, i) {
+      n.classList.remove('active', 'completed');
+      if (i === activeIdx) n.classList.add('active');
+      else if (i < activeIdx) n.classList.add('completed');
+    });
+    navConnectors.forEach(function(c, i) {
+      if (i < activeIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+    var currentSection = sections[activeIdx];
+    if (currentSection) navLabel.textContent = currentSection.getAttribute('data-label') || '';
+    lcarsSegs.forEach(function(seg, i) {
+      seg.classList.remove('active', 'completed');
+      if (i === activeIdx) seg.classList.add('active');
+      else if (i < activeIdx) seg.classList.add('completed');
+    });
+    var c = sectionColors[activeIdx];
+    if (c && ambientEl) {
+      ambientEl.style.setProperty('--ambient-c1', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.06)');
+      ambientEl.style.setProperty('--ambient-c2', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.03)');
+      ambientEl.style.setProperty('--ambient-c3', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.02)');
+    }
+  }
+
+  var activeSection = sections[lastActiveIndex];
+  var nextSection = sections[lastActiveIndex + 1];
+  if (activeSection) {
+    var secTop = activeSection.offsetTop;
+    var secBottom = nextSection ? nextSection.offsetTop : document.documentElement.scrollHeight;
+    var secHeight = secBottom - secTop;
+    var currentY = window.scrollY + window.innerHeight * 0.35;
+    var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+    fill = Math.max(0, Math.min(100, fill));
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+    lcarsSegs.forEach(function(seg, i) {
+      if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+      else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+      else seg.style.removeProperty('--seg-fill');
+    });
+  }
+
+  var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  var scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) scrolled = 100;
+  progressFill.style.width = Math.min(scrolled, 100) + '%';
+}
+
+
+/* ===================================================
+   SCROLL PROGRESS + WORD REVEAL
+   =================================================== */
+function updateScrollProgress() {
+  var viewH = window.innerHeight;
+  sections.forEach(function(section) {
+    var rect = section.getBoundingClientRect();
+    var progress = 1 - (rect.top / viewH);
+    progress = Math.max(0, Math.min(1, progress));
+    section.style.setProperty('--scroll-progress', progress);
+    /* Word reveal: use aggressive ramp so all words are lit once section
+       enters the lower 35% of viewport (progress >= 0.35 → all lit).
+       Factor of 3.0 means: at progress 0.33 all words are revealed. */
+    section.querySelectorAll('.hook-text').forEach(function(hook) {
+      var count = parseInt(hook.getAttribute('data-word-count')) || 1;
+      var litCount = Math.floor(progress * count * 3.0);
+      litCount = Math.min(litCount, count);
+      hook.querySelectorAll('.word').forEach(function(word, i) {
+        if (i < litCount) word.classList.add('lit');
+        else word.classList.remove('lit');
+      });
+    });
+  });
+}
+
+
+/* ===================================================
+   PARALLAX
+   =================================================== */
+var depthShapes = document.querySelectorAll('.depth-shape');
+var depthRates = [0.03, 0.05, 0.02, 0.04];
+function updateParallax() {
+  var scrollY = window.scrollY;
+  depthShapes.forEach(function(shape, i) {
+    shape.style.transform = 'translateY(' + (-scrollY * depthRates[i]) + 'px)';
+  });
+}
+
+
+/* ===================================================
+   UNIFIED SCROLL
+   =================================================== */
+var scrollTicking = false;
+function onScroll() {
+  if (!scrollTicking) {
+    requestAnimationFrame(function() {
+      updateNav();
+      updateScrollProgress();
+      updateParallax();
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('load', function() { updateNav(); updateScrollProgress(); });
+
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    var y = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
+
+
+/* ===================================================
+   4-LAYER TOGGLE
+   =================================================== */
+function toggleLayer(header) {
+  var layer = header.parentElement;
+  layer.classList.toggle('open');
+  var container = layer.closest('.four-layers');
+  if (container) updateLayerDots(container);
+}
+
+function jumpToLayer(containerId, layerIndex) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var layers = container.querySelectorAll('.layer');
+  layers.forEach(function(l, i) {
+    if (i <= layerIndex) l.classList.add('open');
+    else l.classList.remove('open');
+  });
+  updateLayerDots(container);
+}
+
+function updateLayerDots(container) {
+  var layers = container.querySelectorAll('.layer');
+  var dots = container.querySelectorAll('.layer-dot');
+  layers.forEach(function(l, i) {
+    if (dots[i]) {
+      if (l.classList.contains('open')) dots[i].classList.add('active');
+      else dots[i].classList.remove('active');
+    }
+  });
+}
+
+
+/* ===================================================
+   EXPLORE MORE
+   =================================================== */
+function toggleExplore(opener) {
+  var panel = opener.nextElementSibling;
+  var isOpen = opener.classList.toggle('open');
+  if (panel) panel.classList.toggle('open', isOpen);
+}
+
+
+/* ═══ Chapter 8.5: EU AI Act & Data Vault — Exercise Functions (DOET rebuild) ═══ */
+
+var exercisesCompleted = {
+  ex1: false, ex2: false, ex3: false
+};
+
+/* ── Exercise 1: Risk Tier Classification — Per-row specific feedback ── */
+
+var feedback1 = {
+  0: { // Job ad targeting by age/gender
+    "High": "Correct — job ad targeting by age/gender is Annex III Domain 4 (Employment). AI that filters or selects candidates, including ad targeting for jobs, touches people's livelihoods directly.",
+    "Unacceptable": "Not quite — Unacceptable is reserved for banned practices like social scoring by governments or subliminal manipulation. Job ad targeting is regulated but permitted under the High tier.",
+    "Limited": "Limited only applies to systems whose sole risk is lack of transparency (chatbots, deepfakes). This AI affects who gets to see job opportunities — that is a High-risk employment outcome.",
+    "Minimal": "Job access affects livelihoods — this is not trivial. Minimal means no meaningful impact on people's rights or safety. Filtering job ads by demographics directly impacts employment access."
+  },
+  1: { // Chatbot for product returns
+    "Limited": "Correct — a customer service chatbot must disclose it's AI (transparency obligation), but answering return policy questions does not make consequential decisions about people's rights.",
+    "Unacceptable": "Social scoring and subliminal manipulation are Unacceptable. A customer service chatbot is nowhere near that threshold.",
+    "High": "High requires the AI to make consequential decisions about access to services, employment, credit, etc. Answering product return questions does not.",
+    "Minimal": "Close, but the AI Act requires chatbots to identify themselves as AI — that single transparency obligation places them in Limited, not Minimal."
+  },
+  2: { // Government social scoring
+    "Unacceptable": "Correct — social scoring by a public authority to restrict access to services is explicitly banned under Article 5. No compliance path exists.",
+    "High": "High-risk systems are regulated but permitted. Social scoring by governments is prohibited outright — the AI Act does not allow it at any compliance level.",
+    "Limited": "Limited systems just need a transparency label. Social scoring is banned regardless of how transparently it operates.",
+    "Minimal": "This is the most severe category possible — government social scoring is explicitly prohibited under Article 5."
+  },
+  3: { // Bank credit scoring
+    "High": "Correct — credit scoring is Annex III Domain 5 (Essential services). Credit decisions have significant financial consequences for individuals and require conformity assessments.",
+    "Unacceptable": "The AI Act bans social scoring by public authorities and subliminal manipulation. A private bank's credit model is regulated but permitted — with heavy compliance obligations.",
+    "Limited": "Credit decisions have significant financial consequences for individuals. The Limited tier is reserved for AI systems where the only risk is transparency (chatbots, deepfakes).",
+    "Minimal": "Credit scoring directly affects whether someone can get a mortgage, a car loan, or business funding. This is not a trivial impact."
+  },
+  4: { // Video game NPC dialogue
+    "Minimal": "Correct — the AI does not make decisions affecting people's rights, safety, or access to services. NPC dialogue in a video game has no regulatory impact.",
+    "Unacceptable": "Unacceptable is for social scoring and manipulation. Video game NPCs do not manipulate or restrict rights.",
+    "High": "High requires significant consequences for people's lives. Game dialogue has no impact on rights, health, or livelihoods.",
+    "Limited": "The chatbot transparency rule in Limited applies to AI that could be mistaken for a human in a real interaction. An NPC in a video game is understood by everyone to not be human."
+  }
+};
+
+function checkExercise1() {
+  var rows = document.querySelectorAll('#exercise-1 .match-row');
+  var correct = 0;
+  rows.forEach(function(row, i) {
+    var select = row.querySelector('.match-select');
+    var expected = row.getAttribute('data-correct');
+    var fb = row.querySelector('.row-feedback');
+    var val = select.value;
+    if (!val) { fb.className = 'row-feedback'; fb.style.display = 'none'; row.classList.remove('correct', 'incorrect'); return; }
+    var isCorrect = val === expected;
+    if (isCorrect) { correct++; row.classList.add('correct'); row.classList.remove('incorrect'); }
+    else { row.classList.add('incorrect'); row.classList.remove('correct'); }
+    fb.textContent = feedback1[i][val] || '';
+    fb.className = 'row-feedback ' + (isCorrect ? 'feedback-correct' : 'feedback-incorrect');
+    fb.style.display = 'block';
+  });
+  var total = rows.length;
+  var feedbackEl = document.getElementById('feedback-1');
+  if (correct === total) {
+    feedbackEl.textContent = correct + '/' + total + ' — All correct!';
+    feedbackEl.className = 'feedback correct';
+    exercisesCompleted.ex1 = true;
+    checkAllComplete();
+  } else {
+    feedbackEl.textContent = correct + '/' + total + ' correct. Read the feedback below each row.';
+    feedbackEl.className = 'feedback incorrect';
+  }
+}
+
+/* ── Exercise 2: Article 10 → DV Feature Matching — Per-row specific feedback ── */
+
+var feedback2 = {
+  0: { // Documented origin
+    "record_source + load_date": "Correct — record_source tells you which source system the data came from, load_date tells you when it first arrived. Together they satisfy the provenance requirement.",
+    "Layered architecture": "The layered architecture documents transformations between layers — what happened to data as it moved. Origin (where and when) is stored in record_source and load_date columns.",
+    "Profiling queries on BV": "Profiling queries check for bias in data distributions. Origin tracking is about metadata columns on each row, not analytical queries.",
+    "Append-only Satellites": "Append-only Satellites preserve history — they don't track origin. Origin comes from record_source and load_date.",
+    "Validation gates at AI-Mart": "Validation gates check data quality before AI consumption. Origin is tracked by record_source and load_date on every row.",
+    "AI Log Loading": "AI Log Loading captures what happens AFTER the AI runs. Provenance of training data is a before-the-model requirement."
+  },
+  1: { // Data preparation documented
+    "Layered architecture": "Correct — staging standardizes, Raw Vault integrates, Business Vault applies business rules, AI-Mart validates. Each layer makes transformation steps explicit and auditable.",
+    "record_source + load_date": "record_source tells you where data came from. It does not tell you what transformations happened between source and model.",
+    "Profiling queries on BV": "Profiling queries examine data distributions for bias. They don't document the preparation pipeline.",
+    "Append-only Satellites": "Append-only Satellites preserve records over time. But documenting how data was prepared requires the layered architecture.",
+    "Validation gates at AI-Mart": "Validation gates are ONE step in the pipeline. The full documentation comes from the layered architecture.",
+    "AI Log Loading": "AI Log Loading documents AI behavior, not data preparation steps."
+  },
+  2: { // Bias examination
+    "Profiling queries on BV": "Correct — bias examination requires looking at how data is distributed across demographic groups. The Business Vault has integrated, business-meaningful data — the right layer for this analysis.",
+    "record_source + load_date": "record_source tracks origin, not data distributions. Bias examination needs analytical queries across the dataset.",
+    "Layered architecture": "The layered architecture documents transformations. Bias examination is an analytical activity — running queries to check demographic distributions.",
+    "Append-only Satellites": "Satellites preserve history but don't perform bias analysis. Profiling queries on the BV do that.",
+    "Validation gates at AI-Mart": "Close — the AI-Mart enforces quality gates AFTER bias examination. The examination itself runs against the Business Vault.",
+    "AI Log Loading": "AI Log Loading captures model behavior after training. Bias examination happens before the AI sees the data."
+  },
+  3: { // Records preserved for review
+    "Append-only Satellites": "Correct — Satellites never overwrite data. New rows are inserted, old rows remain. You can always show what data existed at any point in time.",
+    "record_source + load_date": "record_source is a column telling you where data came from. Immutability is an architectural property of the entire Satellite design.",
+    "Layered architecture": "The layered architecture documents transformations. Preservation of records requires append-only storage.",
+    "Profiling queries on BV": "Profiling queries analyze data. They don't preserve it.",
+    "Validation gates at AI-Mart": "Validation gates check quality. Record preservation is about storage design.",
+    "AI Log Loading": "AI Log Loading creates audit trails for model behavior. This requirement is about preserving the TRAINING DATA records."
+  },
+  4: { // Quality verified before consumption
+    "Validation gates at AI-Mart": "Correct — the AI-Mart is the last governed layer before data reaches the AI model. Quality, representativeness, and bias audits run here before the model sees anything.",
+    "record_source + load_date": "record_source tracks origin, not quality. Quality verification is an active check at the AI-Mart.",
+    "Layered architecture": "The layers transform data, but quality verification specifically happens at the AI-Mart — the final checkpoint.",
+    "Profiling queries on BV": "Profiling queries check for bias. Quality verification before consumption is the AI-Mart's role.",
+    "Append-only Satellites": "Satellites preserve data. Quality verification is an active gating process.",
+    "AI Log Loading": "AI Log Loading happens AFTER the AI runs. This requirement is about checking BEFORE the AI consumes data."
+  },
+  5: { // AI usage logged
+    "AI Log Loading": "Correct — AI Log Loading is the feedback loop: what data went in, what decisions the AI made, with what confidence, at what time. All loaded back into the warehouse.",
+    "record_source + load_date": "load_date records when training data entered the warehouse. This requirement is about logging what the AI DID — its inputs, outputs, and decisions.",
+    "Layered architecture": "The layered architecture processes data going INTO the AI. AI Log Loading captures the AI's behavior coming OUT.",
+    "Profiling queries on BV": "Profiling queries analyze training data. Logging AI usage is about capturing model behavior.",
+    "Append-only Satellites": "Satellites store the input data going INTO the AI. AI Log Loading stores the AI's outputs and behavior coming OUT.",
+    "Validation gates at AI-Mart": "Validation gates check data quality before the AI. Logging happens after the AI runs."
+  }
+};
+
+function checkExercise2() {
+  var rows = document.querySelectorAll('#exercise-2 .match-row');
+  var correct = 0;
+  rows.forEach(function(row, i) {
+    var select = row.querySelector('.match-select');
+    var expected = row.getAttribute('data-correct');
+    var fb = row.querySelector('.row-feedback');
+    var val = select.value;
+    if (!val) { fb.className = 'row-feedback'; fb.style.display = 'none'; row.classList.remove('correct', 'incorrect'); return; }
+    var isCorrect = val === expected;
+    if (isCorrect) { correct++; row.classList.add('correct'); row.classList.remove('incorrect'); }
+    else { row.classList.add('incorrect'); row.classList.remove('correct'); }
+    fb.textContent = feedback2[i][val] || '';
+    fb.className = 'row-feedback ' + (isCorrect ? 'feedback-correct' : 'feedback-incorrect');
+    fb.style.display = 'block';
+  });
+  var total = rows.length;
+  var feedbackEl = document.getElementById('feedback-2');
+  if (correct === total) {
+    feedbackEl.textContent = correct + '/' + total + ' — All correct!';
+    feedbackEl.className = 'feedback correct';
+    exercisesCompleted.ex2 = true;
+    checkAllComplete();
+  } else {
+    feedbackEl.textContent = correct + '/' + total + ' correct. Read the feedback below each row.';
+    feedbackEl.className = 'feedback incorrect';
+  }
+}
+
+/* ── Exercise 3: Write exercise reveal ── */
+function showAnswer(id) {
+  var answerDiv = document.getElementById(id);
+  if (answerDiv.style.display === 'none' || !answerDiv.style.display) {
+    answerDiv.style.display = 'block';
+    exercisesCompleted.ex3 = true;
+    checkAllComplete();
+  } else {
+    answerDiv.style.display = 'none';
+  }
+}
+
+/* ── Completion tracking ── */
+function checkAllComplete() {
+  var all = true;
+  for (var key in exercisesCompleted) {
+    if (!exercisesCompleted[key]) { all = false; break; }
+  }
+  if (all) {
+    var banner = document.getElementById('completion-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+}
+
+
+/* ===================================================
+   WORD-WRAP UTILITY
+   =================================================== */
+function wrapHookWords(hookEl) {
+  var nodes = Array.prototype.slice.call(hookEl.childNodes);
+  var frag = document.createDocumentFragment();
+  nodes.forEach(function(node) {
+    if (node.nodeType === 1 && node.tagName === 'EM') {
+      var span = document.createElement('span');
+      span.className = 'word';
+      span.appendChild(node.cloneNode(true));
+      frag.appendChild(span);
+    } else if (node.nodeType === 3) {
+      var words = node.textContent.split(/(\s+)/);
+      words.forEach(function(w) {
+        if (/^\s+$/.test(w)) { frag.appendChild(document.createTextNode(w)); }
+        else if (w.length > 0) {
+          var span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = w;
+          frag.appendChild(span);
+        }
+      });
+    } else { frag.appendChild(node.cloneNode(true)); }
+  });
+  while (hookEl.firstChild) hookEl.removeChild(hookEl.firstChild);
+  hookEl.appendChild(frag);
+  hookEl.setAttribute('data-word-count', hookEl.querySelectorAll('.word').length);
+}
+
+
+/* ===================================================
+   INIT
+   =================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.four-layers').forEach(function(container) { updateLayerDots(container); });
+  document.querySelectorAll('.hook-text').forEach(function(hook) { wrapHookWords(hook); });
+});
+</script>
+
+<script src="../nav-inject.js"></script>
+
+
+<!-- ═══════ Game UI Elements ═══════ -->
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar -->
+<div id="inventory-toolbar" class="inventory-toolbar">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel -->
+<div id="inventory-panel" class="inventory-panel hidden">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script>
+/* ═══════ Game system init + scroll-based item discovery ═══════ */
+document.addEventListener('DOMContentLoaded', function() {
+  /* Initialize game systems */
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+    if (SV.achievements) SV.achievements.init();
+  }
+
+  var items = ['ai-risk-tiers', 'provider-deployer', 'ai-spaghetti', 'ai-act-edge'];
+  var granted = {};
+
+  /* Restore already-granted items from persistence */
+  if (typeof SV !== 'undefined' && SV.persistence) {
+    var inv = SV.persistence.get('inventory', []);
+    for (var i = 0; i < inv.length; i++) { granted[inv[i].id] = true; }
+  }
+
+  function getScrollPct() {
+    var h = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    return window.scrollY / h;
+  }
+
+  function checkScroll() {
+    var pct = getScrollPct();
+    for (var i = 0; i < items.length; i++) {
+      var threshold = (i + 0.5) / items.length;
+      if (pct >= threshold && !granted[items[i]]) {
+        granted[items[i]] = true;
+        if (typeof SV !== 'undefined' && SV.inventory && SV.inventory.addItem) {
+          SV.inventory.addItem(items[i]);
+        }
+      }
+    }
+  }
+
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  setTimeout(checkScroll, 1500);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,3171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 12: Integration Day — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #030810;
+  --bg-void: #010409;
+  --pm-surface: rgba(8, 20, 42, 0.82);
+  --pm-surface-hover: rgba(12, 28, 54, 0.88);
+  --pm-glass: rgba(0, 180, 255, 0.06);
+  --pm-glass-edge: rgba(0, 180, 255, 0.12);
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+  /* Tools color palette */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --accent-dim: rgba(0, 180, 255, 0.06);
+  --accent-color: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --accent-bg: rgba(251, 191, 36, 0.04);
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.3);
+  --sql-select: #22c55e;
+  --sql-select-dim: rgba(34, 197, 94, 0.08);
+  --sql-select-glow: rgba(34, 197, 94, 0.25);
+  --border-subtle: rgba(0, 180, 255, 0.08);
+  --border-medium: rgba(0, 180, 255, 0.15);
+  --border-glow: rgba(0, 180, 255, 0.3);
+  --border-active: rgba(0, 180, 255, 0.45);
+  --holo-cyan: #0ef;
+  --holo-cyan-dim: rgba(0, 238, 255, 0.04);
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Exo 2', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#particle-field {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.scanline-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 238, 255, 0.007) 2px, rgba(0, 238, 255, 0.007) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.scan-bar {
+  position: fixed;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 238, 255, 0.08), transparent);
+  animation: scan-sweep 12s linear infinite;
+  pointer-events: none;
+  z-index: 9997;
+}
+
+@keyframes scan-sweep {
+  0% { top: -3px; }
+  100% { top: 100vh; }
+}
+
+.page-content { position: relative; z-index: 2; }
+
+/* NAVIGATION */
+.holo-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(3, 8, 16, 0.9);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.nav-nodes { display: flex; align-items: center; gap: 4px; padding: 12px 0 8px; }
+.nav-node {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--accent-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+  opacity: 0;
+  animation: node-appear 0.4s ease both;
+}
+.nav-node:hover { border-color: var(--accent); color: var(--hub-text); background: rgba(0, 180, 255, 0.1); box-shadow: 0 0 18px rgba(0, 180, 255, 0.2); }
+.nav-node.active { opacity: 1; border-color: var(--accent); color: var(--bg-deep); background: var(--accent); box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.15); animation: node-appear 0.4s ease both, node-pulse 3s ease-in-out 0.4s infinite; }
+.nav-node.completed { opacity: 1; border-color: var(--sql-select); color: var(--sql-select); background: rgba(34, 197, 94, 0.08); }
+.nav-connector { flex: 1; height: 1px; background: var(--border-subtle); min-width: 6px; transition: all 0.6s; }
+.nav-connector.active { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+@keyframes node-pulse { 0%, 100% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.1); } 50% { box-shadow: 0 0 28px rgba(0, 180, 255, 0.5), 0 0 55px rgba(0, 180, 255, 0.2); } }
+@keyframes node-appear { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+.nav-node:nth-child(1) { animation-delay: 0.1s; }
+.nav-node:nth-child(3) { animation-delay: 0.15s; }
+.nav-node:nth-child(5) { animation-delay: 0.2s; }
+.nav-node:nth-child(7) { animation-delay: 0.25s; }
+.nav-node:nth-child(9) { animation-delay: 0.3s; }
+.nav-node:nth-child(11) { animation-delay: 0.35s; }
+.nav-node:nth-child(13) { animation-delay: 0.4s; }
+.nav-node:nth-child(15) { animation-delay: 0.45s; }
+.nav-node:nth-child(17) { animation-delay: 0.5s; }
+.nav-label { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); text-align: center; padding: 2px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* LCARS SEGMENTED PROGRESS BAR */
+.lcars-bar { display: flex; align-items: stretch; padding: 6px 24px 4px; gap: 0; }
+.lcars-elbow { width: 18px; flex-shrink: 0; background: var(--accent); border-radius: 0 0 0 14px; opacity: 0.35; position: relative; transition: opacity 0.6s ease; }
+.lcars-elbow::after { content: ''; position: absolute; bottom: -12px; left: 0; width: 100%; height: 12px; background: var(--accent); border-radius: 0 0 0 8px; opacity: inherit; }
+.lcars-segments { display: flex; gap: 3px; flex: 1; height: 32px; padding-left: 4px; }
+.lcars-seg {
+  flex: 1; border-radius: 3px;
+  background: linear-gradient(90deg, var(--seg-color) 0%, var(--seg-color) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) 100%);
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255, 255, 255, 0.5); cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0; animation: seg-appear 0.4s ease both;
+}
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; } .lcars-seg:nth-child(2) { animation-delay: 0.1s; } .lcars-seg:nth-child(3) { animation-delay: 0.15s; } .lcars-seg:nth-child(4) { animation-delay: 0.2s; } .lcars-seg:nth-child(5) { animation-delay: 0.25s; } .lcars-seg:nth-child(6) { animation-delay: 0.3s; } .lcars-seg:nth-child(7) { animation-delay: 0.35s; } .lcars-seg:nth-child(8) { animation-delay: 0.4s; } .lcars-seg:nth-child(9) { animation-delay: 0.45s; }
+@keyframes seg-appear { from { opacity: 0; transform: scaleX(0.3); } to { opacity: 1; transform: scaleX(1); } }
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+.lcars-seg.active { box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent), inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent); color: var(--bg-deep); }
+.lcars-seg.completed { --seg-fill: 100%; filter: brightness(0.7); color: var(--bg-deep); }
+.lcars-seg:hover { filter: brightness(1.2); box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent); }
+.lcars-flow { height: 3px; margin: 0 24px; background: rgba(0, 180, 255, 0.06); }
+.lcars-flow-fill { height: 100%; background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); width: 0%; transition: width 0.5s ease; }
+/* CONTAINER */
+.container { max-width: 1100px; margin: 0 auto; padding: 92px 28px 140px; }
+
+/* TITLE */
+.title-section { margin-bottom: 72px; padding-bottom: 48px; border-bottom: 1px solid var(--border-subtle); opacity: 0; animation: matter-form 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+@keyframes matter-form { 0% { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(6px); } 40% { filter: blur(2px); } 70% { filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+.title-label { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; display: flex; align-items: center; gap: 12px; }
+.title-label::before { content: ''; width: 32px; height: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.title-section h1 { font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.15; color: var(--text-bright); margin-bottom: 18px; letter-spacing: 0.02em; text-shadow: 0 0 40px rgba(16, 185, 129, 0.12); }
+.title-section .subtitle { font-size: 17px; color: var(--text-secondary); font-weight: 400; line-height: 1.75; max-width: 800px; }
+.meta-chips { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.meta-chip { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; background: var(--holo-cyan-dim); color: var(--text-dim); border: 1px solid var(--border-subtle); transition: all 0.4s; opacity: 0; animation: chip-appear 0.5s ease both; }
+.meta-chip:hover { border-color: var(--border-medium); color: var(--text-secondary); box-shadow: 0 0 12px rgba(0, 180, 255, 0.08); }
+.meta-chip:nth-child(1) { animation-delay: 0.6s; } .meta-chip:nth-child(2) { animation-delay: 0.7s; } .meta-chip:nth-child(3) { animation-delay: 0.8s; } .meta-chip:nth-child(4) { animation-delay: 0.9s; } .meta-chip:nth-child(5) { animation-delay: 1.0s; } .meta-chip:nth-child(6) { animation-delay: 1.1s; } .meta-chip:nth-child(7) { animation-delay: 1.2s; }
+@keyframes chip-appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* SECTIONS */
+.section { margin-bottom: 88px; }
+@supports (animation-timeline: view()) {
+  .section { animation: scroll-materialize both linear; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+  @keyframes scroll-materialize { 0% { opacity: 0; transform: translateY(30px) scale(0.97); filter: blur(4px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+}
+@supports not (animation-timeline: view()) {
+  .section { opacity: 0; transform: translateY(30px); transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94); filter: blur(4px); }
+  .section.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+.section-tag { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bg-deep); padding: 5px 16px; border-radius: 4px; white-space: nowrap; }
+.section-tag.accent-t { background: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+.section-tag.exercise-t { background: linear-gradient(135deg, var(--sql-select), var(--accent)); box-shadow: 0 0 16px var(--success-glow); }
+.section-tag.hub-t { background: var(--hub-color); box-shadow: 0 0 14px var(--hub-glow); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+h2 { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 600; line-height: 1.3; color: var(--text-bright); margin-bottom: 22px; letter-spacing: 0.01em; }
+h3 { font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 600; color: var(--text-bright); margin: 38px 0 14px; letter-spacing: 0.02em; }
+p { margin-bottom: 16px; }
+strong { font-weight: 600; color: var(--text-bright); }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; background: var(--accent-dim); color: var(--hub-text); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-subtle); }
+/* TIER BADGES */
+.tier-badge { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 10px; border-radius: 10px; margin-left: 12px; vertical-align: middle; }
+.tier-core { background: var(--hub-dim); color: var(--hub-text); border: 1px solid rgba(6, 182, 212, 0.2); }
+.tier-important { background: var(--etl-dim); color: var(--etl-text); border: 1px solid rgba(245, 158, 11, 0.2); }
+.tier-bonus { background: var(--sat-dim); color: var(--sat-text); border: 1px solid rgba(168, 85, 247, 0.15); opacity: 0.8; }
+
+/* PM PANELS */
+.pm-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 26px 30px; margin: 26px 0; position: relative; overflow: hidden; backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); transition: border-color 0.5s, box-shadow 0.5s, transform 0.5s; }
+.pm-panel:hover { border-color: var(--border-glow); box-shadow: 0 0 30px rgba(0, 180, 255, 0.06), inset 0 0 40px rgba(0, 180, 255, 0.02); transform: translateY(-1px); }
+.pm-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.35; }
+.pm-panel::after { content: ''; position: absolute; top: -1px; left: 0; width: 60px; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; animation: edge-charge 6s ease-in-out infinite; }
+@keyframes edge-charge { 0% { left: -60px; opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { left: calc(100% + 60px); opacity: 0; } }
+
+/* HOOK PANELS */
+.hook { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.hook::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+.hook::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 20px; pointer-events: none; opacity: 0.5; }
+.hook-default::before { background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.hook-default::after { background: linear-gradient(90deg, rgba(0,180,255,0.06), transparent); }
+.hook .hook-text { font-size: 17.5px; font-weight: 400; color: var(--text-bright); line-height: 1.75; margin: 0; }
+.hook-default .hook-text em { color: var(--hub-text); text-shadow: 0 0 12px var(--hub-glow); font-style: normal; }
+
+/* LANGUAGE BRIDGE */
+.language-bridge { background: var(--pm-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 24px 28px; margin: 26px 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.bridge-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--link-text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.bridge-label::before { content: ''; width: 16px; height: 2px; background: var(--link-color); box-shadow: 0 0 6px var(--link-glow); }
+.language-bridge p { font-size: 15px; color: var(--text-secondary); margin-bottom: 10px; }
+.language-bridge p:last-child { margin-bottom: 0; }
+.bridge-word { color: var(--link-text); font-weight: 600; }
+/* 4-LAYER EXPLANATION */
+.four-layers { margin: 30px 0; border: 1px solid var(--border-medium); border-radius: 16px; overflow: hidden; background: var(--pm-surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.four-layers-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px 12px; }
+.four-layers-title { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); }
+.layer-dots { display: flex; gap: 8px; }
+.layer-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--border-subtle); background: transparent; transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); cursor: pointer; }
+.layer-dot.l1 { border-color: var(--success-color); } .layer-dot.l2 { border-color: var(--hub-color); } .layer-dot.l3 { border-color: var(--link-color); } .layer-dot.l4 { border-color: var(--sat-color); }
+.layer-dot.active { transform: scale(1.4); }
+.layer-dot.l1.active { background: var(--success-color); box-shadow: 0 0 10px var(--success-glow); }
+.layer-dot.l2.active { background: var(--hub-color); box-shadow: 0 0 10px var(--hub-glow); }
+.layer-dot.l3.active { background: var(--link-color); box-shadow: 0 0 10px var(--link-glow); }
+.layer-dot.l4.active { background: var(--sat-color); box-shadow: 0 0 10px var(--sat-glow); }
+.layer { border-top: 1px solid var(--border-subtle); overflow: hidden; }
+.layer-header { display: flex; align-items: center; gap: 14px; padding: 14px 28px; cursor: pointer; user-select: none; transition: background 0.4s; }
+.layer-header:hover { background: rgba(0, 180, 255, 0.03); }
+.layer-badge { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 14px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.layer-1 .layer-badge { background: var(--success-color); color: var(--bg-deep); }
+.layer-2 .layer-badge { background: var(--hub-color); color: var(--bg-deep); }
+.layer-3 .layer-badge { background: var(--link-color); color: var(--bg-deep); }
+.layer-4 .layer-badge { background: var(--sat-color); color: var(--bg-deep); }
+.layer-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); flex: 1; }
+.layer-toggle { font-size: 12px; color: var(--text-dim); transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.layer.open .layer-toggle { transform: rotate(180deg); }
+.layer-content { max-height: 0; overflow: hidden; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.layer.open .layer-content { max-height: 600px; }
+.layer-content-inner { padding: 0 28px 22px; font-size: 15px; line-height: 1.8; color: var(--text-secondary); animation: layer-fade 0.5s ease; }
+@keyframes layer-fade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.layer-content-inner p { margin-bottom: 10px; font-size: 15px; }
+.layer-content-inner p:last-child { margin-bottom: 0; }
+/* DATA TABLES */
+.data-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; margin: 26px 0; overflow: hidden; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; }
+.data-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3; }
+.data-panel-header { padding: 12px 24px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); }
+.data-panel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; animation: dot-glow 3s ease-in-out infinite; }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+.data-panel-dot.hub { background: var(--hub-color); box-shadow: 0 0 8px var(--hub-color); }
+.data-panel-dot.result { background: var(--sql-select); box-shadow: 0 0 8px var(--sql-select); }
+.data-panel-title { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; flex: 1; }
+.data-panel-title.snow-title { color: var(--snow-text); }
+.data-panel-title.result-title { color: var(--sql-select); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.data-table td { font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 10px 16px; border-bottom: 1px solid rgba(0, 180, 255, 0.04); color: var(--text-secondary); transition: background 0.3s; }
+.data-table tr:hover td { background: rgba(0, 180, 255, 0.03); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table td.pk { color: var(--hub-text); font-weight: 500; }
+.data-table td.dbt-val { color: var(--dbt-text); font-weight: 500; }
+.data-table td.etl-val { color: var(--etl-text); font-weight: 500; }
+.data-table td.val { color: var(--text-secondary); }
+/* CONCEPT CALLOUT */
+.concept-callout { background: var(--accent-bg); border: 1px solid rgba(251, 191, 36, 0.12); border-radius: 14px; padding: 22px 26px; margin: 28px 0; position: relative; overflow: hidden; }
+.concept-callout::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent-color); box-shadow: 0 0 8px var(--accent-glow); border-radius: 3px 0 0 3px; }
+.concept-callout::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50px; background: linear-gradient(90deg, rgba(251,191,36,0.04), transparent); pointer-events: none; }
+.concept-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-color); margin-bottom: 10px; text-shadow: 0 0 10px var(--accent-glow); }
+.concept-callout blockquote { font-size: 15px; color: var(--text-bright); font-weight: 400; margin: 0; line-height: 1.75; font-style: italic; border: none; padding: 0; }
+
+/* CONTRASTIVE PANEL */
+.contrast-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 26px 0; border: 1px solid var(--border-medium); border-radius: 14px; overflow: hidden; background: var(--pm-surface); }
+.contrast-side { padding: 24px 26px; }
+.contrast-side:first-child { border-right: 1px solid var(--border-subtle); }
+.contrast-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+.contrast-side p { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+.contrast-side p:last-child { margin-bottom: 0; }
+
+/* DISAMBIGUATION PANEL */
+.disambig-panel { border: 2px solid rgba(245, 158, 11, 0.2); border-radius: 16px; padding: 28px 30px; margin: 30px 0; background: var(--pm-surface); position: relative; overflow: hidden; }
+.disambig-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, var(--etl-color), transparent); opacity: 0.4; }
+.disambig-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--etl-text); margin-bottom: 16px; text-shadow: 0 0 10px var(--etl-glow); }
+.disambig-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; }
+.disambig-item { padding: 16px 18px; border-radius: 10px; }
+.disambig-item h4 { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.disambig-item p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+/* CODE BLOCKS */
+.code-panel { background: rgba(2, 6, 14, 0.9); border: 1px solid var(--border-subtle); border-radius: 12px; margin: 22px 0; overflow: hidden; }
+.code-header { padding: 8px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.code-dot { width: 7px; height: 7px; border-radius: 50%; }
+.code-dot.r { background: #ef4444; } .code-dot.y { background: #f59e0b; } .code-dot.g { background: #22c55e; }
+.code-filename { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); margin-left: 8px; }
+.code-body { padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; color: var(--text-secondary); white-space: pre-wrap; }
+
+/* EXPLORE MORE */
+.explore-opener { display: flex; align-items: center; gap: 10px; padding: 12px 18px; margin: 24px 0 0; background: rgba(10, 25, 47, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.12); border-radius: 12px; cursor: pointer; transition: all 0.35s ease; user-select: none; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 180, 255, 0.15); }
+.explore-opener:hover { background: rgba(10, 25, 47, 0.85); border-color: var(--accent); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 180, 255, 0.1); transform: translateY(-1px); }
+.explore-opener .explore-icon { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--accent); flex-shrink: 0; transition: transform 0.35s ease, background 0.35s ease; }
+.explore-opener.open .explore-icon { transform: rotate(45deg); background: var(--accent); color: var(--bg-deep); }
+.explore-opener .explore-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: color 0.3s ease; }
+.explore-opener:hover .explore-label { color: var(--text-primary); }
+.explore-opener .explore-hint { font-family: 'Orbitron', monospace; font-size: 7px; font-weight: 600; letter-spacing: 0.12em; color: var(--accent); opacity: 0.5; margin-left: auto; transition: opacity 0.3s ease; }
+.explore-opener:hover .explore-hint { opacity: 1; }
+.explore-panel { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.explore-panel.open { max-height: 800px; }
+.explore-panel-inner { padding: 20px 22px 16px; margin: 6px 0 20px; background: rgba(10, 25, 47, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.08); border-radius: 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 180, 255, 0.1); animation: explore-slide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes explore-slide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.explore-panel-inner p { font-size: 14px; line-height: 1.65; color: var(--text-secondary); margin: 0 0 10px; }
+.explore-panel-inner p:last-child { margin: 0; }
+.explore-panel-inner strong { color: var(--text-primary); }
+/* EXERCISE */
+.exercise-section { background: var(--pm-surface); border: 2px solid var(--sql-select); border-radius: 18px; padding: 34px; margin: 52px 0; position: relative; overflow: hidden; box-shadow: 0 0 35px var(--sql-select-glow), 0 0 70px rgba(34,197,94,0.04); }
+.exercise-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--sql-select), transparent); animation: exercise-glow 4s ease-in-out infinite; }
+@keyframes exercise-glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+.exercise-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sql-select); margin-bottom: 16px; text-shadow: 0 0 10px var(--sql-select-glow); }
+.exercise-section h2 { font-size: 22px; margin-bottom: 10px; }
+.match-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 1px solid var(--border-subtle); border-radius: 10px; margin: 8px 0; }
+.match-label { font-size: 14px; color: var(--text-bright); min-width: 180px; flex-shrink: 0; }
+.match-select { flex: 1; font-family: 'Exo 2', sans-serif; font-size: 13px; background: rgba(2, 6, 14, 0.8); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 8px 12px; color: var(--text-primary); outline: none; cursor: pointer; transition: border-color 0.3s; }
+.match-select:focus { border-color: var(--accent); }
+.match-select option { background: var(--bg-deep); color: var(--text-primary); }
+.match-feedback { font-size: 12px; min-width: 20px; text-align: center; }
+.check-btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sql-select); background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 10px; padding: 10px 24px; cursor: pointer; margin-top: 14px; transition: all 0.4s; }
+.check-btn:hover { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.45); box-shadow: 0 0 20px rgba(34,197,94,0.2); }
+.feedback { margin-top: 14px; padding: 16px 20px; border-radius: 12px; font-size: 14px; display: none; animation: feedback-appear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes feedback-appear { from { opacity: 0; transform: translateY(-10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.feedback.correct { display: block; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); color: var(--sql-select); }
+.feedback.incorrect { display: block; background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); color: #f97316; }
+
+/* PIPELINE FLOW */
+.pipeline-flow { display: flex; align-items: center; gap: 0; margin: 30px 0; padding: 20px; overflow-x: auto; }
+.pipeline-node { padding: 12px 16px; border-radius: 10px; font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; text-align: center; white-space: nowrap; min-width: 80px; border: 1px solid; }
+.pipeline-arrow { font-size: 16px; color: var(--text-dim); padding: 0 4px; flex-shrink: 0; }
+
+/* COMPLETION */
+.completion-banner { display: none; background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.06)); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 14px; padding: 24px 28px; margin-top: 28px; text-align: center; animation: matter-form 0.8s ease forwards; }
+.completion-banner h3 { font-family: 'Orbitron', sans-serif; font-size: 18px; color: var(--sql-select); margin-bottom: 8px; text-shadow: 0 0 15px var(--sql-select-glow); }
+.completion-banner p { font-size: 14px; color: var(--text-secondary); margin: 0; }
+
+/* CHUNK MILESTONE */
+.chunk-milestone { margin: 3rem auto; padding: 1.5rem 2rem; max-width: 600px; text-align: center; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.chunk-milestone .milestone-accomplished { font-family: 'Exo 2', sans-serif; font-size: 1.1rem; color: var(--text-bright); margin: 0 0 0.5rem 0; }
+.chunk-milestone .milestone-permission { font-family: 'Exo 2', sans-serif; font-size: 0.85rem; color: var(--text-dim); margin: 0; font-style: italic; }
+.chunk-milestone .milestone-progress { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 0.75rem; }
+
+/* QUERY BUILDER */
+.query-builder { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+.query-step { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); }
+.query-step:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.query-step-label { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem; }
+.query-step-prompt { font-family: 'Exo 2', sans-serif; color: var(--text-secondary); margin-bottom: 0.75rem; }
+.query-accumulated { background: rgba(0, 0, 0, 0.3); border-left: 2px solid var(--accent); padding: 0.75rem 1rem; margin-bottom: 0.75rem; font-family: 'JetBrains Mono', 'Share Tech Mono', monospace; font-size: 0.85rem; color: var(--text-dim); white-space: pre-wrap; border-radius: 0 8px 8px 0; }
+.query-accumulated:empty { display: none; }
+
+.tutorial-footer { margin-top: 80px; padding: 24px 0; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+
+/* AMBIENT + PARALLAX */
+.ambient-glow { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 0; transition: background 1.5s ease; background: radial-gradient(ellipse 600px 400px at 15% 20%, var(--ambient-c1, rgba(16, 185, 129, 0.06)) 0%, transparent 70%), radial-gradient(ellipse 500px 500px at 85% 60%, var(--ambient-c2, rgba(139, 92, 246, 0.04)) 0%, transparent 70%), radial-gradient(ellipse 400px 300px at 50% 90%, var(--ambient-c3, rgba(245, 158, 11, 0.03)) 0%, transparent 70%); }
+.parallax-layer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape.shape-1 { width: 300px; height: 300px; top: 10%; left: 5%; }
+.depth-shape.shape-2 { width: 200px; height: 200px; top: 40%; right: 10%; }
+.depth-shape.shape-3 { width: 250px; height: 250px; top: 70%; left: 60%; }
+.depth-shape.shape-4 { width: 180px; height: 180px; top: 30%; left: 40%; }
+/* WORD REVEAL */
+.hook-text .word { opacity: 0.2; transition: opacity 0.25s ease; }
+.section.visible .hook-text .word, .hook-text .word.lit { opacity: 1; }
+@supports (animation-timeline: view()) {
+  .section h2 { background: linear-gradient(90deg, var(--text-bright) 0%, var(--text-bright) 50%, var(--text-dim) 50.5%, var(--text-dim) 100%); background-size: 200% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: heading-sweep both linear; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+  @keyframes heading-sweep { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+}
+
+@supports not (animation-timeline: view()) {
+  .section .data-table tr { opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  .section.visible .data-table tr { opacity: 1; transform: translateY(0); }
+  .section.visible .data-table tr:nth-child(1) { transition-delay: 0ms; } .section.visible .data-table tr:nth-child(2) { transition-delay: 60ms; } .section.visible .data-table tr:nth-child(3) { transition-delay: 120ms; } .section.visible .data-table tr:nth-child(4) { transition-delay: 180ms; } .section.visible .data-table tr:nth-child(5) { transition-delay: 240ms; } .section.visible .data-table tr:nth-child(6) { transition-delay: 300ms; }
+}
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .container { padding: 88px 18px 100px; }
+  .title-section h1 { font-size: 28px; }
+  h2 { font-size: 20px; }
+  .pm-panel { padding: 20px 22px; }
+  .hook { padding: 22px 24px; }
+  .exercise-section { padding: 24px 20px; }
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .contrast-panel { grid-template-columns: 1fr; }
+  .contrast-side:first-child { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+  .disambig-grid { grid-template-columns: 1fr; }
+  .disambig-vs { padding: 8px 0; }
+  .pipeline-flow { flex-wrap: wrap; justify-content: center; }
+  .match-row { flex-wrap: wrap; }
+  .match-label { min-width: 140px; }
+  .quest-log { width: 160px; top: 60px; right: 8px; font-size: 0.8rem; }
+  .inventory-toolbar { gap: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .scroll-zone { grid-template-columns: 1fr !important; display: block !important; }
+  .scroll-zone > .pin-spacer { display: block !important; width: 100% !important; position: relative !important; }
+  .scroll-zone-visual { position: sticky !important; top: 56px !important; width: 100% !important; max-height: 28vh !important; overflow: hidden !important; z-index: 10 !important; }
+  .scroll-zone-visual .entity-diagram, .scroll-zone-visual svg { font-size: 0.6rem !important; }
+  .scroll-zone-content { width: 100% !important; }
+  .scroll-zone-step { min-height: auto !important; padding: 1rem 0 !important; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.1ms !important; }
+  .section { opacity: 1; transform: none; filter: none; }
+  .title-section { opacity: 1; animation: none; }
+  .nav-node { opacity: 1; }
+  .meta-chip { opacity: 1; }
+  .lcars-seg { opacity: 1; }
+  .hook-text .word { opacity: 1; }
+  .data-table tr { opacity: 1; transform: none; }
+  .ambient-glow { transition: none; }
+  .section h2 { -webkit-text-fill-color: var(--text-bright); background: none; }
+}
+/* Layout compensation removed — panels are draggable, no fixed offset needed */
+/* ═══ DRAGGABLE PANELS ═══ */
+.draggable-panel { cursor: grab; user-select: none; }
+.draggable-panel.dragging { cursor: grabbing; transition: none !important; z-index: 200 !important; }
+.drag-handle { cursor: grab; }
+.dragging .drag-handle { cursor: grabbing; }
+
+/* ═══ QUEST LOG (floating panel, top-right) ═══ */
+.quest-log {
+  position: fixed; top: 126px; right: 12px; z-index: 90;
+  width: 200px; max-height: 400px;
+  background: rgba(10,22,40,0.85); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 12px;
+  font-family: 'Exo 2', sans-serif; transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.quest-log-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; cursor: pointer;
+  border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.quest-log-icon { font-size: 1.2em; }
+.quest-log-title { flex: 1; color: var(--text-bright); font-weight: 600; font-size: 0.9rem; }
+.quest-log-progress { color: var(--accent); font-family: 'Orbitron', sans-serif; font-size: 0.8rem; }
+.quest-log-toggle { color: var(--text-dim); transition: transform 0.3s; }
+.quest-log.collapsed .quest-log-toggle { transform: rotate(-90deg); }
+.quest-log-body { overflow: hidden; transition: max-height 0.4s ease; max-height: 400px; }
+.quest-log.collapsed .quest-log-body { max-height: 0; }
+.quest-log-list { list-style: none; padding: 8px 12px; margin: 0; }
+.quest-log-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; margin: 2px 0; border-radius: 6px;
+  cursor: pointer; transition: background 0.2s;
+  font-size: 0.85rem; color: var(--text-secondary);
+  border-left: 2px solid transparent;
+}
+.quest-log-hint {
+  margin: 0; padding: 4px 12px 2px; font-size: 0.65rem; color: var(--text-dim);
+  font-style: italic; opacity: 0.7;
+}
+.quest-log-item:hover { background: rgba(0,180,255,0.08); }
+.quest-log-item.active { border-left-color: var(--accent); color: var(--text-bright); }
+.quest-log-item.completed { opacity: 0.5; text-decoration: line-through; }
+@keyframes quest-check-flash {
+  0% { background: rgba(48,209,88,0.3); }
+  100% { background: transparent; }
+}
+.quest-log-item.just-completed { animation: quest-check-flash 1.5s ease-out; }
+.quest-check { font-size: 0.9em; width: 20px; text-align: center; }
+
+/* ═══ ACHIEVEMENT TOAST (slide-in from right) ═══ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* ═══ INVENTORY TOOLBAR (bottom fixed) ═══ */
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim); font-family: 'Orbitron', sans-serif; }
+
+/* Achievements button + panel */
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+.achievement-slot .slot-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;
+}
+
+/* Loot drop toast */
+.loot-toast {
+  position: fixed; bottom: 80px; left: 16px;
+  z-index: 200; padding: 12px 24px; border-radius: 10px;
+  background: rgba(10,22,40,0.9); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.3);
+  display: flex; align-items: center; gap: 10px;
+  opacity: 0; transition: all 0.4s ease; pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0,180,255,0.2);
+}
+.loot-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.loot-icon { font-size: 1.2em; }
+.loot-text { font-size: 0.85rem; color: var(--text-bright); }
+
+/* ═══ SCROLL ZONE (sticky visual + scrolling text) ═══ */
+.scroll-zone {
+  display: grid; grid-template-columns: 42% 1fr; gap: 1.5rem;
+  padding: 2rem 0; min-height: 80vh; position: relative;
+}
+.scroll-zone-visual {
+  position: sticky; top: 100px;
+  height: fit-content; align-self: start;
+  min-width: 0; overflow: visible;
+  z-index: 10;
+}
+/* GSAP pin-spacer wraps the visual — force it into the grid column */
+.scroll-zone > .pin-spacer {
+  grid-column: 1; min-width: 0 !important;
+  flex: none !important; width: 100% !important;
+}
+.scroll-zone-visual-frame {
+  position: absolute; top: 0; left: 0; width: 100%; opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.scroll-zone-visual-frame:first-child { position: relative; opacity: 1; }
+.scroll-zone-content { grid-column: 2; min-width: 0; }
+.scroll-zone-step {
+  min-height: 40vh; padding: 2rem 0;
+  opacity: 0.4; transition: opacity 0.4s ease;
+}
+.scroll-zone-step.active { opacity: 1; }
+
+/* ═══ APPLE ACCORDION ═══ */
+.apple-accordion { margin: 1.5rem 0; }
+.apple-accordion-item {
+  border-radius: 12px; margin-bottom: 8px; overflow: hidden;
+  background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);
+  transition: border-color 0.3s;
+}
+.apple-accordion-item.open { border-color: rgba(0,180,255,0.2); }
+.apple-accordion-trigger {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px; cursor: pointer; width: 100%;
+  background: none; border: none; color: var(--text-bright);
+  font-family: 'Exo 2', sans-serif; font-size: 0.95rem; font-weight: 500;
+  text-align: left;
+}
+.apple-accordion-trigger:hover { background: rgba(0,180,255,0.05); }
+.apple-accordion-icon {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 1.5px solid var(--text-dim); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 0.8rem; color: var(--text-dim); transition: all 0.3s;
+  flex-shrink: 0;
+}
+.apple-accordion-item.open .apple-accordion-icon {
+  border-color: var(--accent); color: var(--accent); transform: rotate(45deg);
+}
+.apple-accordion-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 18px;
+}
+.apple-accordion-item.open .apple-accordion-body { padding: 0 18px 18px; }
+
+/* ═══ WIPE REVEAL ═══ */
+.wipe-reveal {
+  clip-path: inset(0 0 100% 0);
+}
+@supports (animation-timeline: view()) {
+  .wipe-reveal {
+    animation: wipeIn linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 80%;
+  }
+}
+@keyframes wipeIn {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0% 0); }
+}
+
+/* ═══ HERO ZOOM ═══ */
+.hero-zoom {
+  height: 100vh; display: flex; align-items: center; justify-content: center;
+  overflow: visible; position: relative;
+}
+.hero-zoom-text {
+  font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 6vw, 5rem);
+  font-weight: 800; text-align: center;
+  background: linear-gradient(135deg, var(--accent), #00E5FF);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  will-change: transform, opacity;
+}
+
+/* ═══ MILESTONE ZOOM (crystallize settle) ═══ */
+.milestone-zoom {
+  height: 100vh; display: flex; align-items: center; justify-content: center;
+  overflow: visible; position: relative;
+}
+
+/* ═══ TIPPY.JS DARK THEME ═══ */
+.tippy-box[data-theme~='sv-dark'] {
+  background: rgba(10,22,40,0.95); backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 8px;
+  color: var(--text-secondary); font-family: 'Exo 2', sans-serif;
+  font-size: 0.8rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.tippy-box[data-theme~='sv-dark'] .tippy-arrow { color: rgba(10,22,40,0.95); }
+
+/* Chapter 12: Integration Day — Tutorial-Specific CSS */
+:root {
+  --mission-gold: #f59e0b;
+  --mission-gold-rgb: 245, 158, 11;
+  --mission-gold-glow: rgba(245, 158, 11, 0.25);
+  --mission-gold-dim: rgba(245, 158, 11, 0.08);
+
+  --create-cyan: #06b6d4;
+  --create-cyan-rgb: 6, 182, 212;
+  --create-cyan-glow: rgba(6, 182, 212, 0.25);
+  --create-cyan-dim: rgba(6, 182, 212, 0.08);
+
+  --insert-green: #22c55e;
+  --insert-green-rgb: 34, 197, 94;
+  --insert-green-glow: rgba(34, 197, 94, 0.25);
+  --insert-green-dim: rgba(34, 197, 94, 0.08);
+
+  --join-purple: #a855f7;
+  --join-purple-rgb: 168, 85, 247;
+  --join-purple-glow: rgba(168, 85, 247, 0.25);
+  --join-purple-dim: rgba(168, 85, 247, 0.08);
+
+  --dbt-blue: #64d2ff;
+  --dbt-blue-rgb: 100, 210, 255;
+  --dbt-blue-glow: rgba(100, 210, 255, 0.25);
+  --dbt-blue-dim: rgba(100, 210, 255, 0.08);
+
+  --payoff-gold: #ffd700;
+  --payoff-gold-rgb: 255, 215, 0;
+  --payoff-gold-glow: rgba(255, 215, 0, 0.25);
+  --payoff-gold-dim: rgba(255, 215, 0, 0.08);
+
+  --topic-glow: var(--mission-gold-rgb);
+}
+
+body::before {
+  background:
+    radial-gradient(ellipse at 20% 20%, var(--mission-gold-dim) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 40%, var(--create-cyan-dim) 0%, transparent 50%),
+    radial-gradient(ellipse at 30% 70%, var(--join-purple-dim) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 85%, var(--payoff-gold-dim) 0%, transparent 60%);
+}
+
+.lcars-flow-fill {
+  background: linear-gradient(90deg,
+    var(--mission-gold) 0%,
+    var(--create-cyan) 20%,
+    var(--insert-green) 40%,
+    var(--join-purple) 60%,
+    var(--dbt-blue) 80%,
+    var(--payoff-gold) 100%
+  );
+}
+
+/* === SECTION TAG VARIANTS === */
+.section-tag.mission-t { background: var(--mission-gold-dim); color: var(--mission-gold); border: 1px solid rgba(245, 158, 11, 0.2); }
+.section-tag.create-t { background: var(--create-cyan-dim); color: var(--create-cyan); border: 1px solid rgba(6, 182, 212, 0.2); }
+.section-tag.insert-t { background: var(--insert-green-dim); color: var(--insert-green); border: 1px solid rgba(34, 197, 94, 0.2); }
+.section-tag.join-t { background: var(--join-purple-dim); color: var(--join-purple); border: 1px solid rgba(168, 85, 247, 0.2); }
+.section-tag.dbt-t { background: var(--dbt-blue-dim); color: var(--dbt-blue); border: 1px solid rgba(100, 210, 255, 0.2); }
+.section-tag.payoff-t { background: var(--payoff-gold-dim); color: var(--payoff-gold); border: 1px solid rgba(255, 215, 0, 0.2); }
+
+/* === HOOK VARIANTS === */
+.hook-mission::before { background: var(--mission-gold); box-shadow: 0 0 8px var(--mission-gold-glow); }
+.hook-mission::after { background: linear-gradient(90deg, var(--mission-gold-glow), transparent); }
+.hook-mission .hook-text em { color: var(--mission-gold); text-shadow: 0 0 12px var(--mission-gold-glow); }
+
+.hook-create::before { background: var(--create-cyan); box-shadow: 0 0 8px var(--create-cyan-glow); }
+.hook-create::after { background: linear-gradient(90deg, var(--create-cyan-glow), transparent); }
+.hook-create .hook-text em { color: var(--create-cyan); text-shadow: 0 0 12px var(--create-cyan-glow); }
+
+.hook-insert::before { background: var(--insert-green); box-shadow: 0 0 8px var(--insert-green-glow); }
+.hook-insert::after { background: linear-gradient(90deg, var(--insert-green-glow), transparent); }
+.hook-insert .hook-text em { color: var(--insert-green); text-shadow: 0 0 12px var(--insert-green-glow); }
+
+.hook-join::before { background: var(--join-purple); box-shadow: 0 0 8px var(--join-purple-glow); }
+.hook-join::after { background: linear-gradient(90deg, var(--join-purple-glow), transparent); }
+.hook-join .hook-text em { color: var(--join-purple); text-shadow: 0 0 12px var(--join-purple-glow); }
+
+.hook-dbt::before { background: var(--dbt-blue); box-shadow: 0 0 8px var(--dbt-blue-glow); }
+.hook-dbt::after { background: linear-gradient(90deg, var(--dbt-blue-glow), transparent); }
+.hook-dbt .hook-text em { color: var(--dbt-blue); text-shadow: 0 0 12px var(--dbt-blue-glow); }
+
+.hook-payoff::before { background: var(--payoff-gold); box-shadow: 0 0 8px var(--payoff-gold-glow); }
+.hook-payoff::after { background: linear-gradient(90deg, var(--payoff-gold-glow), transparent); }
+.hook-payoff .hook-text em { color: var(--payoff-gold); text-shadow: 0 0 12px var(--payoff-gold-glow); }
+
+/* === DATA PANEL VARIANTS === */
+.data-panel-dot.mission-dot { background: var(--mission-gold); box-shadow: 0 0 6px var(--mission-gold-glow); }
+.data-panel-title.mission-title { color: var(--mission-gold); }
+.data-panel-dot.create-dot { background: var(--create-cyan); box-shadow: 0 0 6px var(--create-cyan-glow); }
+.data-panel-title.create-title { color: var(--create-cyan); }
+.data-panel-dot.insert-dot { background: var(--insert-green); box-shadow: 0 0 6px var(--insert-green-glow); }
+.data-panel-title.insert-title { color: var(--insert-green); }
+.data-panel-dot.join-dot { background: var(--join-purple); box-shadow: 0 0 6px var(--join-purple-glow); }
+.data-panel-title.join-title { color: var(--join-purple); }
+.data-panel-dot.dbt-dot { background: var(--dbt-blue); box-shadow: 0 0 6px var(--dbt-blue-glow); }
+.data-panel-title.dbt-title { color: var(--dbt-blue); }
+.data-panel-dot.payoff-dot { background: var(--payoff-gold); box-shadow: 0 0 6px var(--payoff-gold-glow); }
+.data-panel-title.payoff-title { color: var(--payoff-gold); }
+
+/* === DEPTH SHAPES === */
+.depth-shape.shape-1 { background: radial-gradient(circle, var(--create-cyan), transparent 70%); }
+.depth-shape.shape-2 { background: radial-gradient(circle, var(--join-purple), transparent 70%); }
+.depth-shape.shape-3 { background: radial-gradient(circle, var(--payoff-gold), transparent 70%); }
+
+/* === SQL SYNTAX HIGHLIGHTING === */
+.sql-block {
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem 1.2rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  color: #e2e8f0;
+}
+.sql-block .kw, .sql-answer .kw { color: var(--create-cyan); font-weight: 500; }
+.sql-block .name, .sql-answer .name { color: var(--dbt-blue); }
+.sql-block .str, .sql-answer .str { color: var(--mission-gold); }
+.sql-block .type, .sql-answer .type { color: var(--insert-green); }
+.sql-block .constraint, .sql-answer .constraint { color: var(--payoff-gold); }
+
+/* === KEYWORD VALIDATION === */
+.keyword-result { margin-top: 0.75rem; display: none; }
+.keyword-hit { color: var(--success-color); font-family: 'Exo 2', sans-serif; font-size: 0.85rem; padding: 2px 0; }
+.keyword-miss { color: #ff6b6b; font-family: 'Exo 2', sans-serif; font-size: 0.85rem; padding: 2px 0; }
+
+/* === WRITE ANSWER REVEALS === */
+.write-answer {
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(48, 209, 88, 0.06);
+  border: 1px solid rgba(48, 209, 88, 0.25);
+  border-radius: 6px;
+}
+.write-answer-label {
+  font-family: 'Orbitron', 'Exo 2', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--success-color);
+  margin-bottom: 8px;
+}
+.sql-answer {
+  font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* === MATCH ROW STACKING (for long labels) === */
+.match-row { flex-direction: column; align-items: stretch; }
+.match-label { flex: none; }
+.match-select { flex: none; width: 100%; }
+
+/* === ENTITY DIAGRAM === */
+.entity-diagram { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1rem 0; }
+.entity-row { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+.entity-box { background: #1a1d2e; border: 2px solid var(--border-subtle); border-radius: 8px; padding: 0.75rem 1.25rem; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; min-width: 140px; }
+.entity-box.hub-entity { border-color: rgba(6, 182, 212, 0.7); color: var(--create-cyan); }
+.entity-box.link-entity { border-color: rgba(245, 158, 11, 0.7); color: var(--mission-gold); }
+.entity-box.sat-entity { border-color: rgba(168, 85, 247, 0.7); color: var(--join-purple); }
+.entity-arrow { color: var(--text-dim); font-size: 1.2rem; }
+.entity-cols { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.3rem; }
+
+/* === SIDE BY SIDE PANEL === */
+.side-by-side { display: flex; gap: 1.5rem; margin: 1.5rem 0; }
+.side-by-side .pm-panel { flex: 1; min-width: 0; }
+@media (max-width: 768px) {
+  .side-by-side { flex-direction: column; }
+}
+
+/* === MILESTONE GLOW (per-chunk color) === */
+.chunk-milestone.chunk-1 { border-color: rgba(6, 182, 212, 0.15); }
+.chunk-milestone.chunk-2 { border-color: rgba(168, 85, 247, 0.15); }
+.chunk-milestone.chunk-3 { border-color: rgba(255, 215, 0, 0.15); }
+
+/* === PER-CHUNK GRADIENT TEXT === */
+.chunk-1 .milestone-accomplished {
+  background: linear-gradient(135deg, var(--create-cyan), #67e8f9);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.chunk-2 .milestone-accomplished {
+  background: linear-gradient(135deg, var(--join-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.chunk-3 .milestone-accomplished {
+  background: linear-gradient(135deg, var(--payoff-gold), #fef08a);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* === ENTITY HIGHLIGHT STATES (scroll zone) === */
+.entity-active { border-color: currentColor !important; }
+.entity-dim { opacity: 0.4; }
+.hub-entity.entity-active { box-shadow: 0 0 12px var(--create-cyan-glow); }
+.link-entity.entity-active { box-shadow: 0 0 12px var(--mission-gold-glow); }
+.sat-entity.entity-active { box-shadow: 0 0 12px var(--join-purple-glow); }
+
+/* === SCROLL ZONE OVERLAP FIX === */
+/* The sticky visual (left 42%) stays pinned while full-width panels below
+   the zone scroll underneath it, causing overlap. JS in scroll-effects.js
+   fades the visual out before overlap occurs. This transition smooths it. */
+.scroll-zone {
+  margin-bottom: 6rem;
+}
+.scroll-zone-visual {
+  transition: opacity 0.3s ease;
+}
+</style>
+</head>
+<body data-chapter="12" style="padding-top: 52px;">
+<canvas id="particle-field"></canvas>
+<div class="scanline-overlay"></div>
+<div class="scan-bar"></div>
+<div class="ambient-glow" id="ambient-glow"></div>
+<div class="parallax-layer" id="parallax-layer">
+  <div class="depth-shape shape-1"></div>
+  <div class="depth-shape shape-2"></div>
+  <div class="depth-shape shape-3"></div>
+  <div class="depth-shape shape-4"></div>
+</div>
+
+<div class="page-content">
+
+<!-- Chapter 12: Integration Day — Content -->
+
+<nav class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('s1')">1</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s2')">2</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s3')">3</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s4')">4</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s5')">5</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s6')">6</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">The Mission</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: #f59e0b" onclick="scrollToSection('s1')">1</div>
+        <div class="lcars-seg" style="--seg-color: #06b6d4" onclick="scrollToSection('s2')">2</div>
+        <div class="lcars-seg" style="--seg-color: #22c55e" onclick="scrollToSection('s3')">3</div>
+        <div class="lcars-seg" style="--seg-color: #a855f7" onclick="scrollToSection('s4')">4</div>
+        <div class="lcars-seg" style="--seg-color: #64d2ff" onclick="scrollToSection('s5')">5</div>
+        <div class="lcars-seg" style="--seg-color: #ffd700" onclick="scrollToSection('s6')">6</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</nav>
+
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="title-section">
+  <div class="title-label">CHAPTER 12 // INTEGRATION DAY</div>
+  <h1>From Pieces<br>to a Working Vault</h1>
+  <p class="subtitle">Build it. Load it. Query it. Then see how the automation does the same thing.</p>
+  <div class="meta-chips">
+    <span class="meta-chip">Integration</span>
+    <span class="meta-chip">CREATE TABLE</span>
+    <span class="meta-chip">INSERT</span>
+    <span class="meta-chip">JOIN</span>
+    <span class="meta-chip">dbt Reading</span>
+  </div>
+</div>
+
+
+<!-- ═══ HERO ZOOM ═══ -->
+<div class="hero-zoom">
+  <div class="hero-zoom-text">From Pieces to a Working Vault</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 1 — THE MISSION
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s1" data-label="The Mission" data-color="245,158,11">
+  <div class="section-header">
+    <div class="section-tag mission-t">THE MISSION</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-mission">
+    <p class="hook-text">You know what Hubs are. You know what Satellites track. You know how Links connect them. Today you <em>build all five</em> and <em>wire them together</em>.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">LANGUAGE BRIDGE</div>
+    <div class="bridge-content">
+      <p><strong>&ldquo;Integration&rdquo;</strong> &mdash; from Latin <em>integrare</em>, to make whole. The parts exist. Today they become one working system.</p>
+    </div>
+  </div>
+
+  <div class="is-isnot">
+    <div class="is-isnot-header">IS / IS NOT &mdash; Integration Day</div>
+    <div class="is-isnot-body">
+      <div class="is-item is-yes"><strong>IS:</strong> Integration Day IS building a complete working Data Vault from scratch.</div>
+      <div class="is-item is-no"><strong>IS NOT:</strong> It IS NOT learning new SQL &mdash; every concept was covered in Sessions 3, 4, and 9.</div>
+    </div>
+  </div>
+
+  <!-- Entity Diagram -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">THE FIVE TABLES</div>
+    <div class="pm-panel-body">
+      <div class="entity-diagram">
+        <div class="entity-row">
+          <div class="entity-box hub-entity">Hub_Character<div class="entity-cols">4 columns</div></div>
+          <div class="entity-arrow">&harr;</div>
+          <div class="entity-box sat-entity">Sat_Character_Details<div class="entity-cols">7 columns</div></div>
+        </div>
+        <div class="entity-row">
+          <div class="entity-box hub-entity">Hub_Faction<div class="entity-cols">4 columns</div></div>
+          <div class="entity-arrow">&harr;</div>
+          <div class="entity-box sat-entity">Sat_Faction_Details<div class="entity-cols">7 columns</div></div>
+        </div>
+        <div class="entity-row">
+          <div class="entity-box hub-entity">Hub_Character</div>
+          <div class="entity-arrow">&rarr;</div>
+          <div class="entity-box link-entity">Link_Character_Faction<div class="entity-cols">5 columns</div></div>
+          <div class="entity-arrow">&larr;</div>
+          <div class="entity-box hub-entity">Hub_Faction</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSERT syntax bridge -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">NEW SYNTAX &mdash; INSERT INTO</div>
+    <div class="pm-panel-body">
+      <div class="sql-block"><span class="kw">INSERT INTO</span> <span class="name">table_name</span> (<span class="name">column1</span>, <span class="name">column2</span>)
+<span class="kw">VALUES</span> (<span class="str">'value1'</span>, <span class="str">'value2'</span>);</div>
+      <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+        <strong style="color: var(--insert-green);">INSERT INTO</strong> = put this row into the table.<br>
+        <strong style="color: var(--create-cyan);">Parentheses after table name</strong> = which columns you&rsquo;re filling.<br>
+        <strong style="color: var(--mission-gold);">VALUES</strong> = the actual data you&rsquo;re putting in.<br>
+        <strong style="color: var(--join-purple);">Positional mapping</strong> = first column gets first value, second gets second, and so on.
+      </p>
+    </div>
+  </div>
+
+  <!-- Worked Example: Hub_Character CREATE TABLE -->
+  <div class="worked-example">
+    <div class="worked-example-label">WORKED EXAMPLE</div>
+    <p class="scenario">&ldquo;Write the CREATE TABLE statement for Hub_Character &mdash; a Hub tracking character business keys.&rdquo;</p>
+    <div class="pm-panel" style="margin: 1rem 0;">
+      <div class="pm-panel-body">
+        <div class="sql-block"><span class="kw">CREATE TABLE</span> <span class="name">Hub_Character</span> (
+    <span class="name">hub_character_hk</span>    <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">load_date</span>           <span class="type">TIMESTAMP</span>    <span class="constraint">NOT NULL</span>,
+    <span class="name">record_source</span>       <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+    <span class="name">business_key</span>        <span class="type">VARCHAR(255)</span> <span class="constraint">NOT NULL</span>,
+    <span class="kw">PRIMARY KEY</span> (<span class="name">hub_character_hk</span>)
+);</div>
+      </div>
+    </div>
+    <p class="reasoning">
+      <strong>hub_character_hk</strong> &mdash; the hash key. CHAR(64) because SHA2 produces a 64-character hex string. NOT NULL because every row must have an identity.<br>
+      <strong>load_date</strong> &mdash; when this row arrived. TIMESTAMP type. NOT NULL because every row must be time-stamped.<br>
+      <strong>record_source</strong> &mdash; where this row came from. VARCHAR(100) for flexibility. NOT NULL because provenance is mandatory.<br>
+      <strong>business_key</strong> &mdash; the real-world identifier (e.g., a character name). VARCHAR(255). NOT NULL because the business key IS the reason the Hub exists.<br>
+      <strong>PRIMARY KEY</strong> &mdash; the hash key uniquely identifies each Hub row. One character, one row, forever.
+    </p>
+  </div>
+
+</div><!-- /section s1 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 2 — CREATE TABLE x5
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s2" data-label="CREATE TABLE" data-color="6,182,212">
+  <div class="section-header">
+    <div class="section-tag create-t">CREATE TABLE x5</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-create">
+    <p class="hook-text">Five tables. One dependency chain. You know the pattern &mdash; <em>write them from memory</em>.</p>
+  </div>
+
+  <div class="scroll-zone">
+    <!-- Sticky visual: entity diagram with progressive highlights -->
+    <div class="scroll-zone-visual">
+
+      <!-- Frame 1: Hub_Character highlighted -->
+      <div class="scroll-zone-visual-frame">
+        <div style="text-align: center; margin-bottom: 0.75rem; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 0.15em; color: var(--create-cyan);">BUILDING: HUBS</div>
+        <div class="entity-diagram">
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-active">Hub_Character<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-dim">Sat_Character_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Faction<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-dim">Sat_Faction_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Character</div>
+            <div class="entity-arrow">&rarr;</div>
+            <div class="entity-box link-entity entity-dim">Link_Character_Faction<div class="entity-cols">5 columns</div></div>
+            <div class="entity-arrow">&larr;</div>
+            <div class="entity-box hub-entity entity-dim">Hub_Faction</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frame 2: Hub_Faction highlighted -->
+      <div class="scroll-zone-visual-frame" style="opacity: 0;">
+        <div style="text-align: center; margin-bottom: 0.75rem; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 0.15em; color: var(--create-cyan);">BUILDING: HUBS</div>
+        <div class="entity-diagram">
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Character<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-dim">Sat_Character_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-active">Hub_Faction<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-dim">Sat_Faction_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Character</div>
+            <div class="entity-arrow">&rarr;</div>
+            <div class="entity-box link-entity entity-dim">Link_Character_Faction<div class="entity-cols">5 columns</div></div>
+            <div class="entity-arrow">&larr;</div>
+            <div class="entity-box hub-entity entity-dim">Hub_Faction</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frame 3: Link highlighted -->
+      <div class="scroll-zone-visual-frame" style="opacity: 0;">
+        <div style="text-align: center; margin-bottom: 0.75rem; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 0.15em; color: var(--mission-gold);">BUILDING: LINK</div>
+        <div class="entity-diagram">
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Character<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-dim">Sat_Character_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Faction<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-dim">Sat_Faction_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Character</div>
+            <div class="entity-arrow">&rarr;</div>
+            <div class="entity-box link-entity entity-active">Link_Character_Faction<div class="entity-cols">5 columns</div></div>
+            <div class="entity-arrow">&larr;</div>
+            <div class="entity-box hub-entity entity-dim">Hub_Faction</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frame 4: Sat_Character_Details highlighted -->
+      <div class="scroll-zone-visual-frame" style="opacity: 0;">
+        <div style="text-align: center; margin-bottom: 0.75rem; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 0.15em; color: var(--join-purple);">BUILDING: SATELLITES</div>
+        <div class="entity-diagram">
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Character<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-active">Sat_Character_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Faction<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-dim">Sat_Faction_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Character</div>
+            <div class="entity-arrow">&rarr;</div>
+            <div class="entity-box link-entity entity-dim">Link_Character_Faction<div class="entity-cols">5 columns</div></div>
+            <div class="entity-arrow">&larr;</div>
+            <div class="entity-box hub-entity entity-dim">Hub_Faction</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frame 5: Sat_Faction_Details highlighted -->
+      <div class="scroll-zone-visual-frame" style="opacity: 0;">
+        <div style="text-align: center; margin-bottom: 0.75rem; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 0.15em; color: var(--join-purple);">BUILDING: SATELLITES</div>
+        <div class="entity-diagram">
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Character<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-dim">Sat_Character_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Faction<div class="entity-cols">4 columns</div></div>
+            <div class="entity-arrow">&harr;</div>
+            <div class="entity-box sat-entity entity-active">Sat_Faction_Details<div class="entity-cols">7 columns</div></div>
+          </div>
+          <div class="entity-row">
+            <div class="entity-box hub-entity entity-dim">Hub_Character</div>
+            <div class="entity-arrow">&rarr;</div>
+            <div class="entity-box link-entity entity-dim">Link_Character_Faction<div class="entity-cols">5 columns</div></div>
+            <div class="entity-arrow">&larr;</div>
+            <div class="entity-box hub-entity entity-dim">Hub_Faction</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /scroll-zone-visual -->
+
+    <!-- Scrollable exercise steps -->
+    <div class="scroll-zone-content">
+
+      <!-- Write Exercise 1: Hub_Character -->
+      <div class="scroll-zone-step active">
+        <div class="write-exercise" id="write-1-container">
+          <h3>Write Exercise 1 &mdash; Hub_Character</h3>
+          <p>Write CREATE TABLE for Hub_Character. 4 columns, correct types, correct constraints, correct PK.</p>
+          <textarea class="sql-input" id="write-1-input" rows="8" placeholder="CREATE TABLE Hub_Character (&#10;    ...&#10;);"></textarea>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+            <button class="check-btn" onclick="checkKeywords(1)">CHECK KEYWORDS</button>
+            <button class="check-btn" onclick="showAnswer('write-1')" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+          </div>
+          <div class="keyword-result" id="write-1-keywords"></div>
+          <div class="write-answer" id="write-1-answer" style="display: none;">
+            <div class="write-answer-label">REFERENCE ANSWER</div>
+            <pre class="sql-answer"><span class="kw">CREATE TABLE</span> <span class="name">Hub_Character</span> (
+    <span class="name">hub_character_hk</span>    <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">load_date</span>           <span class="type">TIMESTAMP</span>    <span class="constraint">NOT NULL</span>,
+    <span class="name">record_source</span>       <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+    <span class="name">business_key</span>        <span class="type">VARCHAR(255)</span> <span class="constraint">NOT NULL</span>,
+    <span class="constraint">PRIMARY KEY</span> (<span class="name">hub_character_hk</span>)
+);</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Write Exercise 2: Hub_Faction -->
+      <div class="scroll-zone-step">
+        <div class="write-exercise" id="write-2-container">
+          <h3>Write Exercise 2 &mdash; Hub_Faction</h3>
+          <p>Same pattern, new entity. Write Hub_Faction.</p>
+          <textarea class="sql-input" id="write-2-input" rows="8" placeholder="CREATE TABLE Hub_Faction (&#10;    ...&#10;);"></textarea>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+            <button class="check-btn" onclick="checkKeywords(2)">CHECK KEYWORDS</button>
+            <button class="check-btn" onclick="showAnswer('write-2')" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+          </div>
+          <div class="keyword-result" id="write-2-keywords"></div>
+          <div class="write-answer" id="write-2-answer" style="display: none;">
+            <div class="write-answer-label">REFERENCE ANSWER</div>
+            <pre class="sql-answer"><span class="kw">CREATE TABLE</span> <span class="name">Hub_Faction</span> (
+    <span class="name">hub_faction_hk</span>      <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">load_date</span>           <span class="type">TIMESTAMP</span>    <span class="constraint">NOT NULL</span>,
+    <span class="name">record_source</span>       <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+    <span class="name">business_key</span>        <span class="type">VARCHAR(255)</span> <span class="constraint">NOT NULL</span>,
+    <span class="constraint">PRIMARY KEY</span> (<span class="name">hub_faction_hk</span>)
+);</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Write Exercise 3: Link_Character_Faction -->
+      <div class="scroll-zone-step">
+        <div class="write-exercise" id="write-3-container">
+          <h3>Write Exercise 3 &mdash; Link_Character_Faction</h3>
+          <p>The Link connects both Hubs. 5 columns: its own hash key, load_date, record_source, and two foreign hash keys.</p>
+          <textarea class="sql-input" id="write-3-input" rows="10" placeholder="CREATE TABLE Link_Character_Faction (&#10;    ...&#10;);"></textarea>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+            <button class="check-btn" onclick="checkKeywords(3)">CHECK KEYWORDS</button>
+            <button class="check-btn" onclick="showAnswer('write-3')" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+          </div>
+          <div class="keyword-result" id="write-3-keywords"></div>
+          <div class="write-answer" id="write-3-answer" style="display: none;">
+            <div class="write-answer-label">REFERENCE ANSWER</div>
+            <pre class="sql-answer"><span class="kw">CREATE TABLE</span> <span class="name">Link_Character_Faction</span> (
+    <span class="name">link_character_faction_hk</span>    <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">load_date</span>                    <span class="type">TIMESTAMP</span>    <span class="constraint">NOT NULL</span>,
+    <span class="name">record_source</span>                <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+    <span class="name">hub_character_hk</span>             <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">hub_faction_hk</span>               <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="constraint">PRIMARY KEY</span> (<span class="name">link_character_faction_hk</span>)
+);</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Write Exercise 4: Sat_Character_Details -->
+      <div class="scroll-zone-step">
+        <div class="write-exercise" id="write-4-container">
+          <h3>Write Exercise 4 &mdash; Sat_Character_Details</h3>
+          <p>Satellite for character_name, race, and level. Remember: composite PK, hash_diff, and nullable descriptive columns. No load_end_date.</p>
+          <textarea class="sql-input" id="write-4-input" rows="12" placeholder="CREATE TABLE Sat_Character_Details (&#10;    ...&#10;);"></textarea>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+            <button class="check-btn" onclick="checkKeywords(4)">CHECK KEYWORDS</button>
+            <button class="check-btn" onclick="showAnswer('write-4')" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+          </div>
+          <div class="keyword-result" id="write-4-keywords"></div>
+          <div class="write-answer" id="write-4-answer" style="display: none;">
+            <div class="write-answer-label">REFERENCE ANSWER</div>
+            <pre class="sql-answer"><span class="kw">CREATE TABLE</span> <span class="name">Sat_Character_Details</span> (
+    <span class="name">hub_character_hk</span>    <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">load_date</span>           <span class="type">TIMESTAMP</span>    <span class="constraint">NOT NULL</span>,
+    <span class="name">record_source</span>       <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+    <span class="name">hash_diff</span>           <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">character_name</span>      <span class="type">VARCHAR(255)</span>,
+    <span class="name">race</span>                <span class="type">VARCHAR(100)</span>,
+    <span class="name">level</span>               <span class="type">INTEGER</span>,
+    <span class="constraint">PRIMARY KEY</span> (<span class="name">hub_character_hk</span>, <span class="name">load_date</span>)
+);</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Write Exercise 5: Sat_Faction_Details -->
+      <div class="scroll-zone-step">
+        <div class="write-exercise" id="write-5-container">
+          <h3>Write Exercise 5 &mdash; Sat_Faction_Details</h3>
+          <p>Last one. Satellite for faction_name, hold, and alignment.</p>
+          <textarea class="sql-input" id="write-5-input" rows="12" placeholder="CREATE TABLE Sat_Faction_Details (&#10;    ...&#10;);"></textarea>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+            <button class="check-btn" onclick="checkKeywords(5)">CHECK KEYWORDS</button>
+            <button class="check-btn" onclick="showAnswer('write-5')" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+          </div>
+          <div class="keyword-result" id="write-5-keywords"></div>
+          <div class="write-answer" id="write-5-answer" style="display: none;">
+            <div class="write-answer-label">REFERENCE ANSWER</div>
+            <pre class="sql-answer"><span class="kw">CREATE TABLE</span> <span class="name">Sat_Faction_Details</span> (
+    <span class="name">hub_faction_hk</span>      <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">load_date</span>           <span class="type">TIMESTAMP</span>    <span class="constraint">NOT NULL</span>,
+    <span class="name">record_source</span>       <span class="type">VARCHAR(100)</span> <span class="constraint">NOT NULL</span>,
+    <span class="name">hash_diff</span>           <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    <span class="name">faction_name</span>        <span class="type">VARCHAR(255)</span>,
+    <span class="name">hold</span>                <span class="type">VARCHAR(100)</span>,
+    <span class="name">alignment</span>           <span class="type">VARCHAR(50)</span>,
+    <span class="constraint">PRIMARY KEY</span> (<span class="name">hub_faction_hk</span>, <span class="name">load_date</span>)
+);</pre>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /scroll-zone-content -->
+  </div><!-- /scroll-zone -->
+
+  <!-- Pattern callout -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">THE PATTERN</div>
+    <div class="pm-panel-body">
+      <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.7;">Two Hubs &mdash; same structure. Two Satellites &mdash; same structure. One Link &mdash; same structure. The patterns repeat. This is why datavault4dbt works.</p>
+    </div>
+  </div>
+
+</div><!-- /section s2 -->
+
+
+<!-- ═══ MILESTONE 1 ═══ -->
+<div class="milestone-zoom">
+  <div class="chunk-milestone chunk-1">
+    <p class="milestone-accomplished">Five tables built. The empty vault is ready.</p>
+    <p class="milestone-permission">You can stop here and it is a win.</p>
+    <p class="milestone-progress">Chunk 1 of 3 complete</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 3 — INSERT SAMPLE DATA
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s3" data-label="INSERT Data" data-color="34,197,94">
+  <div class="section-header">
+    <div class="section-tag insert-t">INSERT DATA</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-insert">
+    <p class="hook-text">The vault exists but it is <em>empty</em>. Time to put some Nords in it.</p>
+  </div>
+
+  <!-- Worked Example: Hub INSERT -->
+  <div class="worked-example">
+    <div class="worked-example-label">WORKED EXAMPLE</div>
+    <p class="scenario">&ldquo;Insert Ulfric Stormcloak into Hub_Character.&rdquo;</p>
+    <div class="pm-panel" style="margin: 1rem 0;">
+      <div class="pm-panel-body">
+        <div class="sql-block"><span class="kw">INSERT INTO</span> <span class="name">Hub_Character</span> (<span class="name">hub_character_hk</span>, <span class="name">load_date</span>, <span class="name">record_source</span>, <span class="name">business_key</span>)
+<span class="kw">VALUES</span> (
+    <span class="str">'a1b2c3d4e5f6...64chars...'</span>,
+    <span class="str">'2026-03-01 10:00:00'</span>,
+    <span class="str">'Skyrim_NPC_DB'</span>,
+    <span class="str">'Ulfric Stormcloak'</span>
+);</div>
+      </div>
+    </div>
+    <p class="reasoning">
+      <strong>INSERT INTO</strong> &mdash; the destination table. Where this row will live.<br>
+      <strong>Column list in parentheses</strong> &mdash; which blanks you&rsquo;re filling. Same columns as CREATE TABLE defined.<br>
+      <strong>VALUES</strong> &mdash; what goes in each blank, same order as the column list. First column gets first value, second gets second.
+    </p>
+  </div>
+
+  <!-- Write Exercise 6: Hub INSERT -->
+  <div class="write-exercise" id="write-6-container">
+    <h3>Write Exercise 6 &mdash; Hub INSERT</h3>
+    <p>Insert Ulfric Stormcloak into Hub_Character. Use &lsquo;a1b2c3d4...&rsquo; as a placeholder hash key. Load date: &lsquo;2026-03-01 10:00:00&rsquo;. Source: &lsquo;Skyrim_NPC_DB&rsquo;.</p>
+    <textarea class="sql-input" id="write-6-input" rows="8" placeholder="INSERT INTO Hub_Character (&#10;    ...&#10;);"></textarea>
+    <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+      <button class="check-btn" onclick="checkKeywords(6)">CHECK KEYWORDS</button>
+      <button class="check-btn" onclick="showAnswer('write-6')" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+    </div>
+    <div class="keyword-result" id="write-6-keywords"></div>
+    <div class="write-answer" id="write-6-answer" style="display: none;">
+      <div class="write-answer-label">REFERENCE ANSWER</div>
+      <pre class="sql-answer"><span class="kw">INSERT INTO</span> <span class="name">Hub_Character</span> (<span class="name">hub_character_hk</span>, <span class="name">load_date</span>, <span class="name">record_source</span>, <span class="name">business_key</span>)
+<span class="kw">VALUES</span> (
+    <span class="str">'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'</span>,
+    <span class="str">'2026-03-01 10:00:00'</span>,
+    <span class="str">'Skyrim_NPC_DB'</span>,
+    <span class="str">'Ulfric Stormcloak'</span>
+);</pre>
+    </div>
+  </div>
+
+  <!-- Write Exercise 7: Link INSERT -->
+  <div class="write-exercise" id="write-7-container">
+    <h3>Write Exercise 7 &mdash; Link INSERT</h3>
+    <p>Ulfric belongs to the Stormcloaks. Insert this relationship into Link_Character_Faction. Use &lsquo;lnk001...&rsquo; as the link hash key. Use &lsquo;a1b2c3d4...&rsquo; for Ulfric&rsquo;s hub hash key and &lsquo;fac001...&rsquo; for the Stormcloaks hub hash key.</p>
+    <textarea class="sql-input" id="write-7-input" rows="10" placeholder="INSERT INTO Link_Character_Faction (&#10;    ...&#10;);"></textarea>
+    <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+      <button class="check-btn" onclick="checkKeywords(7)">CHECK KEYWORDS</button>
+      <button class="check-btn" onclick="showAnswer('write-7')" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+    </div>
+    <div class="keyword-result" id="write-7-keywords"></div>
+    <div class="write-answer" id="write-7-answer" style="display: none;">
+      <div class="write-answer-label">REFERENCE ANSWER</div>
+      <pre class="sql-answer"><span class="kw">INSERT INTO</span> <span class="name">Link_Character_Faction</span> (
+    <span class="name">link_character_faction_hk</span>, <span class="name">load_date</span>, <span class="name">record_source</span>,
+    <span class="name">hub_character_hk</span>, <span class="name">hub_faction_hk</span>
+)
+<span class="kw">VALUES</span> (
+    <span class="str">'lnk001a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5'</span>,
+    <span class="str">'2026-03-01 10:00:00'</span>,
+    <span class="str">'Skyrim_NPC_DB'</span>,
+    <span class="str">'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'</span>,
+    <span class="str">'fac001a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5'</span>
+);</pre>
+    </div>
+  </div>
+
+  <!-- Teaching callout: INSERT order -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">INSERT ORDER MATTERS</div>
+    <div class="pm-panel-body">
+      <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7;">The Link&rsquo;s foreign hash keys (<code>hub_character_hk</code>, <code>hub_faction_hk</code>) must match values that <strong>already exist</strong> in the respective Hub tables. The INSERT order mirrors the CREATE TABLE order &mdash; you cannot record a relationship between entities that have not been registered.</p>
+    </div>
+  </div>
+
+  <!-- Write Exercise 8: Satellite INSERT -->
+  <div class="write-exercise" id="write-8-container">
+    <h3>Write Exercise 8 &mdash; Satellite INSERT</h3>
+    <p>Give Ulfric attributes: character_name &lsquo;Ulfric Stormcloak&rsquo;, race &lsquo;Nord&rsquo;, level 50. Use &lsquo;hdiff001...&rsquo; as the hash_diff.</p>
+    <textarea class="sql-input" id="write-8-input" rows="12" placeholder="INSERT INTO Sat_Character_Details (&#10;    ...&#10;);"></textarea>
+    <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+      <button class="check-btn" onclick="checkKeywords(8)">CHECK KEYWORDS</button>
+      <button class="check-btn" onclick="showAnswer('write-8')" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+    </div>
+    <div class="keyword-result" id="write-8-keywords"></div>
+    <div class="write-answer" id="write-8-answer" style="display: none;">
+      <div class="write-answer-label">REFERENCE ANSWER</div>
+      <pre class="sql-answer"><span class="kw">INSERT INTO</span> <span class="name">Sat_Character_Details</span> (
+    <span class="name">hub_character_hk</span>, <span class="name">load_date</span>, <span class="name">record_source</span>, <span class="name">hash_diff</span>,
+    <span class="name">character_name</span>, <span class="name">race</span>, <span class="name">level</span>
+)
+<span class="kw">VALUES</span> (
+    <span class="str">'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'</span>,
+    <span class="str">'2026-03-01 10:00:00'</span>,
+    <span class="str">'Skyrim_NPC_DB'</span>,
+    <span class="str">'hdiff001a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'</span>,
+    <span class="str">'Ulfric Stormcloak'</span>,
+    <span class="str">'Nord'</span>,
+    50
+);</pre>
+    </div>
+  </div>
+
+  <!-- History Panel: Ulfric levels up -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">ULFRIC LEVELS UP &mdash; History in Action</div>
+    <div class="pm-panel-body">
+      <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>hub_character_hk</th>
+              <th>load_date</th>
+              <th>character_name</th>
+              <th>race</th>
+              <th>level</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>a1b2c3d4...</td>
+              <td>2026-03-01 10:00:00</td>
+              <td>Ulfric Stormcloak</td>
+              <td>Nord</td>
+              <td>50</td>
+            </tr>
+            <tr>
+              <td>a1b2c3d4...</td>
+              <td>2026-03-02 10:00:00</td>
+              <td>Ulfric Stormcloak</td>
+              <td>Nord</td>
+              <td>52</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top: 1rem; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7;">Same <code>hub_character_hk</code>. Different <code>load_date</code>s. Both rows coexist &mdash; that is the history. Insert-only. The old row is never updated or deleted.</p>
+    </div>
+  </div>
+
+</div><!-- /section s3 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 4 — QUERY ACROSS THE VAULT
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s4" data-label="JOIN Query" data-color="168,85,247">
+  <div class="section-header">
+    <div class="section-tag join-t">JOIN QUERY</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-join">
+    <p class="hook-text">Four tables. Three JOINs. One answer. The <em>hash keys are the rails</em>.</p>
+  </div>
+
+  <!-- The Question -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">THE QUESTION</div>
+    <div class="pm-panel-body">
+      <p style="font-size: 1.05rem; color: var(--text-primary); line-height: 1.7; font-style: italic;">What faction does Ulfric belong to, and what hold is that faction based in?</p>
+    </div>
+  </div>
+
+  <!-- Query Builder as Scroll Zone -->
+  <div class="scroll-zone">
+    <div class="scroll-zone-visual">
+      <!-- Frame 1: Starting point (no query yet) -->
+      <div class="scroll-zone-visual-frame">
+        <div class="pm-panel">
+          <div class="pm-panel-header" style="color: var(--join-purple);">QUERY SO FAR</div>
+          <div class="pm-panel-body">
+            <p style="color: var(--text-dim); font-style: italic; font-family: 'Exo 2', sans-serif;">Start with the table that has Ulfric&rsquo;s name&hellip;</p>
+          </div>
+        </div>
+      </div>
+      <!-- Frame 2: After Step 1 -->
+      <div class="scroll-zone-visual-frame" style="opacity: 0;">
+        <div class="pm-panel">
+          <div class="pm-panel-header" style="color: var(--join-purple);">QUERY SO FAR</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">FROM</span> <span class="name">Hub_Character</span> <span class="name">h</span>
+<span class="kw">WHERE</span> <span class="name">h</span>.<span class="name">business_key</span> = <span class="str">'Ulfric Stormcloak'</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Frame 3: After Steps 1-2 -->
+      <div class="scroll-zone-visual-frame" style="opacity: 0;">
+        <div class="pm-panel">
+          <div class="pm-panel-header" style="color: var(--join-purple);">QUERY SO FAR</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">FROM</span> <span class="name">Hub_Character</span> <span class="name">h</span>
+<span class="kw">JOIN</span> <span class="name">Link_Character_Faction</span> <span class="name">l</span>
+  <span class="kw">ON</span> <span class="name">h</span>.<span class="name">hub_character_hk</span> = <span class="name">l</span>.<span class="name">hub_character_hk</span>
+<span class="kw">WHERE</span> <span class="name">h</span>.<span class="name">business_key</span> = <span class="str">'Ulfric Stormcloak'</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Frame 4: After Steps 1-3 -->
+      <div class="scroll-zone-visual-frame" style="opacity: 0;">
+        <div class="pm-panel">
+          <div class="pm-panel-header" style="color: var(--join-purple);">QUERY SO FAR</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">FROM</span> <span class="name">Hub_Character</span> <span class="name">h</span>
+<span class="kw">JOIN</span> <span class="name">Link_Character_Faction</span> <span class="name">l</span>
+  <span class="kw">ON</span> <span class="name">h</span>.<span class="name">hub_character_hk</span> = <span class="name">l</span>.<span class="name">hub_character_hk</span>
+<span class="kw">JOIN</span> <span class="name">Hub_Faction</span> <span class="name">hf</span>
+  <span class="kw">ON</span> <span class="name">l</span>.<span class="name">hub_faction_hk</span> = <span class="name">hf</span>.<span class="name">hub_faction_hk</span>
+<span class="kw">WHERE</span> <span class="name">h</span>.<span class="name">business_key</span> = <span class="str">'Ulfric Stormcloak'</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Frame 5: After Steps 1-4 -->
+      <div class="scroll-zone-visual-frame" style="opacity: 0;">
+        <div class="pm-panel">
+          <div class="pm-panel-header" style="color: var(--join-purple);">QUERY SO FAR</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">FROM</span> <span class="name">Hub_Character</span> <span class="name">h</span>
+<span class="kw">JOIN</span> <span class="name">Link_Character_Faction</span> <span class="name">l</span>
+  <span class="kw">ON</span> <span class="name">h</span>.<span class="name">hub_character_hk</span> = <span class="name">l</span>.<span class="name">hub_character_hk</span>
+<span class="kw">JOIN</span> <span class="name">Hub_Faction</span> <span class="name">hf</span>
+  <span class="kw">ON</span> <span class="name">l</span>.<span class="name">hub_faction_hk</span> = <span class="name">hf</span>.<span class="name">hub_faction_hk</span>
+<span class="kw">JOIN</span> <span class="name">Sat_Faction_Details</span> <span class="name">sf</span>
+  <span class="kw">ON</span> <span class="name">hf</span>.<span class="name">hub_faction_hk</span> = <span class="name">sf</span>.<span class="name">hub_faction_hk</span>
+<span class="kw">WHERE</span> <span class="name">h</span>.<span class="name">business_key</span> = <span class="str">'Ulfric Stormcloak'</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-zone-content">
+      <div class="query-builder">
+
+        <div class="scroll-zone-step active">
+          <div class="query-step" id="query-step-1">
+            <div class="query-step-label">STEP 1 OF 5</div>
+            <div class="query-step-prompt">Which table has Ulfric&rsquo;s name? Write the FROM and WHERE clauses.</div>
+            <textarea class="sql-input" id="query-step-1-input" rows="3" placeholder="FROM ... WHERE ..."></textarea>
+            <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+              <button class="check-btn" onclick="checkQueryStep(1)">CHECK KEYWORDS</button>
+              <button class="check-btn" onclick="revealQueryStep(1)" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+            </div>
+            <div class="keyword-result" id="query-step-1-keywords"></div>
+            <div class="write-answer" id="query-step-1-answer" style="display: none;">
+              <div class="write-answer-label">REFERENCE ANSWER</div>
+              <pre class="sql-answer"><span class="kw">FROM</span> <span class="name">Hub_Character</span> <span class="name">h</span>
+<span class="kw">WHERE</span> <span class="name">h</span>.<span class="name">business_key</span> = <span class="str">'Ulfric Stormcloak'</span></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-zone-step">
+          <div class="query-step" id="query-step-2">
+            <div class="query-step-label">STEP 2 OF 5</div>
+            <div class="query-step-prompt">Connect to the Link. What column do Hub_Character and Link_Character_Faction share? Write the JOIN + ON.</div>
+            <textarea class="sql-input" id="query-step-2-input" rows="2" placeholder="JOIN ... ON ..."></textarea>
+            <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+              <button class="check-btn" onclick="checkQueryStep(2)">CHECK KEYWORDS</button>
+              <button class="check-btn" onclick="revealQueryStep(2)" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+            </div>
+            <div class="keyword-result" id="query-step-2-keywords"></div>
+            <div class="write-answer" id="query-step-2-answer" style="display: none;">
+              <div class="write-answer-label">REFERENCE ANSWER</div>
+              <pre class="sql-answer"><span class="kw">JOIN</span> <span class="name">Link_Character_Faction</span> <span class="name">l</span> <span class="kw">ON</span> <span class="name">h</span>.<span class="name">hub_character_hk</span> = <span class="name">l</span>.<span class="name">hub_character_hk</span></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-zone-step">
+          <div class="query-step" id="query-step-3">
+            <div class="query-step-label">STEP 3 OF 5</div>
+            <div class="query-step-prompt">Connect to Hub_Faction. What column do the Link and Hub_Faction share? Write the JOIN + ON.</div>
+            <textarea class="sql-input" id="query-step-3-input" rows="2" placeholder="JOIN ... ON ..."></textarea>
+            <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+              <button class="check-btn" onclick="checkQueryStep(3)">CHECK KEYWORDS</button>
+              <button class="check-btn" onclick="revealQueryStep(3)" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+            </div>
+            <div class="keyword-result" id="query-step-3-keywords"></div>
+            <div class="write-answer" id="query-step-3-answer" style="display: none;">
+              <div class="write-answer-label">REFERENCE ANSWER</div>
+              <pre class="sql-answer"><span class="kw">JOIN</span> <span class="name">Hub_Faction</span> <span class="name">hf</span> <span class="kw">ON</span> <span class="name">l</span>.<span class="name">hub_faction_hk</span> = <span class="name">hf</span>.<span class="name">hub_faction_hk</span></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-zone-step">
+          <div class="query-step" id="query-step-4">
+            <div class="query-step-label">STEP 4 OF 5</div>
+            <div class="query-step-prompt">Connect to Sat_Faction_Details for the hold. Write the JOIN + ON.</div>
+            <textarea class="sql-input" id="query-step-4-input" rows="2" placeholder="JOIN ... ON ..."></textarea>
+            <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+              <button class="check-btn" onclick="checkQueryStep(4)">CHECK KEYWORDS</button>
+              <button class="check-btn" onclick="revealQueryStep(4)" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+            </div>
+            <div class="keyword-result" id="query-step-4-keywords"></div>
+            <div class="write-answer" id="query-step-4-answer" style="display: none;">
+              <div class="write-answer-label">REFERENCE ANSWER</div>
+              <pre class="sql-answer"><span class="kw">JOIN</span> <span class="name">Sat_Faction_Details</span> <span class="name">sf</span> <span class="kw">ON</span> <span class="name">hf</span>.<span class="name">hub_faction_hk</span> = <span class="name">sf</span>.<span class="name">hub_faction_hk</span></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-zone-step">
+          <div class="query-step" id="query-step-5">
+            <div class="query-step-label">STEP 5 OF 5</div>
+            <div class="query-step-prompt">What columns answer the question? Write the SELECT.</div>
+            <textarea class="sql-input" id="query-step-5-input" rows="3" placeholder="SELECT ..."></textarea>
+            <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+              <button class="check-btn" onclick="checkQueryStep(5)">CHECK KEYWORDS</button>
+              <button class="check-btn" onclick="revealQueryStep(5)" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+            </div>
+            <div class="keyword-result" id="query-step-5-keywords"></div>
+            <div class="write-answer" id="query-step-5-answer" style="display: none;">
+              <div class="write-answer-label">REFERENCE ANSWER</div>
+              <pre class="sql-answer"><span class="kw">SELECT</span> <span class="name">h</span>.<span class="name">business_key</span> <span class="kw">AS</span> <span class="name">character_name</span>,
+       <span class="name">hf</span>.<span class="name">business_key</span> <span class="kw">AS</span> <span class="name">faction_name</span>,
+       <span class="name">sf</span>.<span class="name">hold</span></pre>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /query-builder -->
+    </div>
+  </div><!-- /scroll-zone -->
+
+  <!-- Full Assembled Query -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">THE COMPLETE QUERY</div>
+    <div class="pm-panel-body">
+      <div class="sql-block"><span class="kw">SELECT</span> <span class="name">h</span>.<span class="name">business_key</span> <span class="kw">AS</span> <span class="name">character_name</span>,
+       <span class="name">hf</span>.<span class="name">business_key</span> <span class="kw">AS</span> <span class="name">faction_name</span>,
+       <span class="name">sf</span>.<span class="name">hold</span>
+<span class="kw">FROM</span> <span class="name">Hub_Character</span> <span class="name">h</span>
+<span class="kw">JOIN</span> <span class="name">Link_Character_Faction</span> <span class="name">l</span> <span class="kw">ON</span> <span class="name">h</span>.<span class="name">hub_character_hk</span> = <span class="name">l</span>.<span class="name">hub_character_hk</span>
+<span class="kw">JOIN</span> <span class="name">Hub_Faction</span> <span class="name">hf</span> <span class="kw">ON</span> <span class="name">l</span>.<span class="name">hub_faction_hk</span> = <span class="name">hf</span>.<span class="name">hub_faction_hk</span>
+<span class="kw">JOIN</span> <span class="name">Sat_Faction_Details</span> <span class="name">sf</span> <span class="kw">ON</span> <span class="name">hf</span>.<span class="name">hub_faction_hk</span> = <span class="name">sf</span>.<span class="name">hub_faction_hk</span>
+<span class="kw">WHERE</span> <span class="name">h</span>.<span class="name">business_key</span> = <span class="str">'Ulfric Stormcloak'</span>;</div>
+    </div>
+  </div>
+
+  <!-- Expected Result -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">EXPECTED RESULT</div>
+    <div class="pm-panel-body">
+      <div style="overflow-x: auto; max-width: 100%;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>character_name</th>
+              <th>faction_name</th>
+              <th>hold</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Ulfric Stormcloak</td>
+              <td>Stormcloaks</td>
+              <td>Eastmarch</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top: 1rem; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7;">Four tables. Three JOINs. One answer. Every JOIN followed a hash key &mdash; from Hub through Link to another Hub to its Satellite. The hash keys are the rails the JOINs ride on.</p>
+    </div>
+  </div>
+
+  <!-- Bonus Exercise: GROUP BY -->
+  <div class="write-exercise" id="write-9-container">
+    <h3>Write Exercise 9 &mdash; GROUP BY Query <span class="tier-badge tier-bonus" style="vertical-align: middle; margin-left: 0.5rem;">Bonus</span></h3>
+    <p>How many characters are in each faction? Write a query using GROUP BY.</p>
+    <textarea class="sql-input" id="write-9-input" rows="6" placeholder="SELECT ...&#10;FROM ...&#10;JOIN ...&#10;GROUP BY ..."></textarea>
+    <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+      <button class="check-btn" onclick="checkKeywords(9)">CHECK KEYWORDS</button>
+      <button class="check-btn" onclick="showAnswer('write-9')" style="background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2);">REVEAL ANSWER</button>
+    </div>
+    <div class="keyword-result" id="write-9-keywords"></div>
+    <div class="write-answer" id="write-9-answer" style="display: none;">
+      <div class="write-answer-label">REFERENCE ANSWER</div>
+      <pre class="sql-answer"><span class="kw">SELECT</span> <span class="name">hf</span>.<span class="name">business_key</span> <span class="kw">AS</span> <span class="name">faction_name</span>,
+       <span class="kw">COUNT</span>(*) <span class="kw">AS</span> <span class="name">member_count</span>
+<span class="kw">FROM</span> <span class="name">Hub_Faction</span> <span class="name">hf</span>
+<span class="kw">JOIN</span> <span class="name">Link_Character_Faction</span> <span class="name">l</span> <span class="kw">ON</span> <span class="name">hf</span>.<span class="name">hub_faction_hk</span> = <span class="name">l</span>.<span class="name">hub_faction_hk</span>
+<span class="kw">GROUP BY</span> <span class="name">hf</span>.<span class="name">business_key</span>;</pre>
+    </div>
+  </div>
+
+</div><!-- /section s4 -->
+
+
+<!-- ═══ MILESTONE 2 ═══ -->
+<div class="milestone-zoom">
+  <div class="chunk-milestone chunk-2">
+    <p class="milestone-accomplished">Data loaded, queried across 4 tables. The vault is alive.</p>
+    <p class="milestone-permission">Everything below is a different kind of work. You can stop here and it is a win.</p>
+    <p class="milestone-progress">Chunk 2 of 3 complete</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 5 — READING dbt MODEL FILES
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s5" data-label="dbt Reading" data-color="100,210,255">
+  <div class="section-header">
+    <div class="section-tag dbt-t">dbt READING</div>
+    <span class="tier-badge tier-important">Important</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-dbt">
+    <p class="hook-text">You just built this by hand. datavault4dbt means you <em>almost never have to</em>.</p>
+  </div>
+
+  <!-- Hub Model File — Apple Accordion (4-Layer) -->
+  <div class="apple-accordion" id="dbt-hub-model">
+    <div class="data-panel" style="margin-bottom: 1rem;">
+      <div class="data-panel-header">
+        <span class="data-panel-dot dbt-dot"></span>
+        <span class="data-panel-title dbt-title">4-Layer Explanation &mdash; dbt Hub Model File</span>
+      </div>
+    </div>
+
+    <div class="apple-accordion-item open">
+      <div class="apple-accordion-trigger"><span class="layer-badge">L1</span><span class="layer-label">Plain language &mdash; for anyone</span></div>
+      <div class="apple-accordion-body" style="max-height: 500px;">
+        <p>A configuration file that generates SQL. You write 7 lines. The macro generates 50+.</p>
+        <div class="pm-panel" style="margin-top: 1rem;">
+          <div class="pm-panel-header">THE ENTIRE HUB MODEL FILE</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">{{</span> config(materialized=<span class="str">'incremental'</span>) <span class="kw">}}</span>
+
+<span class="kw">{%-</span> set yaml_metadata <span class="kw">-%}</span>
+hashkey: <span class="str">'hub_character_hk'</span>
+business_keys:
+  - character_name
+source_models: stage_character
+<span class="kw">{%-</span> endset <span class="kw">-%}</span>
+
+<span class="kw">{{</span> datavault4dbt.hub(yaml_metadata=yaml_metadata) <span class="kw">}}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="apple-accordion-item">
+      <div class="apple-accordion-trigger"><span class="layer-badge">L2</span><span class="layer-label">With mechanism &mdash; how it works</span></div>
+      <div class="apple-accordion-body">
+        <p>You tell datavault4dbt three things: what to name the hash key, which column to hash, and where to find the data. It generates the full INSERT SQL with deduplication, hashing, and insert-only guards.</p>
+      </div>
+    </div>
+
+    <div class="apple-accordion-item">
+      <div class="apple-accordion-trigger"><span class="layer-badge">L3</span><span class="layer-label">Technical &mdash; full detail</span></div>
+      <div class="apple-accordion-body">
+        <div class="pm-panel">
+          <div class="pm-panel-header">LINE-BY-LINE BREAKDOWN</div>
+          <div class="pm-panel-body">
+            <div style="overflow-x: auto; max-width: 100%;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Line</th>
+                    <th>What it says</th>
+                    <th>What it means</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>config(materialized=&rsquo;incremental&rsquo;)</code></td>
+                    <td>This table is incremental</td>
+                    <td>Only process new records each run. Matches DV insert-only.</td>
+                  </tr>
+                  <tr>
+                    <td><code>set yaml_metadata</code></td>
+                    <td>Here is the configuration</td>
+                    <td>Defines a variable with the model&rsquo;s settings.</td>
+                  </tr>
+                  <tr>
+                    <td><code>hashkey: &rsquo;hub_character_hk&rsquo;</code></td>
+                    <td>Hash key column name</td>
+                    <td>Same column you used in CREATE TABLE.</td>
+                  </tr>
+                  <tr>
+                    <td><code>business_keys: - character_name</code></td>
+                    <td>Hash this column</td>
+                    <td>The macro runs SHA2(UPPER(TRIM(...)), 256) on it.</td>
+                  </tr>
+                  <tr>
+                    <td><code>source_models: stage_character</code></td>
+                    <td>Read from this staging model</td>
+                    <td>Upstream dbt model with cleaned source data.</td>
+                  </tr>
+                  <tr>
+                    <td><code>datavault4dbt.hub(...)</code></td>
+                    <td>Generate Hub loading SQL</td>
+                    <td>One macro call expands to ~50 lines of INSERT SQL.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="apple-accordion-item">
+      <div class="apple-accordion-trigger"><span class="layer-badge">L4</span><span class="layer-label">Expert &mdash; nuance &amp; edge cases</span></div>
+      <div class="apple-accordion-body">
+        <p>The Satellite model uses <code>parent_hashkey</code> instead of <code>hashkey</code>. The Hub OWNS its hash key (primary key, generated from business key). The Satellite BORROWS its parent&rsquo;s hash key (foreign key reference). <strong>hashkey</strong> = generated by this entity (the Hub&rsquo;s own primary key). <strong>parent_hashkey</strong> = generated by the parent entity, referenced here as a foreign key.</p>
+        <div class="pm-panel" style="margin-top: 1rem;">
+          <div class="pm-panel-header">SATELLITE MODEL FILE &mdash; SPOT THE DIFFERENCE</div>
+          <div class="pm-panel-body">
+            <div class="sql-block"><span class="kw">{{</span> config(materialized=<span class="str">'incremental'</span>) <span class="kw">}}</span>
+
+<span class="kw">{%-</span> set yaml_metadata <span class="kw">-%}</span>
+parent_hashkey: <span class="str">'hub_character_hk'</span>
+src_hashdiff: <span class="str">'hash_diff'</span>
+src_payload:
+  - character_name
+  - race
+  - level
+source_models: stage_character
+<span class="kw">{%-</span> endset <span class="kw">-%}</span>
+
+<span class="kw">{{</span> datavault4dbt.sat(yaml_metadata=yaml_metadata) <span class="kw">}}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /apple-accordion -->
+
+  <!-- Match Exercise 1 -->
+  <div class="exercise-section" id="exercise-1">
+    <h3>Exercise 1 &mdash; dbt Model Components</h3>
+    <p>Match each dbt model component to what it does.</p>
+
+    <div class="match-row" data-correct="Sets the table to only process new data each run">
+      <div class="match-label"><code>config(materialized=&rsquo;incremental&rsquo;)</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Names the output hash key column">
+      <div class="match-label"><code>hashkey: &rsquo;hub_character_hk&rsquo;</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Specifies which source columns get hashed">
+      <div class="match-label"><code>business_keys: - character_name</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Tells the macro which staging model to read from">
+      <div class="match-label"><code>source_models: stage_character</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <div class="match-row" data-correct="Calls the macro that generates the full SQL">
+      <div class="match-label"><code>datavault4dbt.hub(...)</code></div>
+      <select class="match-select">
+        <option value="">&mdash; select &mdash;</option>
+        <option value="Sets the table to only process new data each run">Sets the table to only process new data each run</option>
+        <option value="Names the output hash key column">Names the output hash key column</option>
+        <option value="Specifies which source columns get hashed">Specifies which source columns get hashed</option>
+        <option value="Tells the macro which staging model to read from">Tells the macro which staging model to read from</option>
+        <option value="Calls the macro that generates the full SQL">Calls the macro that generates the full SQL</option>
+      </select>
+      <div class="row-feedback"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise1()">CHECK ANSWERS</button>
+    <div class="feedback" id="feedback-1"></div>
+  </div>
+
+  <!-- dbt run Flow -->
+  <div class="pm-panel">
+    <div class="pm-panel-header">dbt run &mdash; FROM MODEL TO TABLE</div>
+    <div class="pm-panel-body">
+      <div class="arch-flow" style="flex-direction: column; align-items: center;">
+        <div class="arch-node source">Model file (.sql)</div>
+        <div class="arch-arrow">&darr;</div>
+        <div class="arch-node model">dbt run</div>
+        <div class="arch-arrow">&darr;</div>
+        <div class="arch-node model">Dependency resolution</div>
+        <div class="arch-arrow">&darr;</div>
+        <div class="arch-node model">Macro expansion</div>
+        <div class="arch-arrow">&darr;</div>
+        <div class="arch-node vault">Compiled SQL</div>
+        <div class="arch-arrow">&darr;</div>
+        <div class="arch-node mart">Snowflake execution</div>
+        <div class="arch-arrow">&darr;</div>
+        <div class="arch-node mart">Tables populated</div>
+      </div>
+      <p style="margin-top: 1.5rem; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7;"><code>dbt run</code> is like compile and execute. The model file is the source code. The compiled SQL is the machine code. Snowflake is the processor.</p>
+    </div>
+  </div>
+
+</div><!-- /section s5 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 6 — THE FULL PICTURE
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section wipe-reveal" id="s6" data-label="Full Picture" data-color="255,215,0">
+  <div class="section-header">
+    <div class="section-tag payoff-t">THE FULL PICTURE</div>
+    <span class="tier-badge tier-important">Important</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="hook hook-payoff">
+    <p class="hook-text">Understanding the SQL is why you can <em>debug when the automation breaks</em>.</p>
+  </div>
+
+  <!-- Side-by-Side Panel -->
+  <div class="side-by-side">
+    <div class="pm-panel">
+      <div class="pm-panel-header">WHAT YOU WROTE TODAY</div>
+      <div class="pm-panel-body">
+        <div class="sql-block"><span class="kw">CREATE TABLE</span> <span class="name">Hub_Character</span> (
+    <span class="name">hub_character_hk</span>    <span class="type">CHAR(64)</span>     <span class="constraint">NOT NULL</span>,
+    ...
+    <span class="kw">PRIMARY KEY</span> (<span class="name">hub_character_hk</span>)
+);
+
+<span class="kw">INSERT INTO</span> <span class="name">Hub_Character</span> (...)
+<span class="kw">VALUES</span> (...);
+
+<span class="kw">SELECT</span> <span class="name">h</span>.<span class="name">business_key</span>, <span class="name">hf</span>.<span class="name">business_key</span>, <span class="name">sf</span>.<span class="name">hold</span>
+<span class="kw">FROM</span> <span class="name">Hub_Character</span> <span class="name">h</span>
+<span class="kw">JOIN</span> <span class="name">Link_Character_Faction</span> <span class="name">l</span> <span class="kw">ON</span> ...
+<span class="kw">JOIN</span> <span class="name">Hub_Faction</span> <span class="name">hf</span> <span class="kw">ON</span> ...
+<span class="kw">JOIN</span> <span class="name">Sat_Faction_Details</span> <span class="name">sf</span> <span class="kw">ON</span> ...
+<span class="kw">WHERE</span> <span class="name">h</span>.<span class="name">business_key</span> = <span class="str">'Ulfric Stormcloak'</span>;</div>
+      </div>
+    </div>
+    <div class="pm-panel">
+      <div class="pm-panel-header">WHAT A CONSULTANT WRITES</div>
+      <div class="pm-panel-body">
+        <div class="sql-block"><span class="kw">{{</span> config(materialized=<span class="str">'incremental'</span>) <span class="kw">}}</span>
+
+<span class="kw">{%-</span> set yaml_metadata <span class="kw">-%}</span>
+hashkey: <span class="str">'hub_character_hk'</span>
+business_keys:
+  - character_name
+source_models: stage_character
+<span class="kw">{%-</span> endset <span class="kw">-%}</span>
+
+<span class="kw">{{</span> datavault4dbt.hub(yaml_metadata=yaml_metadata) <span class="kw">}}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.7; margin: 1.5rem 0;">7 lines of configuration. The macro generates everything you wrote by hand. Understanding the SQL is why you can debug when the automation breaks &mdash; or explain it to a client.</p>
+
+  <!-- Concept Callout -->
+  <div class="concept-callout">
+    <div class="concept-callout-label">KEY CONCEPT</div>
+    <p>This chapter covers both sides of the same coin: hand-written Data Vault SQL and the datavault4dbt automation that generates it. Understanding the SQL is what makes the automation debuggable.</p>
+  </div>
+
+  <!-- Completion Banner -->
+  <div class="completion-banner" id="completion-banner">
+    <h3>Integration Complete</h3>
+    <p>You built a Data Vault from scratch, loaded it, queried across it, and read the automation that does it at scale.</p>
+  </div>
+
+</div><!-- /section s6 -->
+
+<!-- ═══ MILESTONE 3 ═══ -->
+<div class="milestone-zoom">
+  <div class="chunk-milestone chunk-3">
+    <p class="milestone-accomplished">You see both sides. The hand-written SQL and the automation that generates it.</p>
+    <p class="milestone-permission">You built it, loaded it, queried it, and read the automation. That is the whole chain.</p>
+    <p class="milestone-progress">Chunk 3 of 3 complete</p>
+  </div>
+</div>
+
+
+<div class="tutorial-footer">
+  <p>Chapter 12 &mdash; Integration Day</p>
+</div>
+
+</div><!-- /container -->
+
+</div><!-- /page-content -->
+
+<!-- ═══ GAME SYSTEM CONTAINERS ═══ -->
+
+<!-- Quest Log (top-right floating panel) -->
+<div id="quest-log" class="quest-log collapsed draggable-panel">
+  <div class="quest-log-header" onclick="SV.questLog && SV.questLog.toggle()">
+    <span class="quest-log-icon">📜</span>
+    <span class="quest-log-title">Objectives</span>
+    <span class="quest-log-progress"></span>
+    <span class="quest-log-toggle">▼</span>
+  </div>
+  <div class="quest-log-body">
+    <p class="quest-log-hint">Complete exercises to check off objectives</p>
+    <ul class="quest-log-list"></ul>
+  </div>
+</div>
+
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar (bottom fixed) -->
+<div id="inventory-toolbar" class="inventory-toolbar draggable-panel">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel (slides up from toolbar) -->
+<div id="inventory-panel" class="inventory-panel hidden draggable-panel">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+
+<script>
+/* ===================================================
+   STAR CONSTELLATION PARTICLE FIELD
+   =================================================== */
+(function() {
+  var canvas = document.getElementById('particle-field');
+  var ctx = canvas.getContext('2d');
+  var w, h;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var STAR_COUNT = 110;
+  var HUB_FRACTION = 0.15;
+  var CONNECT_DIST = 140;
+  var MOUSE_RADIUS = 200;
+  var MOUSE_STRENGTH = 0.015;
+
+  var starColors = [
+    { r: 16, g: 185, b: 129 },
+    { r: 59, g: 130, b: 246 },
+    { r: 245, g: 158, b: 11 },
+    { r: 0, g: 180, b: 255 },
+    { r: 6, g: 182, b: 212 },
+    { r: 139, g: 92, b: 246 },
+    { r: 168, g: 85, b: 247 }
+  ];
+
+  var stars = [];
+  for (var i = 0; i < STAR_COUNT; i++) {
+    var isHub = Math.random() < HUB_FRACTION;
+    var col = starColors[Math.floor(Math.random() * starColors.length)];
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      baseSize: isHub ? (2.5 + Math.random() * 2) : (0.8 + Math.random() * 1.2),
+      opacity: isHub ? (0.6 + Math.random() * 0.4) : (0.25 + Math.random() * 0.35),
+      r: col.r, g: col.g, b: col.b,
+      isHub: isHub,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.008 + Math.random() * 0.012,
+      driftAngle: Math.random() * Math.PI * 2,
+      driftSpeed: 0.08 + Math.random() * 0.15,
+      driftTurn: (Math.random() - 0.5) * 0.005
+    });
+  }
+
+  var mouse = { x: 0, y: 0, active: false };
+
+  function isOverContent(el) {
+    if (!el) return false;
+    /* If the mouse target itself is a text-level or interactive element,
+       block particles — the user is hovering over actual content. */
+    var tag = el.tagName;
+    if (tag === 'P' || tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'H4' ||
+        tag === 'H5' || tag === 'H6' || tag === 'SPAN' || tag === 'CODE' || tag === 'PRE' ||
+        tag === 'STRONG' || tag === 'EM' || tag === 'A' || tag === 'LI' || tag === 'UL' ||
+        tag === 'OL' || tag === 'LABEL' || tag === 'TD' || tag === 'TH' || tag === 'TR' ||
+        tag === 'BLOCKQUOTE' || tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' ||
+        tag === 'TEXTAREA' || tag === 'IMG' || tag === 'TABLE' || tag === 'THEAD' ||
+        tag === 'TBODY' || tag === 'NAV') {
+      return true;
+    }
+    /* Walk up ancestors: only block for elements with visible backgrounds,
+       not transparent layout wrappers like .section, .container, .scroll-zone-step */
+    while (el) {
+      if (el.classList) {
+        if (el.classList.contains('hero-zoom') || el.classList.contains('milestone-zoom') ||
+            el.classList.contains('holo-nav') || el.classList.contains('pm-panel') ||
+            el.classList.contains('hook') || el.classList.contains('four-layers') ||
+            el.classList.contains('data-panel') || el.classList.contains('exercise-section') ||
+            el.classList.contains('concept-callout') || el.classList.contains('language-bridge') ||
+            el.classList.contains('contrast-panel') || el.classList.contains('disambig-panel') ||
+            el.classList.contains('code-panel') || el.classList.contains('explore-panel') ||
+            el.classList.contains('pipeline-flow') || el.classList.contains('is-isnot') ||
+            el.classList.contains('worked-example') ||
+            el.classList.contains('apple-accordion') || el.classList.contains('sql-block') ||
+            el.classList.contains('completion-banner') ||
+            el.classList.contains('chunk-milestone') ||
+            el.classList.contains('query-builder') ||
+            el.classList.contains('write-exercise') ||
+            el.classList.contains('question-card') ||
+            el.classList.contains('trap-reveal') || el.classList.contains('answer-reveal') ||
+            el.classList.contains('trap-scorecard') || el.classList.contains('polished-line') ||
+            el.classList.contains('confidence-check')) {
+          return true;
+        }
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = !isOverContent(e.target);
+  });
+  document.addEventListener('mouseleave', function() { mouse.active = false; });
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      p.pulse += p.pulseSpeed;
+      p.driftAngle += p.driftTurn;
+      p.x += Math.cos(p.driftAngle) * p.driftSpeed;
+      p.y += Math.sin(p.driftAngle) * p.driftSpeed;
+
+      if (mouse.active) {
+        var dx = mouse.x - p.x;
+        var dy = mouse.y - p.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS && dist > 1) {
+          var force = (1 - dist / MOUSE_RADIUS) * MOUSE_STRENGTH;
+          p.x += dx * force;
+          p.y += dy * force;
+        }
+      }
+
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      for (var j = i + 1; j < stars.length; j++) {
+        var dx = stars[i].x - stars[j].x;
+        var dy = stars[i].y - stars[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          var alpha = (1 - dist / CONNECT_DIST) * 0.12;
+          if (stars[i].isHub || stars[j].isHub) alpha *= 1.8;
+          ctx.beginPath();
+          ctx.moveTo(stars[i].x, stars[i].y);
+          ctx.lineTo(stars[j].x, stars[j].y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (mouse.active) {
+      for (var i = 0; i < stars.length; i++) {
+        var p = stars[i];
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          var mFade = 1 - mDist / MOUSE_RADIUS;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + (mFade * mFade * 0.2) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      var pulseVal = 0.6 + 0.4 * Math.sin(p.pulse);
+      var currentOpacity = p.opacity * pulseVal;
+      var currentSize = p.baseSize * (0.85 + 0.15 * Math.sin(p.pulse));
+
+      var proximityBoost = 1;
+      if (mouse.active) {
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          proximityBoost = 1 + (1 - mDist / MOUSE_RADIUS) * 1.5;
+        }
+      }
+
+      var boostedOpacity = Math.min(currentOpacity * proximityBoost, 1);
+
+      var glowRadius = currentSize * (p.isHub ? 8 : 5);
+      var grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      grd.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.3) + ')');
+      grd.addColorStop(0.4, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.08) + ')');
+      grd.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + Math.min(p.r + 60, 255) + ',' + Math.min(p.g + 60, 255) + ',' + Math.min(p.b + 60, 255) + ',' + boostedOpacity + ')';
+      ctx.fill();
+
+      if (p.isHub) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, currentSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (boostedOpacity * 0.7) + ')';
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+/* ===================================================
+   SECTION VISIBILITY + NAV
+   =================================================== */
+var sections = document.querySelectorAll('.section');
+var navNodes = document.querySelectorAll('.nav-node');
+var navConnectors = document.querySelectorAll('.nav-connector');
+var progressFill = document.getElementById('progress-fill');
+var navLabel = document.getElementById('nav-current-label');
+var lcarsSegs = document.querySelectorAll('.lcars-seg');
+var ambientEl = document.getElementById('ambient-glow');
+
+var usesCSSTimeline = CSS.supports && CSS.supports('animation-timeline', 'view()');
+
+if (!usesCSSTimeline) {
+  var sectionObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+      else entry.target.classList.remove('visible');
+    });
+  }, { threshold: 0.01, rootMargin: '200px 0px -40px 0px' });
+  sections.forEach(function(s) { sectionObserver.observe(s); });
+}
+
+
+var sectionColors = [];
+sections.forEach(function(s) {
+  var dc = s.getAttribute('data-color');
+  if (dc) {
+    var parts = dc.split(',');
+    sectionColors.push({ r: parseInt(parts[0]), g: parseInt(parts[1]), b: parseInt(parts[2]) });
+  } else {
+    sectionColors.push({ r: 0, g: 180, b: 255 });
+  }
+});
+
+var lastActiveIndex = -1;
+function updateNav() {
+  var activeIdx = 0;
+  var scrollY = window.scrollY + window.innerHeight * 0.35;
+  sections.forEach(function(s, i) { if (s.offsetTop <= scrollY) activeIdx = i; });
+
+  if (activeIdx !== lastActiveIndex) {
+    lastActiveIndex = activeIdx;
+    navNodes.forEach(function(n, i) {
+      n.classList.remove('active', 'completed');
+      if (i === activeIdx) n.classList.add('active');
+      else if (i < activeIdx) n.classList.add('completed');
+    });
+    navConnectors.forEach(function(c, i) {
+      if (i < activeIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+    var currentSection = sections[activeIdx];
+    if (currentSection) navLabel.textContent = currentSection.getAttribute('data-label') || '';
+    lcarsSegs.forEach(function(seg, i) {
+      seg.classList.remove('active', 'completed');
+      if (i === activeIdx) seg.classList.add('active');
+      else if (i < activeIdx) seg.classList.add('completed');
+    });
+    var c = sectionColors[activeIdx];
+    if (c && ambientEl) {
+      ambientEl.style.setProperty('--ambient-c1', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.06)');
+      ambientEl.style.setProperty('--ambient-c2', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.03)');
+      ambientEl.style.setProperty('--ambient-c3', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.02)');
+    }
+  }
+
+  var activeSection = sections[lastActiveIndex];
+  var nextSection = sections[lastActiveIndex + 1];
+  if (activeSection) {
+    var secTop = activeSection.offsetTop;
+    var secBottom = nextSection ? nextSection.offsetTop : (document.documentElement.scrollHeight - window.innerHeight * 0.65);
+    var secHeight = secBottom - secTop;
+    var currentY = window.scrollY + window.innerHeight * 0.35;
+    var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+    fill = Math.max(0, Math.min(100, fill));
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+    lcarsSegs.forEach(function(seg, i) {
+      if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+      else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+      else seg.style.removeProperty('--seg-fill');
+    });
+  }
+
+  var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  var scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) scrolled = 100;
+  progressFill.style.width = Math.min(scrolled, 100) + '%';
+}
+
+
+/* ===================================================
+   SCROLL PROGRESS + WORD REVEAL
+   =================================================== */
+function updateScrollProgress() {
+  var viewH = window.innerHeight;
+  sections.forEach(function(section) {
+    var rect = section.getBoundingClientRect();
+    var progress = 1 - (rect.top / viewH);
+    progress = Math.max(0, Math.min(1, progress));
+    section.style.setProperty('--scroll-progress', progress);
+    /* Word reveal: use aggressive ramp so all words are lit once section
+       enters the lower 35% of viewport (progress >= 0.35 → all lit).
+       Factor of 3.0 means: at progress 0.33 all words are revealed. */
+    section.querySelectorAll('.hook-text').forEach(function(hook) {
+      var count = parseInt(hook.getAttribute('data-word-count')) || 1;
+      var litCount = Math.floor(progress * count * 3.0);
+      litCount = Math.min(litCount, count);
+      hook.querySelectorAll('.word').forEach(function(word, i) {
+        if (i < litCount) word.classList.add('lit');
+        else word.classList.remove('lit');
+      });
+    });
+  });
+}
+
+
+/* ===================================================
+   PARALLAX
+   =================================================== */
+var depthShapes = document.querySelectorAll('.depth-shape');
+var depthRates = [0.03, 0.05, 0.02, 0.04];
+function updateParallax() {
+  var scrollY = window.scrollY;
+  depthShapes.forEach(function(shape, i) {
+    shape.style.transform = 'translateY(' + (-scrollY * depthRates[i]) + 'px)';
+  });
+}
+
+
+/* ===================================================
+   UNIFIED SCROLL
+   =================================================== */
+var scrollTicking = false;
+function onScroll() {
+  if (!scrollTicking) {
+    requestAnimationFrame(function() {
+      updateNav();
+      updateScrollProgress();
+      updateParallax();
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('load', function() { updateNav(); updateScrollProgress(); });
+
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    var y = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
+
+
+/* ===================================================
+   4-LAYER TOGGLE
+   =================================================== */
+function toggleLayer(header) {
+  var layer = header.parentElement;
+  layer.classList.toggle('open');
+  var container = layer.closest('.four-layers');
+  if (container) updateLayerDots(container);
+}
+
+function jumpToLayer(containerId, layerIndex) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var layers = container.querySelectorAll('.layer');
+  layers.forEach(function(l, i) {
+    if (i <= layerIndex) l.classList.add('open');
+    else l.classList.remove('open');
+  });
+  updateLayerDots(container);
+}
+
+function updateLayerDots(container) {
+  var layers = container.querySelectorAll('.layer');
+  var dots = container.querySelectorAll('.layer-dot');
+  layers.forEach(function(l, i) {
+    if (dots[i]) {
+      if (l.classList.contains('open')) dots[i].classList.add('active');
+      else dots[i].classList.remove('active');
+    }
+  });
+}
+
+
+/* ===================================================
+   EXPLORE MORE
+   =================================================== */
+function toggleExplore(opener) {
+  var panel = opener.nextElementSibling;
+  var isOpen = opener.classList.toggle('open');
+  if (panel) panel.classList.toggle('open', isOpen);
+}
+
+
+/* ===================================================
+   DRAGGABLE PANELS
+   Make quest log and inventory toolbar movable.
+   Drag by clicking and dragging. Position persists in localStorage.
+   =================================================== */
+(function() {
+  var panels = document.querySelectorAll('.draggable-panel');
+  if (!panels.length) return;
+
+  panels.forEach(function(panel) {
+    var id = panel.id;
+    var state = { dragging: false, startX: 0, startY: 0, origLeft: 0, origTop: 0 };
+
+    // Restore saved position
+    try {
+      var saved = JSON.parse(localStorage.getItem('sv-panel-pos-' + id));
+      if (saved && saved.left != null && saved.top != null) {
+        panel.style.left = saved.left + 'px';
+        panel.style.top = saved.top + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+        panel.style.transform = 'none';
+      }
+    } catch(e) {}
+
+    function onDown(e) {
+      // Don't drag if clicking on interactive elements inside
+      var tag = e.target.tagName;
+      if (tag === 'SELECT' || tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+      // Don't drag if clicking inside quest log body (allow scrolling items)
+      if (e.target.closest && e.target.closest('.quest-log-body')) return;
+
+      state.dragging = true;
+      var rect = panel.getBoundingClientRect();
+      state.startX = e.clientX || (e.touches && e.touches[0].clientX);
+      state.startY = e.clientY || (e.touches && e.touches[0].clientY);
+      state.origLeft = rect.left;
+      state.origTop = rect.top;
+      panel.classList.add('dragging');
+      e.preventDefault();
+    }
+
+    function onMove(e) {
+      if (!state.dragging) return;
+      var cx = e.clientX || (e.touches && e.touches[0].clientX);
+      var cy = e.clientY || (e.touches && e.touches[0].clientY);
+      var dx = cx - state.startX;
+      var dy = cy - state.startY;
+      var newLeft = Math.max(0, Math.min(window.innerWidth - 50, state.origLeft + dx));
+      var newTop = Math.max(0, Math.min(window.innerHeight - 30, state.origTop + dy));
+      panel.style.left = newLeft + 'px';
+      panel.style.top = newTop + 'px';
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+      panel.style.transform = 'none';
+    }
+
+    function onUp() {
+      if (!state.dragging) return;
+      state.dragging = false;
+      panel.classList.remove('dragging');
+      // Save position
+      try {
+        localStorage.setItem('sv-panel-pos-' + id, JSON.stringify({
+          left: parseInt(panel.style.left),
+          top: parseInt(panel.style.top)
+        }));
+      } catch(e) {}
+    }
+
+    panel.addEventListener('mousedown', onDown);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    panel.addEventListener('touchstart', onDown, {passive: false});
+    document.addEventListener('touchmove', onMove, {passive: false});
+    document.addEventListener('touchend', onUp);
+  });
+})();
+
+
+/* === Chapter 12: Integration Day — Exercise Functions === */
+
+/* --- Quest objectives --- */
+var TUTORIAL_11_OBJECTIVES = [
+  { id: 'mission',     label: 'The Mission',        sectionId: 's1' },
+  { id: 'create-x5',   label: 'CREATE TABLE x5',    sectionId: 's2' },
+  { id: 'insert-data',  label: 'INSERT Sample Data', sectionId: 's3' },
+  { id: 'join-query',   label: 'Query the Vault',    sectionId: 's4' },
+  { id: 'dbt-reading',  label: 'dbt Model Reading',  sectionId: 's5' },
+  { id: 'full-picture', label: 'The Full Picture',   sectionId: 's6' }
+];
+
+/* --- Loot mapping: exercise completion -> item(s) to discover --- */
+var TUTORIAL_11_LOOT = {
+  'write-5': 'mini-vault-structure',
+  'write-8': 'insert-mastery',
+  'query-complete': 'multi-join-query',
+  'exercise-1': ['dbt-model-reading', 'python-reading']
+};
+
+/* --- Exercise tracking --- */
+var exercisesCompleted = {
+  write1: false, write2: false, write3: false, write4: false, write5: false,
+  write6: false, write7: false, write8: false, write9: false,
+  query: false,
+  ex1: false
+};
+
+/* ─── Keyword sets for write exercises ─── */
+
+var keywords = {
+  write1: {
+    required: ['CREATE TABLE', 'CHAR(64)', 'NOT NULL', 'PRIMARY KEY', 'TIMESTAMP', 'VARCHAR'],
+    labels:   ['CREATE TABLE statement', 'CHAR(64) for hash key', 'NOT NULL constraints', 'PRIMARY KEY declaration', 'TIMESTAMP for load_date', 'VARCHAR for variable-length columns']
+  },
+  write2: {
+    required: ['CREATE TABLE', 'CHAR(64)', 'NOT NULL', 'PRIMARY KEY', 'TIMESTAMP', 'VARCHAR'],
+    labels:   ['CREATE TABLE statement', 'CHAR(64) for hash key', 'NOT NULL constraints', 'PRIMARY KEY declaration', 'TIMESTAMP for load_date', 'VARCHAR for variable-length columns']
+  },
+  write3: {
+    required: ['CREATE TABLE', 'CHAR(64)', 'NOT NULL', 'PRIMARY KEY', 'HUB_CHARACTER_HK', 'HUB_FACTION_HK'],
+    labels:   ['CREATE TABLE statement', 'CHAR(64) for hash keys', 'NOT NULL constraints', 'PRIMARY KEY declaration', 'Hub_Character foreign hash key', 'Hub_Faction foreign hash key']
+  },
+  write4: {
+    required: ['CREATE TABLE', 'CHAR(64)', 'NOT NULL', 'PRIMARY KEY', 'HASH_DIFF', 'TIMESTAMP', 'VARCHAR'],
+    labels:   ['CREATE TABLE statement', 'CHAR(64) for hash key', 'NOT NULL constraints', 'Composite PRIMARY KEY (hub_hk, load_date)', 'hash_diff column', 'TIMESTAMP for load_date', 'VARCHAR for descriptive columns']
+  },
+  write5: {
+    required: ['CREATE TABLE', 'CHAR(64)', 'NOT NULL', 'PRIMARY KEY', 'HASH_DIFF', 'TIMESTAMP', 'VARCHAR'],
+    labels:   ['CREATE TABLE statement', 'CHAR(64) for hash key', 'NOT NULL constraints', 'Composite PRIMARY KEY (hub_hk, load_date)', 'hash_diff column', 'TIMESTAMP for load_date', 'VARCHAR for descriptive columns']
+  },
+  write6: {
+    required: ['INSERT INTO', 'VALUES', 'HUB_CHARACTER_HK', 'LOAD_DATE', 'RECORD_SOURCE'],
+    labels:   ['INSERT INTO statement', 'VALUES clause', 'hub_character_hk column', 'load_date column', 'record_source column']
+  },
+  write7: {
+    required: ['INSERT INTO', 'VALUES', 'HUB_CHARACTER_HK', 'HUB_FACTION_HK', 'LINK_CHARACTER_FACTION_HK'],
+    labels:   ['INSERT INTO statement', 'VALUES clause', 'Hub_Character foreign key', 'Hub_Faction foreign key', 'Link hash key']
+  },
+  write8: {
+    required: ['INSERT INTO', 'VALUES', 'HUB_CHARACTER_HK', 'HASH_DIFF', 'LOAD_DATE'],
+    labels:   ['INSERT INTO statement', 'VALUES clause', 'Parent hub hash key', 'hash_diff column', 'load_date column']
+  },
+  write9: {
+    required: ['SELECT', 'COUNT', 'FROM', 'JOIN', 'GROUP BY'],
+    labels:   ['SELECT clause', 'COUNT aggregate', 'FROM clause', 'JOIN clause', 'GROUP BY clause']
+  }
+};
+
+/* ─── Query builder keyword sets ─── */
+
+var queryKeywords = {
+  step1: {
+    required: ['FROM', 'HUB_CHARACTER', 'WHERE', 'ULFRIC'],
+    labels:   ['FROM clause', 'Hub_Character table', 'WHERE filter', 'Ulfric filter value']
+  },
+  step2: {
+    required: ['JOIN', 'LINK_CHARACTER_FACTION', 'ON', 'HUB_CHARACTER_HK'],
+    labels:   ['JOIN keyword', 'Link_Character_Faction table', 'ON clause', 'hub_character_hk join column']
+  },
+  step3: {
+    required: ['JOIN', 'HUB_FACTION', 'ON', 'HUB_FACTION_HK'],
+    labels:   ['JOIN keyword', 'Hub_Faction table', 'ON clause', 'hub_faction_hk join column']
+  },
+  step4: {
+    required: ['JOIN', 'SAT_FACTION_DETAILS', 'ON', 'HUB_FACTION_HK'],
+    labels:   ['JOIN keyword', 'Sat_Faction_Details table', 'ON clause', 'hub_faction_hk join column']
+  },
+  step5: {
+    required: ['SELECT', 'BUSINESS_KEY', 'HOLD'],
+    labels:   ['SELECT keyword', 'business_key column', 'hold column']
+  }
+};
+
+/* ─── Per-row feedback data for Exercise 1 (dbt Model Components) ─── */
+
+var feedback1 = {
+  0: {
+    "Sets the table to only process new data each run": "Correct. config(materialized='incremental') tells dbt to append new rows instead of rebuilding the whole table every run.",
+    "Names the output hash key column": "Not quite. The config line controls materialization strategy (incremental vs table vs view), not column naming.",
+    "Specifies which source columns get hashed": "Not quite. Materialization controls HOW the table is built (incremental = append only). Business keys control WHAT gets hashed.",
+    "Tells the macro which staging model to read from": "Not quite. The config line sets materialization strategy. Source models are specified separately.",
+    "Calls the macro that generates the full SQL": "Not quite. The config is metadata about how to build the table. The macro call is the last line."
+  },
+  1: {
+    "Names the output hash key column": "Correct. hashkey tells the macro what to name the hash key column in the output table (e.g., hub_character_hk).",
+    "Sets the table to only process new data each run": "Not quite. Incremental materialization is set in the config block, not the hashkey field.",
+    "Specifies which source columns get hashed": "Close but different. hashkey names the OUTPUT column. business_keys specifies the INPUT columns that get hashed.",
+    "Tells the macro which staging model to read from": "Not quite. Source models are specified separately. hashkey only names the output hash key column.",
+    "Calls the macro that generates the full SQL": "Not quite. The macro call is the last line. hashkey is a parameter that gets passed TO the macro."
+  },
+  2: {
+    "Specifies which source columns get hashed": "Correct. business_keys lists the source column(s) that get hashed into the hash key. For a Hub, this is the natural business key.",
+    "Sets the table to only process new data each run": "Not quite. Materialization is controlled by the config block. business_keys specifies which columns feed the hash.",
+    "Names the output hash key column": "Close but different. hashkey names the OUTPUT column. business_keys specifies which INPUT columns get hashed to produce that key.",
+    "Tells the macro which staging model to read from": "Not quite. Source models point to the staging layer. business_keys specifies which columns within that source get hashed.",
+    "Calls the macro that generates the full SQL": "Not quite. The macro call is the last line. business_keys is a parameter that gets passed TO the macro."
+  },
+  3: {
+    "Tells the macro which staging model to read from": "Correct. source_models points to the staging model that feeds data into this Hub/Sat/Link. The macro uses this to generate the FROM clause.",
+    "Sets the table to only process new data each run": "Not quite. Materialization is in the config block. source_models specifies WHERE the data comes from.",
+    "Names the output hash key column": "Not quite. hashkey names the output column. source_models tells the macro which upstream model to read from.",
+    "Specifies which source columns get hashed": "Not quite. business_keys specifies hashed columns. source_models specifies which staging model contains those columns.",
+    "Calls the macro that generates the full SQL": "Not quite. The macro call is the last line. source_models is a parameter that tells the macro where to find the data."
+  },
+  4: {
+    "Calls the macro that generates the full SQL": "Correct. datavault4dbt.hub() is the macro call that takes all the parameters above and generates the complete SQL — CREATE TABLE, INSERT, dedup, and hashing.",
+    "Sets the table to only process new data each run": "Not quite. Materialization is in the config block. The macro call assembles everything into the final SQL.",
+    "Names the output hash key column": "Not quite. hashkey names the column. The macro call is what uses all the parameters to generate the full SQL.",
+    "Specifies which source columns get hashed": "Not quite. business_keys specifies hashed columns. The macro call is the instruction that generates the complete SQL output.",
+    "Tells the macro which staging model to read from": "Not quite. source_models specifies the data source. The macro call is the final instruction that generates all the SQL."
+  }
+};
+
+/* ─── Keyword validation for write exercises ─── */
+
+function checkKeywords(writeNum) {
+  var textarea = document.getElementById('write-' + writeNum + '-input');
+  var resultDiv = document.getElementById('write-' + writeNum + '-keywords');
+  if (!textarea || !resultDiv) return;
+
+  var text = textarea.value.toUpperCase().replace(/\s+/g, ' ');
+  var kw = keywords['write' + writeNum];
+  if (!kw) return;
+
+  var hits = 0;
+  /* Clear previous results safely */
+  while (resultDiv.firstChild) resultDiv.removeChild(resultDiv.firstChild);
+
+  for (var i = 0; i < kw.required.length; i++) {
+    var found = text.indexOf(kw.required[i].toUpperCase()) !== -1;
+    if (found) hits++;
+    var row = document.createElement('div');
+    row.className = found ? 'keyword-hit' : 'keyword-miss';
+    row.textContent = (found ? '\u2713 ' : '\u2717 ') + kw.labels[i];
+    resultDiv.appendChild(row);
+  }
+  resultDiv.style.display = 'block';
+
+  if (hits === kw.required.length) {
+    var exKey = 'write' + writeNum;
+    exercisesCompleted[exKey] = true;
+
+    /* Loot drop */
+    var lootKey = 'write-' + writeNum;
+    var loot = TUTORIAL_11_LOOT[lootKey];
+    if (loot && typeof SV !== 'undefined' && SV.inventory) {
+      SV.inventory.addItem(loot);
+    }
+
+    /* Quest objectives */
+    if (writeNum <= 5 && exercisesCompleted.write1 && exercisesCompleted.write2 &&
+        exercisesCompleted.write3 && exercisesCompleted.write4 && exercisesCompleted.write5) {
+      if (typeof SV !== 'undefined' && SV.questLog) SV.questLog.complete('create-x5');
+    }
+    if (writeNum >= 6 && writeNum <= 8 && exercisesCompleted.write6 &&
+        exercisesCompleted.write7 && exercisesCompleted.write8) {
+      if (typeof SV !== 'undefined' && SV.questLog) SV.questLog.complete('insert-data');
+    }
+    checkAllComplete();
+  }
+
+  /* Refresh scroll triggers after content height change */
+  if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+}
+
+/* ─── Query builder keyword validation ─── */
+
+function checkQueryStep(stepNum) {
+  var textarea = document.getElementById('query-step-' + stepNum + '-input');
+  var resultDiv = document.getElementById('query-step-' + stepNum + '-keywords');
+  if (!textarea || !resultDiv) return;
+
+  var text = textarea.value.toUpperCase().replace(/\s+/g, ' ');
+  var kw = queryKeywords['step' + stepNum];
+  if (!kw) return;
+
+  var hits = 0;
+  while (resultDiv.firstChild) resultDiv.removeChild(resultDiv.firstChild);
+
+  for (var i = 0; i < kw.required.length; i++) {
+    var found = text.indexOf(kw.required[i].toUpperCase()) !== -1;
+    if (found) hits++;
+    var row = document.createElement('div');
+    row.className = found ? 'keyword-hit' : 'keyword-miss';
+    row.textContent = (found ? '\u2713 ' : '\u2717 ') + kw.labels[i];
+    resultDiv.appendChild(row);
+  }
+  resultDiv.style.display = 'block';
+}
+
+/* ─── Query builder reveal ─── */
+
+function revealQueryStep(stepNum) {
+  var answerDiv = document.getElementById('query-step-' + stepNum + '-answer');
+  if (!answerDiv) return;
+  answerDiv.style.display = answerDiv.style.display === 'block' ? 'none' : 'block';
+
+  /* If last step revealed, mark query complete */
+  if (stepNum === 5) {
+    exercisesCompleted.query = true;
+    var loot = TUTORIAL_11_LOOT['query-complete'];
+    if (loot && typeof SV !== 'undefined' && SV.inventory) {
+      SV.inventory.addItem(loot);
+    }
+    if (typeof SV !== 'undefined' && SV.questLog) SV.questLog.complete('join-query');
+    checkAllComplete();
+  }
+
+  /* Refresh scroll triggers after content height change */
+  if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+}
+
+/* ─── Write exercise reveal ─── */
+
+function showAnswer(id) {
+  var answerDiv = document.getElementById(id + '-answer');
+  if (!answerDiv) return;
+
+  if (answerDiv.style.display === 'none' || !answerDiv.style.display) {
+    answerDiv.style.display = 'block';
+
+    /* Mark the write exercise as completed */
+    var writeNum = id.replace('write-', '');
+    var exKey = 'write' + writeNum;
+    if (exercisesCompleted.hasOwnProperty(exKey)) {
+      exercisesCompleted[exKey] = true;
+
+      /* Loot drop */
+      var loot = TUTORIAL_11_LOOT[id];
+      if (loot && typeof SV !== 'undefined' && SV.inventory) {
+        SV.inventory.addItem(loot);
+      }
+
+      /* Quest objectives for write exercises */
+      if (parseInt(writeNum) <= 5 && exercisesCompleted.write1 && exercisesCompleted.write2 &&
+          exercisesCompleted.write3 && exercisesCompleted.write4 && exercisesCompleted.write5) {
+        if (typeof SV !== 'undefined' && SV.questLog) SV.questLog.complete('create-x5');
+      }
+      if (parseInt(writeNum) >= 6 && parseInt(writeNum) <= 8 && exercisesCompleted.write6 &&
+          exercisesCompleted.write7 && exercisesCompleted.write8) {
+        if (typeof SV !== 'undefined' && SV.questLog) SV.questLog.complete('insert-data');
+      }
+
+      checkAllComplete();
+    }
+  } else {
+    answerDiv.style.display = 'none';
+  }
+
+  /* Refresh scroll triggers after content height change */
+  if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+}
+
+/* ─── Match exercise check (Exercise 1 — dbt Model Components) ─── */
+
+function checkWithFeedback(exerciseNum, feedbackData) {
+  var rows = document.querySelectorAll('#exercise-' + exerciseNum + ' .match-row');
+  var correct = 0;
+
+  rows.forEach(function(row, index) {
+    var sel = row.querySelector('.match-select');
+    var fb = row.querySelector('.row-feedback');
+    var expected = row.getAttribute('data-correct');
+    var val = sel.value;
+
+    /* Reset previous state */
+    fb.className = 'row-feedback';
+    row.style.borderColor = '';
+    row.style.borderLeftWidth = '';
+
+    if (!val) {
+      fb.className = 'row-feedback feedback-incorrect';
+      fb.textContent = 'Please select an answer.';
+      fb.style.display = 'block';
+      return;
+    }
+
+    var isCorrect = val === expected;
+    if (isCorrect) {
+      correct++;
+      row.style.borderColor = 'var(--success-color)';
+      row.style.borderLeftWidth = '3px';
+      fb.className = 'row-feedback feedback-correct';
+    } else {
+      row.style.borderColor = '#ff4444';
+      row.style.borderLeftWidth = '3px';
+      fb.className = 'row-feedback feedback-incorrect';
+    }
+
+    /* Look up specific feedback text */
+    var feedbackText = feedbackData[index] ? feedbackData[index][val] : null;
+    fb.textContent = feedbackText || (isCorrect ? 'Correct.' : 'Not quite. Try again.');
+    fb.style.display = 'block';
+  });
+
+  var totalFb = document.getElementById('feedback-' + exerciseNum);
+  if (correct === rows.length) {
+    totalFb.textContent = correct + '/' + rows.length + ' — All correct!';
+    totalFb.style.color = 'var(--success-color)';
+    var exKey = 'ex' + exerciseNum;
+    exercisesCompleted[exKey] = true;
+
+    /* Loot drop */
+    var loot = TUTORIAL_11_LOOT['exercise-' + exerciseNum];
+    if (loot && typeof SV !== 'undefined' && SV.inventory) {
+      if (typeof loot === 'string') {
+        SV.inventory.addItem(loot);
+      } else {
+        for (var li = 0; li < loot.length; li++) {
+          SV.inventory.addItem(loot[li]);
+        }
+      }
+    }
+
+    /* Quest objective */
+    if (exerciseNum === 1 && typeof SV !== 'undefined' && SV.questLog) {
+      SV.questLog.complete('dbt-reading');
+    }
+
+    checkAllComplete();
+  } else {
+    totalFb.textContent = correct + '/' + rows.length + ' — Review the feedback below each row.';
+    totalFb.style.color = '#ff9580';
+  }
+
+  /* Refresh scroll triggers after feedback rows expand */
+  if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+}
+
+function checkExercise1() { checkWithFeedback(1, feedback1); }
+
+/* ─── Completion tracking ─── */
+
+function checkAllComplete() {
+  var all = true;
+  for (var key in exercisesCompleted) {
+    if (!exercisesCompleted[key]) { all = false; break; }
+  }
+  if (all) {
+    /* Award completion loot */
+    if (typeof SV !== 'undefined' && SV.inventory) {
+      SV.inventory.addItem('end-to-end-vault');
+      SV.inventory.addItem('mini-vault');
+    }
+
+    /* Complete final quest objectives */
+    if (typeof SV !== 'undefined' && SV.questLog) {
+      SV.questLog.complete('full-picture');
+    }
+
+    var banner = document.getElementById('completion-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    /* Final achievement check */
+    if (typeof SV !== 'undefined' && SV.achievements) {
+      SV.achievements.checkAll();
+    }
+  }
+}
+
+/* ─── Shuffle select options (keeps placeholder first) ─── */
+
+function shuffleSelectOptions() {
+  var selects = document.querySelectorAll('.match-select');
+  selects.forEach(function(sel) {
+    var placeholder = sel.options[0];
+    var opts = Array.prototype.slice.call(sel.options, 1);
+    for (var i = opts.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = opts[i]; opts[i] = opts[j]; opts[j] = tmp;
+    }
+    while (sel.options.length > 0) sel.remove(0);
+    sel.appendChild(placeholder);
+    opts.forEach(function(o) { sel.appendChild(o); });
+    sel.selectedIndex = 0;
+  });
+}
+
+/* ─── DOMContentLoaded: initialize game systems ─── */
+
+document.addEventListener('DOMContentLoaded', function() {
+  shuffleSelectOptions();
+
+  /* Mark S1 (The Mission) complete on page load — it is read-only */
+  if (typeof SV !== 'undefined' && SV.questLog) {
+    setTimeout(function() {
+      SV.questLog.complete('mission');
+    }, 1500);
+  }
+
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+
+    /* Reset quest progress for this tutorial on each page load so
+       objectives always start unchecked — they check off as exercises
+       are completed during the session. */
+    if (SV.persistence) {
+      SV.persistence.update('quest-progress', function(p) {
+        delete p['tutorial-11'];
+        return p;
+      }, {});
+    }
+
+    /* Clear saved draggable panel positions so panels use their CSS defaults.
+       Prevents stale positions from previous layouts persisting. */
+    try {
+      localStorage.removeItem('sv-panel-pos-quest-log');
+      localStorage.removeItem('sv-panel-pos-inventory-toolbar');
+    } catch(e) {}
+    var ql = document.getElementById('quest-log');
+    if (ql) ql.removeAttribute('style');
+
+    if (SV.questLog) SV.questLog.init({
+      tutorialId: 'tutorial-11',
+      objectives: TUTORIAL_11_OBJECTIVES
+    });
+    if (SV.achievements) SV.achievements.init();
+    if (SV.scrollEffects) SV.scrollEffects.init();
+  }
+});
+
+
+/* ===================================================
+   WORD-WRAP UTILITY
+   =================================================== */
+function wrapHookWords(hookEl) {
+  var nodes = Array.prototype.slice.call(hookEl.childNodes);
+  var frag = document.createDocumentFragment();
+  nodes.forEach(function(node) {
+    if (node.nodeType === 1 && node.tagName === 'EM') {
+      var span = document.createElement('span');
+      span.className = 'word';
+      span.appendChild(node.cloneNode(true));
+      frag.appendChild(span);
+    } else if (node.nodeType === 3) {
+      var words = node.textContent.split(/(\s+)/);
+      words.forEach(function(w) {
+        if (/^\s+$/.test(w)) { frag.appendChild(document.createTextNode(w)); }
+        else if (w.length > 0) {
+          var span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = w;
+          frag.appendChild(span);
+        }
+      });
+    } else { frag.appendChild(node.cloneNode(true)); }
+  });
+  while (hookEl.firstChild) hookEl.removeChild(hookEl.firstChild);
+  hookEl.appendChild(frag);
+  hookEl.setAttribute('data-word-count', hookEl.querySelectorAll('.word').length);
+}
+
+
+/* ===================================================
+   INIT
+   =================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.four-layers').forEach(function(container) { updateLayerDots(container); });
+  document.querySelectorAll('.hook-text').forEach(function(hook) { wrapHookWords(hook); });
+});
+</script>
+
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script src="../nav-inject.js"></script>
+</body>
+</html>

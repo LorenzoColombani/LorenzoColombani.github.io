@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Exam Pacer</title>
+<style>
+  :root{
+    --bg:#0A0D13;
+    --surface:#12161F;
+    --surface-2:#1A2029;
+    --line:#232A36;
+    --text:#EAEDF2;
+    --muted:#7A8496;
+    --muted-dim:#4E5666;
+    --reg-ok:#34D399;
+    --reg-low:#FBBF24;
+    --extra:#FB6E6E;
+    --reserve:#F97316;
+    --ring-track:#20262F;
+    --btn:#E7EAF0;
+    --btn-ink:#0A0D13;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{
+    margin:0;
+    background:radial-gradient(1200px 700px at 50% -10%, #10151E 0%, rgba(16,21,30,0) 60%), var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;align-items:center;justify-content:center;
+    min-height:100dvh;padding:22px;
+  }
+  .mono{font-family:ui-monospace,"SF Mono","Menlo","Cascadia Code","Roboto Mono",Consolas,monospace;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+  .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  .card{
+    width:100%;max-width:440px;
+    background:linear-gradient(180deg,var(--surface) 0%, #0E121A 100%);
+    border:1px solid var(--line);border-radius:22px;padding:20px 22px 22px;
+    box-shadow:0 30px 80px -40px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.02) inset;
+  }
+  .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+  .eyebrow{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .icons{display:flex;gap:6px}
+  .icon-btn{width:34px;height:34px;display:grid;place-items:center;background:transparent;border:1px solid transparent;border-radius:10px;color:var(--muted);cursor:pointer;transition:background .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease);}
+  .icon-btn:hover{background:var(--surface-2);color:var(--text)}
+  .icon-btn.on{color:var(--text);border-color:var(--line)}
+  .icon-btn svg{width:17px;height:17px}
+  .icon-btn:focus-visible{outline:2px solid var(--reg-ok);outline-offset:2px}
+  .gauge{position:relative;width:100%;aspect-ratio:1/1;max-width:288px;margin:6px auto 2px}
+  .gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .track{fill:none;stroke:var(--ring-track);stroke-width:12}
+  .arc{fill:none;stroke:var(--reg-ok);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .26s linear, stroke .3s var(--ease)}
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px}
+  .q-badge{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .q-num{font-size:15px;letter-spacing:.10em;color:var(--text);margin-top:1px;transition:transform .35s var(--ease)}
+  .q-num .slash{color:var(--muted-dim);margin:0 3px}
+  .pulse{animation:pulse .45s var(--ease)}
+  @keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.16)}100%{transform:scale(1)}}
+  .p-time{font-size:clamp(44px,14.5vw,58px);font-weight:600;line-height:1;letter-spacing:-.01em;margin-top:9px;color:var(--text)}
+  .p-cap{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:7px;min-height:14px}
+  .sec{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:8px;min-height:20px;transition:opacity .25s var(--ease)}
+  .sec .sec-time{font-size:17px;font-weight:600;letter-spacing:.01em}
+  .sec .sec-lbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .total{margin-top:12px;padding-top:14px;border-top:1px solid var(--line)}
+  .total-row{display:flex;align-items:baseline;justify-content:space-between}
+  .total-lbl{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .total-val{font-size:22px;font-weight:600;letter-spacing:.01em;transition:color .3s var(--ease)}
+  .bar-wrap{position:relative;margin-top:10px}
+  .bar{height:6px;background:var(--ring-track);border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;width:0%;background:linear-gradient(90deg,#2C3442,#59647A);border-radius:99px;transition:width .3s linear,background .3s var(--ease)}
+  .bar-mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--reserve);opacity:.55;border-radius:2px}
+  .bar-note{display:flex;justify-content:flex-end;margin-top:5px;font-size:10px;letter-spacing:.06em;color:var(--muted-dim)}
+  .controls{display:flex;gap:8px;margin-top:16px}
+  .btn{height:52px;border:none;border-radius:14px;font-size:15px;font-weight:650;letter-spacing:.01em;cursor:pointer;font-family:inherit;transition:transform .12s var(--ease),background .18s var(--ease),opacity .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease)}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:2px solid var(--reg-ok);outline-offset:2px}
+  .btn[disabled]{opacity:.35;cursor:not-allowed}
+  .btn-primary{flex:1.15;background:var(--btn);color:var(--btn-ink)}
+  .btn-primary:hover:not([disabled]){background:#fff}
+  .btn-skip{flex:1;background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+  .btn-skip:hover:not([disabled]){border-color:#39485A;background:#1F2732}
+  .btn-reset{background:transparent;color:var(--muted);border:1px solid var(--line);padding:0 18px;min-width:96px}
+  .btn-reset:hover:not([disabled]){color:var(--text);border-color:#33404F}
+  .btn-reset.armed{color:var(--reg-low);border-color:var(--reg-low)}
+  .btn-reset.resume{color:var(--reg-ok);border-color:var(--reg-ok)}
+  .hint{margin-top:13px;text-align:center;font-size:11px;color:var(--muted-dim);letter-spacing:.02em}
+  .hint kbd{font-family:ui-monospace,monospace;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:10px;color:var(--muted)}
+  .settings{overflow:hidden;max-height:0;opacity:0;transition:max-height .32s var(--ease),opacity .28s var(--ease),margin .32s var(--ease);margin-top:0}
+  .settings.open{max-height:400px;opacity:1;margin-top:14px}
+  .settings-inner{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .field{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .field:last-of-type{margin-bottom:0}
+  .field label{font-size:13px;color:var(--muted);letter-spacing:.01em}
+  .inputs{display:flex;gap:8px;align-items:center}
+  .inp{width:60px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px 8px;font-size:16px;text-align:center;font-family:ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .inp:focus{outline:none;border-color:#3A4756}
+  .unit{font-size:12px;color:var(--muted-dim)}
+  .derived{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+  .drow{display:flex;align-items:center;justify-content:space-between}
+  .drow .lbl{font-size:12px;color:var(--muted);letter-spacing:.02em}
+  .drow .val{font-size:15px;font-weight:600}
+  .apply{width:100%;margin-top:14px;height:40px;background:transparent;border:1px solid #33404F;color:var(--text);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .18s var(--ease)}
+  .apply:hover{background:var(--bg)}
+  @media (prefers-reduced-motion:reduce){*{transition-duration:.001ms !important;animation-duration:.001ms !important}}
+</style>
+</head>
+<body>
+  <main class="card" role="application" aria-label="Exam pacing timer">
+    <div class="head">
+      <span class="eyebrow">Exam Pacer</span>
+      <div class="icons">
+        <button class="icon-btn" id="soundBtn" title="Sound cue when borrowed time starts" aria-pressed="false" aria-label="Toggle sound">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+        </button>
+        <button class="icon-btn" id="gearBtn" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="gauge">
+      <svg viewBox="0 0 260 260" aria-hidden="true">
+        <circle class="track" cx="130" cy="130" r="118"/>
+        <circle class="arc" id="arc" cx="130" cy="130" r="118"/>
+      </svg>
+      <div class="center">
+        <div class="q-badge" id="qBadge">Question</div>
+        <div class="q-num mono" id="qNum"><span id="qCur">1</span><span class="slash">/</span><span id="qTot">100</span></div>
+        <div class="p-time mono" id="pTime">1:30</div>
+        <div class="p-cap" id="pCap">per question</div>
+      </div>
+    </div>
+
+    <div class="sec" id="sec" style="opacity:0">
+      <span class="sec-time mono" id="secTime">+0:00</span>
+      <span class="sec-lbl" id="secLbl">banked</span>
+    </div>
+
+    <div class="total">
+      <div class="total-row">
+        <span class="total-lbl">Total remaining</span>
+        <span class="total-val mono" id="totVal">3:00:00</span>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+        <div class="bar-mark" id="barMark"></div>
+      </div>
+      <div class="bar-note" id="barNote">reserve begins at 2:30:00</div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-primary" id="primary">Start</button>
+      <button class="btn btn-skip" id="skipBtn" disabled>Skip &rarr;</button>
+      <button class="btn btn-reset" id="resetBtn" disabled>Reset</button>
+    </div>
+
+    <div class="hint"><kbd>Space</kbd> start/pause &nbsp;&middot;&nbsp; <kbd>&rarr;</kbd> skip &nbsp;&middot;&nbsp; <kbd>R</kbd> reset</div>
+
+    <div class="settings" id="settings">
+      <div class="settings-inner">
+        <div class="field">
+          <label for="inpQ">Questions</label>
+          <div class="inputs"><input class="inp mono" id="inpQ" type="number" min="1" max="500" value="100" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <label for="inpP">Per question</label>
+          <div class="inputs"><input class="inp mono" id="inpP" type="number" min="5" max="3600" value="90" inputmode="numeric"><span class="unit">s</span></div>
+        </div>
+        <div class="field">
+          <label for="inpH">Total time</label>
+          <div class="inputs">
+            <input class="inp mono" id="inpH" type="number" min="0" max="12" value="3" inputmode="numeric"><span class="unit">h</span>
+            <input class="inp mono" id="inpM" type="number" min="0" max="59" value="0" inputmode="numeric"><span class="unit">m</span>
+          </div>
+        </div>
+        <div class="derived">
+          <div class="drow"><span class="lbl">Reserve buffer</span><span class="val mono" id="dReserve">30:00</span></div>
+          <div class="drow"><span class="lbl">Even split would be</span><span class="val mono" id="dEven" style="color:var(--muted)">108s</span></div>
+        </div>
+        <button class="apply" id="applyBtn">Apply &amp; reset clock</button>
+      </div>
+    </div>
+
+    <div class="sr" aria-live="polite" id="live"></div>
+  </main>
+
+<script>
+(function(){
+  "use strict";
+
+  // iOS Safari ignores viewport user-scalable=no, so kill pinch-zoom gestures
+  // and the double-tap-to-zoom that fires on quick taps.
+  ['gesturestart','gesturechange','gestureend'].forEach(function(ev){
+    document.addEventListener(ev, function(e){ e.preventDefault(); }, { passive:false });
+  });
+  var _lastTouch = 0;
+  document.addEventListener('touchend', function(e){
+    var now = e.timeStamp;
+    if (now - _lastTouch <= 350){ e.preventDefault(); }
+    _lastTouch = now;
+  }, { passive:false });
+  var KEY="exam-pacer.session.v1";
+  var config={ perQ:90, numQuestions:100, totalSeconds:3*3600 };
+
+  var running=false, elapsedBefore=0, segStart=0, tickId=null;
+  var currentIndex=1, qStartElapsed=0;
+  var reviewMode=false, reviewStartRemain=0;
+  var timesUp=false;
+  var soundOn=false, audioCtx=null, wakeLock=null;
+  var lastShownQ=1, lastPhase=1, lastSaveT=0, lastSkipT=0;
+  var snapshot=null, resetArmed=false, resetArmTimer=null;
+
+  var $=function(id){ return document.getElementById(id); };
+  var arc=$('arc'), qBadge=$('qBadge'), qCur=$('qCur'), qTot=$('qTot'), qNum=$('qNum');
+  var pTime=$('pTime'), pCap=$('pCap');
+  var sec=$('sec'), secTime=$('secTime'), secLbl=$('secLbl');
+  var totVal=$('totVal'), barFill=$('barFill'), barMark=$('barMark'), barNote=$('barNote');
+  var primary=$('primary'), skipBtn=$('skipBtn'), resetBtn=$('resetBtn');
+  var gearBtn=$('gearBtn'), soundBtn=$('soundBtn'), settings=$('settings'), applyBtn=$('applyBtn');
+  var inpQ=$('inpQ'), inpP=$('inpP'), inpH=$('inpH'), inpM=$('inpM');
+  var dReserve=$('dReserve'), dEven=$('dEven'), live=$('live');
+
+  var R=118, C=2*Math.PI*R;
+  arc.style.strokeDasharray=C.toFixed(2);
+
+  /* ---------- helpers ---------- */
+  function elMs(){ return elapsedBefore + (running ? (Date.now()-segStart) : 0); }
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function fmtMS(s){ s=Math.max(0,Math.ceil(s)); return Math.floor(s/60)+':'+pad(s%60); }
+  function fmtHMS(s){ s=Math.max(0,Math.ceil(s)); var h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h+':'+pad(m)+':'+pad(s%60); }
+  function fmtClock(s){ s=Math.max(0,Math.ceil(s)); return s>=3600 ? fmtHMS(s) : fmtMS(s); }
+  function cssv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function reserveSeconds(){ return Math.max(0, config.totalSeconds - config.perQ*config.numQuestions); }
+  function announce(t){ live.textContent=t; }
+
+  /* ---------- schedule (pure) ----------
+     Advances through the pacing schedule to wherever `real` falls.
+     Each question's budget = regular time + whatever bank it started with.
+     Advancing lands the next question exactly at the scheduled boundary,
+     so the bank stays consistent even after long gaps (sleeping tab, etc.). */
+  function advanceSchedule(real, idx, qStart, pq, numQ){
+    var steps=0;
+    while(true){
+      var bank=Math.max(0, pq*(idx-1)-qStart);
+      var budget=pq+bank;
+      if(real - qStart < budget) break;
+      if(idx>=numQ) return {idx:idx, qStart:qStart, steps:steps, review:true};
+      qStart=qStart+budget; idx++; steps++;
+    }
+    return {idx:idx, qStart:qStart, steps:steps, review:false};
+  }
+
+  /* ---------- persistence (best effort; silently unavailable in sandboxes) ---------- */
+  function storeSet(p){ try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(_){} }
+  function storeGet(){ try{ var s=localStorage.getItem(KEY); return s?JSON.parse(s):null; }catch(_){ return null; } }
+  function storeDel(){ try{ localStorage.removeItem(KEY); }catch(_){} }
+  function sessionPayload(){
+    return { v:1, e:elMs(), i:currentIndex, q:qStartElapsed, r:reviewMode?1:0, rs:reviewStartRemain,
+             c:{p:config.perQ, n:config.numQuestions, t:config.totalSeconds}, at:Date.now() };
+  }
+  function maybeAutosave(){
+    if(!running) return;
+    var now=Date.now();
+    if(now-lastSaveT>2000){ lastSaveT=now; storeSet(sessionPayload()); }
+  }
+
+  /* ---------- sound ---------- */
+  function beep(kind){
+    if(!soundOn) return;
+    try{
+      if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state==='suspended') audioCtx.resume().catch(function(){});
+      var seq = kind==='exhaust' ? [[440,0],[330,0.15]] : [[720,0]];
+      seq.forEach(function(p){
+        var t=audioCtx.currentTime+p[1];
+        var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        o.type='sine'; o.frequency.setValueAtTime(p[0],t);
+        g.gain.setValueAtTime(0.0001,t);
+        g.gain.exponentialRampToValueAtTime(0.15,t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+0.24);
+        o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+0.26);
+      });
+    }catch(e){}
+  }
+
+  /* ---------- screen wake lock (best effort) ---------- */
+  function lockOn(){
+    try{
+      if(navigator.wakeLock && !wakeLock){
+        navigator.wakeLock.request('screen').then(function(l){
+          wakeLock=l;
+          l.addEventListener('release', function(){ wakeLock=null; });
+        }).catch(function(){});
+      }
+    }catch(_){}
+  }
+  function lockOff(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(_){} }
+
+  /* ---------- terminal states ---------- */
+  function setTimesUp(){
+    timesUp=true; running=false; stopTick(); lockOff(); storeDel();
+    primary.textContent="Time's up"; primary.disabled=true; skipBtn.disabled=true;
+    pTime.textContent='0:00'; pTime.style.color=cssv('--extra');
+    pCap.textContent="time's up";
+    sec.style.opacity='0';
+    arc.style.strokeDashoffset=C.toFixed(2); arc.style.stroke=cssv('--extra');
+    totVal.textContent='0:00:00'; totVal.style.color=cssv('--reserve');
+    barFill.style.width='100%'; barFill.style.background=cssv('--reserve');
+    document.title="Time's up · Exam Pacer";
+    updateResetBtn();
+    announce("Time is up.");
+  }
+  function enterReview(real){
+    reviewMode=true;
+    reviewStartRemain=Math.max(0.001, config.totalSeconds-real);
+    skipBtn.disabled=true;
+    beep('exhaust');
+    announce('All questions covered. Review time.');
+  }
+
+  /* ---------- render ---------- */
+  function render(){
+    var real=elMs()/1000;
+    if(timesUp) return;
+    if(real>=config.totalSeconds){ setTimesUp(); return; }
+
+    // total remaining + reserve color
+    var totRemain=config.totalSeconds-real;
+    totVal.textContent=fmtHMS(totRemain);
+    var res=reserveSeconds();
+    var inReserve = res>0 && totRemain<=res;
+    totVal.style.color = inReserve ? cssv('--reserve') : cssv('--text');
+
+    // progress bar
+    var prog=Math.min(1, real/config.totalSeconds);
+    barFill.style.width=(prog*100).toFixed(2)+'%';
+    var basePct = res>0 ? (config.perQ*config.numQuestions)/config.totalSeconds : 1;
+    barFill.style.background = (prog>basePct) ? cssv('--reserve') : 'linear-gradient(90deg,#2C3442,#59647A)';
+
+    var paused = (!running && elapsedBefore>0);
+
+    // schedule catch-up (handles normal rollover AND long gaps)
+    if(!reviewMode){
+      var s=advanceSchedule(real, currentIndex, qStartElapsed, config.perQ, config.numQuestions);
+      if(s.steps>0){
+        currentIndex=s.idx; qStartElapsed=s.qStart;
+        if(running){
+          qNum.classList.remove('pulse'); void qNum.offsetWidth; qNum.classList.add('pulse');
+          beep('exhaust');
+          announce('Question '+currentIndex);
+        }
+      }
+      if(s.review) enterReview(real);
+    }
+
+    if(reviewMode){
+      qBadge.textContent='Review';
+      qCur.textContent=config.numQuestions;
+      pTime.textContent=fmtClock(totRemain); pTime.style.color=cssv('--reserve');
+      pCap.textContent = paused ? 'paused' : 'reserve time';
+      var vf=Math.max(0,Math.min(1, totRemain/reviewStartRemain));
+      arc.style.strokeDashoffset=(C*(1-vf)).toFixed(2);
+      arc.style.stroke=cssv('--reserve');
+      sec.style.opacity='0';
+      document.title=(paused?'Paused · ':'')+'Review '+fmtClock(totRemain)+' · Exam Pacer';
+      lastShownQ=currentIndex;
+      maybeAutosave();
+      return;
+    }
+
+    qBadge.textContent='Question';
+    var pq=config.perQ;
+    var timeOnQ=real-qStartElapsed;
+    var bank=Math.max(0, pq*(currentIndex-1)-qStartElapsed);
+    var regRemain=pq-timeOnQ;
+    var hasExtra=bank>0.05;
+    var extraRemain=hasExtra ? Math.max(0, bank-Math.max(0,timeOnQ-pq)) : 0;
+    var phase2 = hasExtra && regRemain<=0;
+
+    qCur.textContent=currentIndex;
+
+    if(running){
+      var ph=phase2?2:1;
+      if(ph===2 && lastPhase!==2){ beep('borrow'); announce('Borrowed time.'); }
+      lastPhase=ph;
+    }
+
+    if(!phase2){
+      var regDisp=Math.max(0,regRemain);
+      pTime.textContent=fmtMS(regDisp); pTime.style.color=cssv('--text');
+      pCap.textContent = paused ? 'paused' : 'per question';
+      var rf=Math.max(0,Math.min(1,regDisp/pq));
+      arc.style.strokeDashoffset=(C*(1-rf)).toFixed(2);
+      arc.style.stroke = (rf>1/3) ? cssv('--reg-ok') : cssv('--reg-low');
+      if(hasExtra){
+        secTime.textContent='+'+fmtMS(extraRemain); secTime.style.color=cssv('--extra');
+        secLbl.textContent='banked'; secLbl.style.color=cssv('--muted');
+        sec.style.opacity = paused ? '0.5' : '0.9';
+      } else { sec.style.opacity='0'; }
+      document.title=(paused?'Paused · ':'')+'Q'+currentIndex+' '+fmtMS(regDisp)+' · Exam Pacer';
+    } else {
+      pTime.textContent=fmtMS(extraRemain); pTime.style.color=cssv('--extra');
+      pCap.textContent = paused ? 'paused' : 'borrowed time';
+      var ef=Math.max(0,Math.min(1, bank>0 ? extraRemain/bank : 0));
+      arc.style.strokeDashoffset=(C*(1-ef)).toFixed(2);
+      arc.style.stroke=cssv('--extra');
+      secTime.textContent='0:00'; secTime.style.color=cssv('--muted-dim');
+      secLbl.textContent='regular up'; secLbl.style.color=cssv('--muted-dim');
+      sec.style.opacity='0.75';
+      document.title=(paused?'Paused · ':'')+'Q'+currentIndex+' +'+fmtMS(extraRemain)+' · Exam Pacer';
+    }
+
+    lastShownQ=currentIndex;
+    maybeAutosave();
+  }
+
+  /* ---------- tick driver (interval survives background throttling better than rAF) ---------- */
+  function startTick(){ if(!tickId) tickId=setInterval(function(){ if(running) render(); }, 250); }
+  function stopTick(){ if(tickId){ clearInterval(tickId); tickId=null; } }
+
+  /* ---------- controls ---------- */
+  function start(){
+    if(running||timesUp) return;
+    if(elapsedBefore>=config.totalSeconds*1000) return;
+    running=true; segStart=Date.now();
+    primary.textContent='Pause';
+    skipBtn.disabled=reviewMode;
+    disarmReset(); updateResetBtn();
+    if(soundOn && !audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+    lockOn(); startTick(); render();
+  }
+  function pause(){
+    if(!running) return;
+    elapsedBefore=elMs(); running=false;
+    stopTick(); lockOff();
+    primary.textContent='Resume';
+    storeSet(sessionPayload());
+    render(); updateResetBtn();
+  }
+  function togglePrimary(){ running ? pause() : start(); }
+
+  function skip(){
+    if(timesUp||reviewMode) return;
+    if(!running && elapsedBefore===0) return;
+    var now=Date.now();
+    if(now-lastSkipT<300) return;           // debounce accidental double fire
+    lastSkipT=now;
+    var real=elMs()/1000;
+    if(currentIndex>=config.numQuestions){ enterReview(real); }
+    else{
+      currentIndex++;
+      qStartElapsed=real;                    // remainder of this slot becomes bank
+      qNum.classList.remove('pulse'); void qNum.offsetWidth; qNum.classList.add('pulse');
+      announce('Question '+currentIndex);
+    }
+    storeSet(sessionPayload());
+    render();
+  }
+
+  /* ---------- reset with two layers of protection ----------
+     1) first press arms ("Sure?"), second press within 2.5s confirms
+     2) confirming snapshots the session; the button then offers "Resume" */
+  function disarmReset(){
+    resetArmed=false;
+    if(resetArmTimer){ clearTimeout(resetArmTimer); resetArmTimer=null; }
+    resetBtn.classList.remove('armed');
+  }
+  function updateResetBtn(){
+    if(resetArmed){ resetBtn.textContent='Sure?'; resetBtn.classList.add('armed'); resetBtn.classList.remove('resume'); resetBtn.disabled=false; return; }
+    resetBtn.classList.remove('armed');
+    var idle = !running && elapsedBefore===0;
+    if(idle && snapshot && !timesUp){
+      resetBtn.textContent='Resume'; resetBtn.classList.add('resume'); resetBtn.disabled=false;
+    } else {
+      resetBtn.textContent='Reset'; resetBtn.classList.remove('resume');
+      resetBtn.disabled = idle && !timesUp;
+    }
+  }
+  function doReset(){
+    // preserve an older snapshot if this session barely started (double-accident guard)
+    if(elMs()>=5000 || !snapshot){ snapshot=sessionPayload(); storeSet(snapshot); }
+    running=false; stopTick(); lockOff();
+    elapsedBefore=0; segStart=0; currentIndex=1; qStartElapsed=0;
+    reviewMode=false; reviewStartRemain=0; timesUp=false;
+    lastShownQ=1; lastPhase=1;
+    primary.textContent='Start'; primary.disabled=false;
+    skipBtn.disabled=true;
+    totVal.style.color=cssv('--text'); pTime.style.color=cssv('--text');
+    qBadge.textContent='Question'; qTot.textContent=config.numQuestions;
+    document.title='Exam Pacer';
+    disarmReset(); render(); updateResetBtn();
+    announce('Timer reset. Resume is available.');
+  }
+  function restore(){
+    var p=snapshot||storeGet();
+    if(!p||!p.c) return;
+    config.perQ=p.c.p; config.numQuestions=p.c.n; config.totalSeconds=p.c.t;
+    syncSettingsUI();
+    elapsedBefore=Math.min(p.e, config.totalSeconds*1000);
+    segStart=0; running=false;
+    currentIndex=Math.min(p.i, config.numQuestions);
+    qStartElapsed=p.q;
+    reviewMode=!!p.r; reviewStartRemain=p.rs||Math.max(0.001, config.totalSeconds-elapsedBefore/1000);
+    timesUp=false; lastPhase=1; lastShownQ=currentIndex;
+    snapshot=null;
+    primary.textContent='Resume'; primary.disabled=false;
+    skipBtn.disabled=true;
+    disarmReset(); render(); updateResetBtn();
+    announce('Session restored at question '+currentIndex+'. Press resume to continue.');
+  }
+  function onResetBtn(){
+    if(!resetArmed && !running && elapsedBefore===0 && snapshot && !timesUp){ restore(); return; }
+    if(!resetArmed){
+      resetArmed=true; updateResetBtn();
+      resetArmTimer=setTimeout(function(){ disarmReset(); updateResetBtn(); }, 2500);
+      return;
+    }
+    doReset();
+  }
+
+  /* ---------- settings ---------- */
+  function clampInt(v,lo,hi,dflt){ v=parseInt(v,10); if(isNaN(v)) v=dflt; return Math.min(hi,Math.max(lo,v)); }
+  function readInputs(){
+    return { q:clampInt(inpQ.value,1,500,100), p:clampInt(inpP.value,5,3600,90),
+             h:clampInt(inpH.value,0,12,3), m:clampInt(inpM.value,0,59,0) };
+  }
+  function updateDerived(){
+    var v=readInputs(), tot=v.h*3600+v.m*60, res=tot-v.p*v.q;
+    if(res>=0){ dReserve.textContent=fmtClock(res); dReserve.style.color=cssv('--reg-ok'); }
+    else { dReserve.textContent='-'+fmtClock(-res)+' short'; dReserve.style.color=cssv('--extra'); }
+    dEven.textContent = tot>0 ? (tot/v.q).toFixed((tot%v.q===0)?0:1)+'s' : '-';
+  }
+  function syncSettingsUI(){
+    inpQ.value=config.numQuestions; inpP.value=config.perQ;
+    inpH.value=Math.floor(config.totalSeconds/3600);
+    inpM.value=Math.floor((config.totalSeconds%3600)/60);
+    qTot.textContent=config.numQuestions;
+    var res=reserveSeconds();
+    var basePct = res>0 ? (config.perQ*config.numQuestions)/config.totalSeconds*100 : 100;
+    barMark.style.left=basePct+'%';
+    barMark.style.display = res>0 ? '' : 'none';
+    barNote.textContent = res>0 ? ('reserve begins at '+fmtHMS(config.perQ*config.numQuestions)) : 'no reserve buffer';
+    updateDerived();
+  }
+  function applyConfig(){
+    var v=readInputs(), tot=v.h*3600+v.m*60;
+    if(tot<=0) return;
+    config.numQuestions=v.q; config.perQ=v.p; config.totalSeconds=tot;
+    snapshot=null; storeDel();
+    syncSettingsUI();
+    doReset(); snapshot=null; storeDel(); updateResetBtn();
+    settings.classList.remove('open'); gearBtn.classList.remove('on');
+  }
+
+  /* ---------- events ---------- */
+  primary.addEventListener('click', function(){ togglePrimary(); this.blur(); });
+  skipBtn.addEventListener('click', function(){ skip(); this.blur(); });
+  resetBtn.addEventListener('click', function(){ onResetBtn(); this.blur(); });
+  gearBtn.addEventListener('click', function(){ var o=settings.classList.toggle('open'); gearBtn.classList.toggle('on',o); });
+  soundBtn.addEventListener('click', function(){
+    soundOn=!soundOn; soundBtn.classList.toggle('on',soundOn);
+    soundBtn.setAttribute('aria-pressed', soundOn?'true':'false');
+    if(soundOn){ try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); beep('borrow'); }catch(e){} }
+  });
+  applyBtn.addEventListener('click', applyConfig);
+  [inpQ,inpP,inpH,inpM].forEach(function(el){ el.addEventListener('input', updateDerived); });
+
+  document.addEventListener('keydown', function(e){
+    if(e.target.tagName==='INPUT') return;
+    if(e.code==='Space'){ e.preventDefault(); togglePrimary(); }
+    else if(e.code==='ArrowRight' || e.key==='n' || e.key==='N'){ e.preventDefault(); skip(); }
+    else if(e.key==='r' || e.key==='R'){ onResetBtn(); }
+  });
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden){ if(running) lockOn(); render(); }
+    else if(running){ storeSet(sessionPayload()); }
+  });
+  window.addEventListener('pagehide', function(){ if(running||elapsedBefore>0) storeSet(sessionPayload()); });
+
+  /* ---------- init ---------- */
+  syncSettingsUI();
+  (function(){
+    var p=storeGet();
+    if(p && p.e>5000 && p.c && p.e < p.c.t*1000){ snapshot=p; }
+  })();
+  render(); updateResetBtn();
+})();
+</script>
+</body>
+</html>

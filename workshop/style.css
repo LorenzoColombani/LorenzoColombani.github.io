@@ -461,7 +461,8 @@ body[data-product-layout="portrait"] .desk-return{top:max(92px,calc(env(safe-are
 /* Website projection: a gently translucent page with an unframed, feathered edge. */
 .website-experience{position:fixed;inset:0;z-index:26;pointer-events:none;background:none;overflow:visible}
 .website-css-scene{position:absolute;inset:0;pointer-events:none}
-.website-open .top-bar{z-index:45}
+.website-open .top-bar{z-index:45;pointer-events:none}
+.website-open .top-bar :is(a,button,select){pointer-events:auto}
 .website-open #info-toggle{visibility:hidden;pointer-events:none}
 .holo-website{display:flex;flex-direction:column;inset:auto;margin:0;max-width:none;background:transparent;border:0;border-radius:0;box-shadow:none;isolation:isolate;transform-origin:center;overflow:visible}
 .holo-website-bar{display:none}

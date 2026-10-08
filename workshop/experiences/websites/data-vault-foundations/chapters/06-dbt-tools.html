@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 6: dbt Tools — Data Vault Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #030810;
+  --bg-void: #010409;
+  --pm-surface: rgba(8, 20, 42, 0.82);
+  --pm-surface-hover: rgba(12, 28, 54, 0.88);
+  --pm-glass: rgba(0, 180, 255, 0.06);
+  --pm-glass-edge: rgba(0, 180, 255, 0.12);
+  --hub-color: #06b6d4;
+  --hub-glow: rgba(6, 182, 212, 0.15);
+  --hub-dim: rgba(6, 182, 212, 0.08);
+  --hub-text: #22d3ee;
+  --link-color: #f59e0b;
+  --link-glow: rgba(245, 158, 11, 0.15);
+  --link-dim: rgba(245, 158, 11, 0.08);
+  --link-text: #fbbf24;
+  --sat-color: #a855f7;
+  --sat-glow: rgba(168, 85, 247, 0.15);
+  --sat-dim: rgba(168, 85, 247, 0.08);
+  --sat-text: #c084fc;
+  /* Tools color palette */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #f8fafc;
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --accent-dim: rgba(0, 180, 255, 0.06);
+  --accent-color: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --accent-bg: rgba(251, 191, 36, 0.04);
+  --warning-color: #ef4444;
+  --success-color: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.3);
+  --sql-select: #22c55e;
+  --sql-select-dim: rgba(34, 197, 94, 0.08);
+  --sql-select-glow: rgba(34, 197, 94, 0.25);
+  --border-subtle: rgba(0, 180, 255, 0.08);
+  --border-medium: rgba(0, 180, 255, 0.15);
+  --border-glow: rgba(0, 180, 255, 0.3);
+  --border-active: rgba(0, 180, 255, 0.45);
+  --holo-cyan: #0ef;
+  --holo-cyan-dim: rgba(0, 238, 255, 0.04);
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Exo 2', -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#particle-field {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.scanline-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 238, 255, 0.007) 2px, rgba(0, 238, 255, 0.007) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.scan-bar {
+  position: fixed;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 238, 255, 0.08), transparent);
+  animation: scan-sweep 12s linear infinite;
+  pointer-events: none;
+  z-index: 9997;
+}
+
+@keyframes scan-sweep {
+  0% { top: -3px; }
+  100% { top: 100vh; }
+}
+
+.page-content { position: relative; z-index: 2; }
+
+/* NAVIGATION */
+.holo-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(3, 8, 16, 0.9);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.nav-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+.nav-nodes { display: flex; align-items: center; gap: 4px; padding: 12px 0 8px; }
+.nav-node {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--accent-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+  opacity: 0;
+  animation: node-appear 0.4s ease both;
+}
+.nav-node:hover { border-color: var(--accent); color: var(--hub-text); background: rgba(0, 180, 255, 0.1); box-shadow: 0 0 18px rgba(0, 180, 255, 0.2); }
+.nav-node.active { opacity: 1; border-color: var(--accent); color: var(--bg-deep); background: var(--accent); box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.15); animation: node-appear 0.4s ease both, node-pulse 3s ease-in-out 0.4s infinite; }
+.nav-node.completed { opacity: 1; border-color: var(--sql-select); color: var(--sql-select); background: rgba(34, 197, 94, 0.08); }
+.nav-connector { flex: 1; height: 1px; background: var(--border-subtle); min-width: 6px; transition: all 0.6s; }
+.nav-connector.active { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+@keyframes node-pulse { 0%, 100% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 180, 255, 0.1); } 50% { box-shadow: 0 0 28px rgba(0, 180, 255, 0.5), 0 0 55px rgba(0, 180, 255, 0.2); } }
+@keyframes node-appear { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+.nav-node:nth-child(1) { animation-delay: 0.1s; }
+.nav-node:nth-child(3) { animation-delay: 0.15s; }
+.nav-node:nth-child(5) { animation-delay: 0.2s; }
+.nav-node:nth-child(7) { animation-delay: 0.25s; }
+.nav-node:nth-child(9) { animation-delay: 0.3s; }
+.nav-node:nth-child(11) { animation-delay: 0.35s; }
+.nav-node:nth-child(13) { animation-delay: 0.4s; }
+.nav-node:nth-child(15) { animation-delay: 0.45s; }
+.nav-node:nth-child(17) { animation-delay: 0.5s; }
+.nav-label { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); text-align: center; padding: 2px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* LCARS SEGMENTED PROGRESS BAR */
+.lcars-bar { display: flex; align-items: stretch; padding: 6px 24px 4px; gap: 0; }
+.lcars-elbow { width: 18px; flex-shrink: 0; background: var(--accent); border-radius: 0 0 0 14px; opacity: 0.35; position: relative; transition: opacity 0.6s ease; }
+.lcars-elbow::after { content: ''; position: absolute; bottom: -12px; left: 0; width: 100%; height: 12px; background: var(--accent); border-radius: 0 0 0 8px; opacity: inherit; }
+.lcars-segments { display: flex; gap: 3px; flex: 1; height: 32px; padding-left: 4px; }
+.lcars-seg {
+  flex: 1; border-radius: 3px;
+  background: linear-gradient(90deg, var(--seg-color) 0%, var(--seg-color) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) var(--seg-fill, 0%), color-mix(in srgb, var(--seg-color) 20%, transparent) 100%);
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255, 255, 255, 0.5); cursor: pointer;
+  transition: box-shadow 0.5s ease, filter 0.4s ease;
+  opacity: 0; animation: seg-appear 0.4s ease both;
+}
+.lcars-seg:nth-child(1) { animation-delay: 0.05s; } .lcars-seg:nth-child(2) { animation-delay: 0.1s; } .lcars-seg:nth-child(3) { animation-delay: 0.15s; } .lcars-seg:nth-child(4) { animation-delay: 0.2s; } .lcars-seg:nth-child(5) { animation-delay: 0.25s; } .lcars-seg:nth-child(6) { animation-delay: 0.3s; } .lcars-seg:nth-child(7) { animation-delay: 0.35s; } .lcars-seg:nth-child(8) { animation-delay: 0.4s; } .lcars-seg:nth-child(9) { animation-delay: 0.45s; }
+@keyframes seg-appear { from { opacity: 0; transform: scaleX(0.3); } to { opacity: 1; transform: scaleX(1); } }
+.lcars-seg:last-child { border-radius: 3px 12px 12px 3px; }
+.lcars-seg.active { box-shadow: 0 0 14px color-mix(in srgb, var(--seg-color) 50%, transparent), inset 0 0 8px color-mix(in srgb, var(--seg-color) 15%, transparent); color: var(--bg-deep); }
+.lcars-seg.completed { --seg-fill: 100%; filter: brightness(0.7); color: var(--bg-deep); }
+.lcars-seg:hover { filter: brightness(1.2); box-shadow: 0 0 10px color-mix(in srgb, var(--seg-color) 35%, transparent); }
+.lcars-flow { height: 3px; margin: 0 24px; background: rgba(0, 180, 255, 0.06); }
+.lcars-flow-fill { height: 100%; background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); width: 0%; transition: width 0.5s ease; }
+/* CONTAINER */
+.container { max-width: 800px; margin: 0 auto; padding: 92px 28px 140px; }
+
+/* TITLE */
+.title-section { margin-bottom: 72px; padding-bottom: 48px; border-bottom: 1px solid var(--border-subtle); opacity: 0; animation: matter-form 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+@keyframes matter-form { 0% { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(6px); } 40% { filter: blur(2px); } 70% { filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+.title-label { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; display: flex; align-items: center; gap: 12px; }
+.title-label::before { content: ''; width: 32px; height: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.title-section h1 { font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.15; color: var(--text-bright); margin-bottom: 18px; letter-spacing: 0.02em; text-shadow: 0 0 40px rgba(16, 185, 129, 0.12); }
+.title-section .subtitle { font-size: 17px; color: var(--text-secondary); font-weight: 400; line-height: 1.75; max-width: 620px; }
+.meta-chips { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.meta-chip { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; background: var(--holo-cyan-dim); color: var(--text-dim); border: 1px solid var(--border-subtle); transition: all 0.4s; opacity: 0; animation: chip-appear 0.5s ease both; }
+.meta-chip:hover { border-color: var(--border-medium); color: var(--text-secondary); box-shadow: 0 0 12px rgba(0, 180, 255, 0.08); }
+.meta-chip:nth-child(1) { animation-delay: 0.6s; } .meta-chip:nth-child(2) { animation-delay: 0.7s; } .meta-chip:nth-child(3) { animation-delay: 0.8s; } .meta-chip:nth-child(4) { animation-delay: 0.9s; } .meta-chip:nth-child(5) { animation-delay: 1.0s; } .meta-chip:nth-child(6) { animation-delay: 1.1s; } .meta-chip:nth-child(7) { animation-delay: 1.2s; }
+@keyframes chip-appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* SECTIONS */
+.section { margin-bottom: 88px; }
+@supports (animation-timeline: view()) {
+  .section { animation: scroll-materialize both linear; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+  @keyframes scroll-materialize { 0% { opacity: 0; transform: translateY(30px) scale(0.97); filter: blur(4px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+}
+@supports not (animation-timeline: view()) {
+  .section { opacity: 0; transform: translateY(30px); transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94); filter: blur(4px); }
+  .section.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+.section-tag { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bg-deep); padding: 5px 16px; border-radius: 4px; white-space: nowrap; }
+.section-tag.accent-t { background: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+.section-tag.exercise-t { background: linear-gradient(135deg, var(--sql-select), var(--accent)); box-shadow: 0 0 16px var(--success-glow); }
+.section-tag.hub-t { background: var(--hub-color); box-shadow: 0 0 14px var(--hub-glow); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-medium), transparent); }
+h2 { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 600; line-height: 1.3; color: var(--text-bright); margin-bottom: 22px; letter-spacing: 0.01em; }
+h3 { font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 600; color: var(--text-bright); margin: 38px 0 14px; letter-spacing: 0.02em; }
+p { margin-bottom: 16px; }
+strong { font-weight: 600; color: var(--text-bright); }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; background: var(--accent-dim); color: var(--hub-text); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-subtle); }
+/* TIER BADGES */
+.tier-badge { font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 10px; border-radius: 10px; margin-left: 12px; vertical-align: middle; }
+.tier-core { background: var(--hub-dim); color: var(--hub-text); border: 1px solid rgba(6, 182, 212, 0.2); }
+.tier-important { background: var(--etl-dim); color: var(--etl-text); border: 1px solid rgba(245, 158, 11, 0.2); }
+.tier-bonus { background: var(--sat-dim); color: var(--sat-text); border: 1px solid rgba(168, 85, 247, 0.15); opacity: 0.8; }
+
+/* PM PANELS */
+.pm-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 26px 30px; margin: 26px 0; position: relative; overflow: hidden; backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); transition: border-color 0.5s, box-shadow 0.5s, transform 0.5s; }
+.pm-panel:hover { border-color: var(--border-glow); box-shadow: 0 0 30px rgba(0, 180, 255, 0.06), inset 0 0 40px rgba(0, 180, 255, 0.02); transform: translateY(-1px); }
+.pm-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.35; }
+.pm-panel::after { content: ''; position: absolute; top: -1px; left: 0; width: 60px; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; animation: edge-charge 6s ease-in-out infinite; }
+@keyframes edge-charge { 0% { left: -60px; opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { left: calc(100% + 60px); opacity: 0; } }
+
+/* HOOK PANELS */
+.hook { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.hook::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+.hook::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50px; pointer-events: none; }
+.hook-default::before { background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.hook-default::after { background: linear-gradient(90deg, rgba(0,180,255,0.06), transparent); }
+.hook .hook-text { font-size: 17.5px; font-weight: 400; color: var(--text-bright); line-height: 1.75; margin: 0; }
+.hook-default .hook-text em { color: var(--hub-text); text-shadow: 0 0 12px var(--hub-glow); font-style: normal; }
+
+/* LANGUAGE BRIDGE */
+.language-bridge { background: var(--pm-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 24px 28px; margin: 26px 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.bridge-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--link-text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.bridge-label::before { content: ''; width: 16px; height: 2px; background: var(--link-color); box-shadow: 0 0 6px var(--link-glow); }
+.language-bridge p { font-size: 15px; color: var(--text-secondary); margin-bottom: 10px; }
+.language-bridge p:last-child { margin-bottom: 0; }
+.bridge-word { color: var(--link-text); font-weight: 600; }
+/* 4-LAYER EXPLANATION */
+.four-layers { margin: 30px 0; border: 1px solid var(--border-medium); border-radius: 16px; overflow: hidden; background: var(--pm-surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.four-layers-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px 12px; }
+.four-layers-title { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); }
+.layer-dots { display: flex; gap: 8px; }
+.layer-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--border-subtle); background: transparent; transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); cursor: pointer; }
+.layer-dot.l1 { border-color: var(--success-color); } .layer-dot.l2 { border-color: var(--hub-color); } .layer-dot.l3 { border-color: var(--link-color); } .layer-dot.l4 { border-color: var(--sat-color); }
+.layer-dot.active { transform: scale(1.4); }
+.layer-dot.l1.active { background: var(--success-color); box-shadow: 0 0 10px var(--success-glow); }
+.layer-dot.l2.active { background: var(--hub-color); box-shadow: 0 0 10px var(--hub-glow); }
+.layer-dot.l3.active { background: var(--link-color); box-shadow: 0 0 10px var(--link-glow); }
+.layer-dot.l4.active { background: var(--sat-color); box-shadow: 0 0 10px var(--sat-glow); }
+.layer { border-top: 1px solid var(--border-subtle); overflow: hidden; }
+.layer-header { display: flex; align-items: center; gap: 14px; padding: 14px 28px; cursor: pointer; user-select: none; transition: background 0.4s; }
+.layer-header:hover { background: rgba(0, 180, 255, 0.03); }
+.layer-badge { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 14px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.layer-1 .layer-badge { background: var(--success-color); color: var(--bg-deep); }
+.layer-2 .layer-badge { background: var(--hub-color); color: var(--bg-deep); }
+.layer-3 .layer-badge { background: var(--link-color); color: var(--bg-deep); }
+.layer-4 .layer-badge { background: var(--sat-color); color: var(--bg-deep); }
+.layer-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); flex: 1; }
+.layer-toggle { font-size: 12px; color: var(--text-dim); transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.layer.open .layer-toggle { transform: rotate(180deg); }
+.layer-content { max-height: 0; overflow: hidden; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.layer.open .layer-content { max-height: 600px; }
+.layer-content-inner { padding: 0 28px 22px; font-size: 15px; line-height: 1.8; color: var(--text-secondary); animation: layer-fade 0.5s ease; }
+@keyframes layer-fade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.layer-content-inner p { margin-bottom: 10px; font-size: 15px; }
+.layer-content-inner p:last-child { margin-bottom: 0; }
+/* DATA TABLES */
+.data-panel { background: var(--pm-surface); border: 1px solid var(--border-medium); border-radius: 14px; margin: 26px 0; overflow: hidden; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; }
+.data-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3; }
+.data-panel-header { padding: 12px 24px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); }
+.data-panel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; animation: dot-glow 3s ease-in-out infinite; }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes dot-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+.data-panel-dot.hub { background: var(--hub-color); box-shadow: 0 0 8px var(--hub-color); }
+.data-panel-dot.result { background: var(--sql-select); box-shadow: 0 0 8px var(--sql-select); }
+.data-panel-title { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; flex: 1; }
+.data-panel-title.snow-title { color: var(--snow-text); }
+.data-panel-title.result-title { color: var(--sql-select); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.data-table td { font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 10px 16px; border-bottom: 1px solid rgba(0, 180, 255, 0.04); color: var(--text-secondary); transition: background 0.3s; }
+.data-table tr:hover td { background: rgba(0, 180, 255, 0.03); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table td.pk { color: var(--hub-text); font-weight: 500; }
+.data-table td.dbt-val { color: var(--dbt-text); font-weight: 500; }
+.data-table td.etl-val { color: var(--etl-text); font-weight: 500; }
+.data-table td.val { color: var(--text-secondary); }
+/* CONCEPT CALLOUT */
+.concept-callout { background: var(--accent-bg); border: 1px solid rgba(251, 191, 36, 0.12); border-radius: 14px; padding: 22px 26px; margin: 28px 0; position: relative; overflow: hidden; }
+.concept-callout::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent-color); box-shadow: 0 0 8px var(--accent-glow); border-radius: 3px 0 0 3px; }
+.concept-callout::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50px; background: linear-gradient(90deg, rgba(251,191,36,0.04), transparent); pointer-events: none; }
+.concept-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-color); margin-bottom: 10px; text-shadow: 0 0 10px var(--accent-glow); }
+.concept-callout blockquote { font-size: 15px; color: var(--text-bright); font-weight: 400; margin: 0; line-height: 1.75; font-style: italic; border: none; padding: 0; }
+
+/* CONTRASTIVE PANEL */
+.contrast-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 26px 0; border: 1px solid var(--border-medium); border-radius: 14px; overflow: hidden; background: var(--pm-surface); }
+.contrast-side { padding: 24px 26px; }
+.contrast-side:first-child { border-right: 1px solid var(--border-subtle); }
+.contrast-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+.contrast-side p { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+.contrast-side p:last-child { margin-bottom: 0; }
+
+/* DISAMBIGUATION PANEL */
+.disambig-panel { border: 2px solid rgba(245, 158, 11, 0.2); border-radius: 16px; padding: 28px 30px; margin: 30px 0; background: var(--pm-surface); position: relative; overflow: hidden; }
+.disambig-panel::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, var(--etl-color), transparent); opacity: 0.4; }
+.disambig-label { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--etl-text); margin-bottom: 16px; text-shadow: 0 0 10px var(--etl-glow); }
+.disambig-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; }
+.disambig-item { padding: 16px 18px; border-radius: 10px; }
+.disambig-item h4 { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.disambig-item p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+/* CODE BLOCKS */
+.code-panel { background: rgba(2, 6, 14, 0.9); border: 1px solid var(--border-subtle); border-radius: 12px; margin: 22px 0; overflow: hidden; }
+.code-header { padding: 8px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-subtle); background: rgba(0, 180, 255, 0.02); }
+.code-dot { width: 7px; height: 7px; border-radius: 50%; }
+.code-dot.r { background: #ef4444; } .code-dot.y { background: #f59e0b; } .code-dot.g { background: #22c55e; }
+.code-filename { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); margin-left: 8px; }
+.code-body { padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; color: var(--text-secondary); white-space: pre-wrap; }
+
+/* EXPLORE MORE */
+.explore-opener { display: flex; align-items: center; gap: 10px; padding: 12px 18px; margin: 24px 0 0; background: rgba(10, 25, 47, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.12); border-radius: 12px; cursor: pointer; transition: all 0.35s ease; user-select: none; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 180, 255, 0.15); }
+.explore-opener:hover { background: rgba(10, 25, 47, 0.85); border-color: var(--accent); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 180, 255, 0.1); transform: translateY(-1px); }
+.explore-opener .explore-icon { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--accent); flex-shrink: 0; transition: transform 0.35s ease, background 0.35s ease; }
+.explore-opener.open .explore-icon { transform: rotate(45deg); background: var(--accent); color: var(--bg-deep); }
+.explore-opener .explore-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: color 0.3s ease; }
+.explore-opener:hover .explore-label { color: var(--text-primary); }
+.explore-opener .explore-hint { font-family: 'Orbitron', monospace; font-size: 7px; font-weight: 600; letter-spacing: 0.12em; color: var(--accent); opacity: 0.5; margin-left: auto; transition: opacity 0.3s ease; }
+.explore-opener:hover .explore-hint { opacity: 1; }
+.explore-panel { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.explore-panel.open { max-height: 800px; }
+.explore-panel-inner { padding: 20px 22px 16px; margin: 6px 0 20px; background: rgba(10, 25, 47, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 180, 255, 0.08); border-radius: 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 180, 255, 0.1); animation: explore-slide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes explore-slide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.explore-panel-inner p { font-size: 14px; line-height: 1.65; color: var(--text-secondary); margin: 0 0 10px; }
+.explore-panel-inner p:last-child { margin: 0; }
+.explore-panel-inner strong { color: var(--text-primary); }
+/* EXERCISE */
+.exercise-section { background: var(--pm-surface); border: 2px solid var(--sql-select); border-radius: 18px; padding: 34px; margin: 52px 0; position: relative; overflow: hidden; box-shadow: 0 0 35px var(--sql-select-glow), 0 0 70px rgba(34,197,94,0.04); }
+.exercise-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--sql-select), transparent); animation: exercise-glow 4s ease-in-out infinite; }
+@keyframes exercise-glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+.exercise-label { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sql-select); margin-bottom: 16px; text-shadow: 0 0 10px var(--sql-select-glow); }
+.exercise-section h2 { font-size: 22px; margin-bottom: 10px; }
+.match-row { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px; border: 1px solid var(--border-subtle); border-radius: 10px; margin: 8px 0; }
+.match-label { font-size: 14px; color: var(--text-bright); flex: none; }
+.match-select { flex: none; width: 100%; font-family: 'Exo 2', sans-serif; font-size: 13px; background: rgba(2, 6, 14, 0.8); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 8px 12px; color: var(--text-primary); outline: none; cursor: pointer; transition: border-color 0.3s; }
+.match-select:focus { border-color: var(--accent); }
+.match-select option { background: var(--bg-deep); color: var(--text-primary); }
+.match-feedback { font-size: 12px; min-width: 20px; text-align: center; }
+.check-btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sql-select); background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 10px; padding: 10px 24px; cursor: pointer; margin-top: 14px; transition: all 0.4s; }
+.check-btn:hover { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.45); box-shadow: 0 0 20px rgba(34,197,94,0.2); }
+.feedback { margin-top: 14px; padding: 16px 20px; border-radius: 12px; font-size: 14px; display: none; animation: feedback-appear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+@keyframes feedback-appear { from { opacity: 0; transform: translateY(-10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.feedback.correct { display: block; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); color: var(--sql-select); }
+.feedback.incorrect { display: block; background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); color: #f97316; }
+
+/* PIPELINE FLOW */
+.pipeline-flow { display: flex; align-items: center; gap: 0; margin: 30px -28px; padding: 20px 28px; overflow-x: auto; }
+.pipeline-node { padding: 10px 8px; border-radius: 10px; font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; text-align: center; white-space: nowrap; border: 1px solid; flex-shrink: 0; }
+.pipeline-arrow { font-size: 14px; color: var(--text-dim); padding: 0 2px; flex-shrink: 0; }
+
+/* COMPLETION */
+.completion-banner { display: none; background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(6,182,212,0.06)); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 14px; padding: 24px 28px; margin-top: 28px; text-align: center; animation: matter-form 0.8s ease forwards; }
+.completion-banner h3 { font-family: 'Orbitron', sans-serif; font-size: 18px; color: var(--sql-select); margin-bottom: 8px; text-shadow: 0 0 15px var(--sql-select-glow); }
+.completion-banner p { font-size: 14px; color: var(--text-secondary); margin: 0; }
+
+.tutorial-footer { margin-top: 80px; padding: 24px 0; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+
+/* AMBIENT + PARALLAX */
+.ambient-glow { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 0; transition: background 1.5s ease; background: radial-gradient(ellipse 600px 400px at 15% 20%, var(--ambient-c1, rgba(16, 185, 129, 0.06)) 0%, transparent 70%), radial-gradient(ellipse 500px 500px at 85% 60%, var(--ambient-c2, rgba(139, 92, 246, 0.04)) 0%, transparent 70%), radial-gradient(ellipse 400px 300px at 50% 90%, var(--ambient-c3, rgba(245, 158, 11, 0.03)) 0%, transparent 70%); }
+.parallax-layer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape { position: absolute; border-radius: 50%; opacity: 0.04; will-change: transform; }
+.depth-shape.shape-1 { width: 300px; height: 300px; top: 10%; left: 5%; }
+.depth-shape.shape-2 { width: 200px; height: 200px; top: 40%; right: 10%; }
+.depth-shape.shape-3 { width: 250px; height: 250px; top: 70%; left: 60%; }
+.depth-shape.shape-4 { width: 180px; height: 180px; top: 30%; left: 40%; }
+/* WORD REVEAL */
+.hook-text .word { opacity: 0.2; transition: opacity 0.25s ease; }
+.section.visible .hook-text .word, .hook-text .word.lit { opacity: 1; }
+@supports (animation-timeline: view()) {
+  .section h2 { background: linear-gradient(90deg, var(--text-bright) 0%, var(--text-bright) 50%, var(--text-dim) 50.5%, var(--text-dim) 100%); background-size: 200% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: heading-sweep both linear; animation-timeline: view(); animation-range: entry 10% entry 80%; }
+  @keyframes heading-sweep { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+}
+
+@supports not (animation-timeline: view()) {
+  .section .data-table tr { opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  .section.visible .data-table tr { opacity: 1; transform: translateY(0); }
+  .section.visible .data-table tr:nth-child(1) { transition-delay: 0ms; } .section.visible .data-table tr:nth-child(2) { transition-delay: 60ms; } .section.visible .data-table tr:nth-child(3) { transition-delay: 120ms; } .section.visible .data-table tr:nth-child(4) { transition-delay: 180ms; } .section.visible .data-table tr:nth-child(5) { transition-delay: 240ms; } .section.visible .data-table tr:nth-child(6) { transition-delay: 300ms; }
+}
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .container { padding: 88px 18px 100px; }
+  .title-section h1 { font-size: 28px; }
+  h2 { font-size: 20px; }
+  .pm-panel { padding: 20px 22px; }
+  .hook { padding: 22px 24px; }
+  .exercise-section { padding: 24px 20px; }
+  .lcars-bar { padding: 4px 14px; }
+  .lcars-segments { height: 24px; }
+  .lcars-seg { font-size: 6px; }
+  .lcars-elbow { width: 12px; }
+  .contrast-panel { grid-template-columns: 1fr; }
+  .contrast-side:first-child { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+  .disambig-grid { grid-template-columns: 1fr; }
+  .disambig-vs { padding: 8px 0; }
+  .pipeline-flow { flex-wrap: wrap; justify-content: center; }
+  .match-label { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.1ms !important; }
+  .section { opacity: 1; transform: none; filter: none; }
+  .title-section { opacity: 1; animation: none; }
+  .nav-node { opacity: 1; }
+  .meta-chip { opacity: 1; }
+  .lcars-seg { opacity: 1; }
+  .hook-text .word { opacity: 1; }
+  .data-table tr { opacity: 1; transform: none; }
+  .ambient-glow { transition: none; }
+  .section h2 { -webkit-text-fill-color: var(--text-bright); background: none; }
+}
+/* Chapter 6: The Tools — Tutorial-Specific CSS */
+
+:root {
+  --dbt-color: #10b981;
+  --dbt-glow: rgba(16, 185, 129, 0.25);
+  --dbt-dim: rgba(16, 185, 129, 0.08);
+  --dbt-text: #34d399;
+  --etl-color: #f59e0b;
+  --etl-glow: rgba(245, 158, 11, 0.25);
+  --etl-dim: rgba(245, 158, 11, 0.08);
+  --etl-text: #fbbf24;
+  --python-color: #3b82f6;
+  --python-glow: rgba(59, 130, 246, 0.25);
+  --python-dim: rgba(59, 130, 246, 0.08);
+  --python-text: #60a5fa;
+  --snow-color: #06b6d4;
+  --snow-glow: rgba(6, 182, 212, 0.25);
+  --snow-dim: rgba(6, 182, 212, 0.08);
+  --snow-text: #22d3ee;
+  --pipeline-color: #8b5cf6;
+  --pipeline-glow: rgba(139, 92, 246, 0.25);
+  --pipeline-dim: rgba(139, 92, 246, 0.08);
+}
+
+/* Ambient background gradient */
+body::before {
+  background:
+    radial-gradient(ellipse 600px 400px at 15% 20%, rgba(16, 185, 129, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 85% 60%, rgba(139, 92, 246, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 90%, rgba(245, 158, 11, 0.03) 0%, transparent 70%);
+}
+
+/* LCARS flow gradient */
+.lcars-flow-fill { background: linear-gradient(90deg, var(--dbt-color), var(--accent), var(--python-color)); box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+
+/* Section tag variants */
+.section-tag.dbt-t { background: var(--dbt-color); box-shadow: 0 0 14px var(--dbt-glow); }
+.section-tag.etl-t { background: var(--etl-color); box-shadow: 0 0 14px var(--etl-glow); }
+.section-tag.python-t { background: var(--python-color); box-shadow: 0 0 14px var(--python-glow); }
+.section-tag.snow-t { background: var(--snow-color); box-shadow: 0 0 14px var(--snow-glow); }
+.section-tag.pipeline-t { background: var(--pipeline-color); box-shadow: 0 0 14px var(--pipeline-glow); }
+
+/* Hook color variants */
+.hook-dbt::before { background: var(--dbt-color); box-shadow: 0 0 12px var(--dbt-glow); }
+.hook-dbt::after { background: linear-gradient(90deg, rgba(16,185,129,0.06), transparent); }
+.hook-etl::before { background: var(--etl-color); box-shadow: 0 0 12px var(--etl-glow); }
+.hook-etl::after { background: linear-gradient(90deg, rgba(245,158,11,0.06), transparent); }
+.hook-python::before { background: var(--python-color); box-shadow: 0 0 12px var(--python-glow); }
+.hook-python::after { background: linear-gradient(90deg, rgba(59,130,246,0.06), transparent); }
+.hook-snow::before { background: var(--snow-color); box-shadow: 0 0 12px var(--snow-glow); }
+.hook-snow::after { background: linear-gradient(90deg, rgba(6,182,212,0.06), transparent); }
+.hook-pipeline::before { background: var(--pipeline-color); box-shadow: 0 0 12px var(--pipeline-glow); }
+.hook-pipeline::after { background: linear-gradient(90deg, rgba(139,92,246,0.06), transparent); }
+.hook-dbt .hook-text em { color: var(--dbt-text); text-shadow: 0 0 12px var(--dbt-glow); font-style: normal; }
+.hook-etl .hook-text em { color: var(--etl-text); text-shadow: 0 0 12px var(--etl-glow); font-style: normal; }
+.hook-python .hook-text em { color: var(--python-text); text-shadow: 0 0 12px var(--python-glow); font-style: normal; }
+.hook-snow .hook-text em { color: var(--snow-text); text-shadow: 0 0 12px var(--snow-glow); font-style: normal; }
+.hook-pipeline .hook-text em { color: #a78bfa; text-shadow: 0 0 12px var(--pipeline-glow); font-style: normal; }
+
+/* Data panel dot/title variants */
+.data-panel-dot.dbt { background: var(--dbt-color); box-shadow: 0 0 8px var(--dbt-color); }
+.data-panel-dot.etl { background: var(--etl-color); box-shadow: 0 0 8px var(--etl-color); }
+.data-panel-dot.snow { background: var(--snow-color); box-shadow: 0 0 8px var(--snow-color); }
+.data-panel-dot.pipeline { background: var(--pipeline-color); box-shadow: 0 0 8px var(--pipeline-color); }
+.data-panel-title.dbt-title { color: var(--dbt-text); }
+.data-panel-title.etl-title { color: var(--etl-text); }
+.data-panel-title.snow-title { color: var(--snow-text); }
+.data-panel-title.pipeline-title { color: #a78bfa; }
+
+/* Contrast panel colors */
+.contrast-old .contrast-label { color: var(--text-dim); }
+.contrast-new .contrast-label { color: var(--dbt-text); text-shadow: 0 0 10px var(--dbt-glow); }
+
+/* Disambig panel colors */
+.disambig-item.dbt-side { background: var(--dbt-dim); border: 1px solid rgba(16, 185, 129, 0.2); }
+.disambig-item.dbt-side h4 { color: var(--dbt-text); }
+.disambig-item.dv-side { background: var(--hub-dim); border: 1px solid rgba(6, 182, 212, 0.2); }
+.disambig-item.dv-side h4 { color: var(--hub-text); }
+.disambig-vs { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 800; color: var(--text-dim); text-align: center; }
+
+/* Code body keyword colors */
+.code-body .kw { color: var(--python-text); font-weight: 500; }
+.code-body .fn { color: var(--dbt-text); }
+.code-body .str { color: var(--etl-text); }
+.code-body .cmt { color: var(--text-dim); font-style: italic; }
+.code-body .var { color: var(--hub-text); }
+.code-body .num { color: #a78bfa; }
+
+/* Depth shape colors */
+.depth-shape.shape-1 { width: 300px; height: 300px; top: 10%; left: 5%; background: radial-gradient(circle, var(--dbt-color), transparent 70%); }
+.depth-shape.shape-2 { width: 200px; height: 200px; top: 40%; right: 10%; background: radial-gradient(circle, var(--python-color), transparent 70%); }
+.depth-shape.shape-3 { width: 250px; height: 250px; top: 70%; left: 60%; background: radial-gradient(circle, var(--etl-color), transparent 70%); }
+.depth-shape.shape-4 { width: 180px; height: 180px; top: 30%; left: 40%; background: radial-gradient(circle, var(--accent), transparent 70%); }
+
+/* ═══════ Game UI: Inventory + Achievements ═══════ */
+.achievement-toast-container {
+  position: fixed; top: 100px; right: -350px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  width: 320px; padding: 16px 20px; border-radius: 12px;
+  backdrop-filter: blur(16px);
+  transform: translateX(0); transition: right 0.5s cubic-bezier(0.68,-0.55,0.27,1.55);
+  pointer-events: auto; position: relative;
+}
+.achievement-toast-container.has-toast { right: 20px; }
+.achievement-toast-tier {
+  font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.achievement-toast-name { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 4px; }
+.achievement-toast-desc { font-size: 0.8rem; color: var(--text-secondary, rgba(255,255,255,0.5)); }
+.inventory-toolbar {
+  position: fixed; bottom: 12px; left: 16px;
+  z-index: 90; display: flex; gap: 12px; padding: 8px 16px;
+  background: rgba(10,22,40,0.8); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,180,255,0.15); border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+.inventory-toolbar:hover { border-color: rgba(0,180,255,0.3); }
+.inventory-bag {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.3); border: 1.5px solid;
+  cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.inventory-bag:hover { transform: scale(1.15); filter: brightness(1.3); }
+.bag-icon { font-size: 18px; line-height: 1; }
+.bag-count {
+  font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
+  color: var(--text-dim, rgba(255,255,255,0.3)); margin-top: 2px;
+}
+.inventory-panel {
+  position: fixed; bottom: 75px; left: 16px;
+  z-index: 89; width: min(600px, calc(100vw - 32px)); max-height: 400px;
+  background: rgba(10,22,40,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,180,255,0.2); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+.inventory-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.inventory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(0,180,255,0.1);
+}
+.inventory-panel-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; }
+.inventory-panel-close {
+  background: none; border: none; color: var(--text-dim, rgba(255,255,255,0.3));
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.inventory-panel-close:hover { color: var(--text-bright, #fff); }
+.inventory-panel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; padding: 16px 20px;
+}
+.inventory-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.25s ease; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.inventory-slot.discovered { cursor: pointer; }
+.inventory-slot.discovered:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 16px rgba(0,180,255,0.15); }
+.inventory-slot.discovered:active { transform: scale(0.95); filter: brightness(1.4); transition: all 0.1s ease; }
+.inventory-slot.locked { opacity: 0.3; }
+.slot-name { font-size: 0.85rem; color: var(--text-bright, #fff); font-weight: 500; margin-bottom: 4px; }
+.slot-session { font-size: 0.65rem; color: var(--text-dim, rgba(255,255,255,0.3)); font-family: 'Orbitron', sans-serif; }
+.achievements-bag { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.08) !important; }
+.achievements-bag:hover { border-color: rgba(255,215,0,0.7) !important; }
+.achievement-slot {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+  min-height: 70px; display: flex; flex-direction: column; justify-content: center;
+}
+.achievement-slot.unlocked { border-color: var(--ach-color, rgba(255,215,0,0.4)); box-shadow: 0 0 8px var(--ach-glow, rgba(255,215,0,0.2)); }
+.achievement-slot.locked { opacity: 0.25; }
+@media (max-width: 600px) {
+  .inventory-toolbar { bottom: 8px; left: 8px; padding: 6px 12px; }
+  .inventory-bag { width: 36px; height: 36px; }
+  .inventory-panel { width: calc(100vw - 16px); left: 8px; bottom: 60px; }
+  .scanline-overlay, .scan-bar { display: none !important; }
+  #particle-field { position: absolute !important; }
+  .ambient-glow, .parallax-layer { position: absolute !important; }
+}
+
+</style>
+</head>
+<body data-chapter="6" style="padding-top: 52px;">
+<canvas id="particle-field"></canvas>
+<div class="scanline-overlay"></div>
+<div class="scan-bar"></div>
+<div class="ambient-glow" id="ambient-glow"></div>
+<div class="parallax-layer" id="parallax-layer">
+  <div class="depth-shape shape-1"></div>
+  <div class="depth-shape shape-2"></div>
+  <div class="depth-shape shape-3"></div>
+  <div class="depth-shape shape-4"></div>
+</div>
+
+<div class="page-content">
+
+<nav class="holo-nav">
+  <div class="nav-inner">
+    <div class="nav-nodes">
+      <div class="nav-node active" onclick="scrollToSection('s1')">1</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s2')">2</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s3')">3</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s4')">4</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s5')">5</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s6')">6</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s7')">7</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s8')">8</div>
+      <div class="nav-connector"></div>
+      <div class="nav-node" onclick="scrollToSection('s9')">9</div>
+    </div>
+    <div class="nav-label" id="nav-current-label">ELT vs ETL</div>
+    <div class="lcars-bar">
+      <div class="lcars-elbow"></div>
+      <div class="lcars-segments" id="lcars-segments">
+        <div class="lcars-seg active" style="--seg-color: var(--etl-color)" onclick="scrollToSection('s1')">1</div>
+        <div class="lcars-seg" style="--seg-color: var(--dbt-color)" onclick="scrollToSection('s2')">2</div>
+        <div class="lcars-seg" style="--seg-color: var(--etl-color)" onclick="scrollToSection('s3')">3</div>
+        <div class="lcars-seg" style="--seg-color: var(--dbt-color)" onclick="scrollToSection('s4')">4</div>
+        <div class="lcars-seg" style="--seg-color: var(--sat-color)" onclick="scrollToSection('s5')">5</div>
+        <div class="lcars-seg" style="--seg-color: var(--snow-color)" onclick="scrollToSection('s6')">6</div>
+        <div class="lcars-seg" style="--seg-color: var(--python-color)" onclick="scrollToSection('s7')">7</div>
+        <div class="lcars-seg" style="--seg-color: var(--pipeline-color)" onclick="scrollToSection('s8')">8</div>
+        <div class="lcars-seg" style="--seg-color: var(--sql-select)" onclick="scrollToSection('s9')">EX</div>
+      </div>
+    </div>
+    <div class="lcars-flow">
+      <div class="lcars-flow-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- TITLE -->
+<div class="title-section">
+  <div class="title-label">Chapter 6 &mdash; Chapter 6</div>
+  <h1>The Tools</h1>
+  <p class="subtitle">You&rsquo;ve been learning Data Vault by hand. In real projects, almost nobody writes the SQL manually. Let&rsquo;s figure out what actually builds it.</p>
+  <div class="meta-chips">
+    <span class="meta-chip">ELT vs ETL</span>
+    <span class="meta-chip">dbt</span>
+    <span class="meta-chip">DataVault4dbt</span>
+    <span class="meta-chip">TurboVault4dbt</span>
+    <span class="meta-chip">Snowflake</span>
+    <span class="meta-chip">Python</span>
+    <span class="meta-chip">Pipeline</span>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 1: ELT vs ETL ======= -->
+<div class="section" id="s1" data-color="245,158,11" data-label="ELT vs ETL">
+  <div class="section-header">
+    <div class="section-tag etl-t">ELT vs ETL</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>The Order Changed Everything</h2>
+
+  <div class="hook hook-etl">
+    <p class="hook-text">For decades, data teams cleaned their data <em>before</em> putting it in the warehouse. Then cloud warehouses got powerful enough that everyone asked: wait, why don&rsquo;t we just <em>load it first</em> and clean it there?</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; Extract, Transform, Load</div>
+    <p><span class="bridge-word">Extract</span> &mdash; from Latin <em>extrahere</em>: &ldquo;to pull out.&rdquo; Pull data out of source systems.</p>
+    <p><span class="bridge-word">Transform</span> &mdash; from Latin <em>transformare</em>: &ldquo;to change shape.&rdquo; Reshape data into the structure you need.</p>
+    <p><span class="bridge-word">Load</span> &mdash; from Old English <em>lad</em>: &ldquo;course, journey.&rdquo; Send data on its journey into the warehouse.</p>
+    <p><strong>Why the order matters:</strong> ETL = transform then load. ELT = load then transform. Same three steps, different sequence. That sequence change is the entire revolution.</p>
+  </div>
+
+  <div class="contrast-panel">
+    <div class="contrast-side contrast-old">
+      <div class="contrast-label">ETL &mdash; The Old Way</div>
+      <p><strong>Extract</strong> &rarr; <strong>Transform</strong> &rarr; <strong>Load</strong></p>
+      <p>Data is cleaned, reshaped, and validated <em>before</em> it enters the warehouse.</p>
+      <p>Like cooking at home, bringing the finished meal to a restaurant, and plating it there.</p>
+      <p>Why it existed: warehouses were expensive. You didn&rsquo;t waste precious warehouse compute on messy data.</p>
+    </div>
+    <div class="contrast-side contrast-new">
+      <div class="contrast-label">ELT &mdash; The Modern Way</div>
+      <p><strong>Extract</strong> &rarr; <strong>Load</strong> &rarr; <strong>Transform</strong></p>
+      <p>Raw data is loaded into the warehouse <em>first</em>, then transformed inside it.</p>
+      <p>Like delivering all the raw ingredients to a professional kitchen and letting the chefs handle it.</p>
+      <p>Why it won: cloud warehouses (Snowflake, BigQuery) have massive, elastic compute. Transforming there is cheaper and faster.</p>
+    </div>
+  </div>
+
+  <div class="four-layers" id="layers-elt">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; ELT</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-elt', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-elt', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-elt', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-elt', 3)"></div>
+      </div>
+    </div>
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L1</span><span class="layer-label">Plain language &mdash; for anyone</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>ELT means: grab data from wherever it lives, dump it into the warehouse as-is, then reshape it there. It&rsquo;s like moving all your stuff into a new apartment first, then organizing it, instead of sorting everything before the move.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L2</span><span class="layer-label">With mechanism &mdash; how it works</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>In ETL, a separate tool (like Informatica or Talend) does the heavy transformation work on a dedicated server. In ELT, raw data lands in the warehouse (staging layer), and the warehouse itself runs the transformations using SQL. Cloud warehouses can spin up massive compute clusters on demand, making this approach both faster and cheaper at scale.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L3</span><span class="layer-label">Technical &mdash; full detail</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>Data Vault is naturally ELT-aligned. Raw data loads into the staging area and Raw Vault with minimal transformation &mdash; just hash key generation and structural conformance. Business rules and complex transformations happen in the Business Vault, inside the warehouse. This preserves the source data in its original form (audit trail) while still producing clean, queryable output.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L4</span><span class="layer-label">Expert &mdash; nuance &amp; edge cases</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>The ETL/ELT distinction is less binary than it sounds. Modern pipelines often do light transformations during extraction (e.g., format conversion, deduplication) before loading. What changed is where the <em>business logic</em> runs. In ETL, business rules were embedded in the extraction tool &mdash; opaque, hard to version-control, coupled to the tool vendor. In ELT, business logic lives in SQL inside the warehouse &mdash; transparent, version-controlled (via dbt), and tool-agnostic. That&rsquo;s the real win: not just performance, but engineering discipline.</p>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">Why did cloud warehouses change everything?</span>
+    <span class="explore-hint">Explore</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p>Traditional warehouses (Oracle, Teradata) had fixed compute capacity. Every query competed for the same resources. Running heavy transformations during business hours could slow down reports.</p>
+      <p><strong>Cloud warehouses separate storage from compute.</strong> Snowflake, for example, lets you spin up a &ldquo;warehouse&rdquo; (compute cluster) specifically for transformations, run it for 20 minutes, then shut it down. You pay only for those 20 minutes. Meanwhile, analysts query on a completely separate cluster. No contention, elastic scaling, pay-per-use.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 2: WHAT DBT IS ======= -->
+<div class="section" id="s2" data-color="16,185,129" data-label="What dbt Is">
+  <div class="section-header">
+    <div class="section-tag dbt-t">dbt</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>What dbt Actually Is</h2>
+
+  <div class="hook hook-dbt">
+    <p class="hook-text">dbt is not a database. It&rsquo;s not a pipeline. It&rsquo;s not an ETL tool. It&rsquo;s the <em>transformation layer</em> &mdash; the part that takes raw data sitting in a warehouse and reshapes it into something useful.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; dbt</div>
+    <p><span class="bridge-word">dbt</span> = <strong>data build tool</strong>. &ldquo;Build&rdquo; like building a house. You have blueprints (models), raw materials (data in the warehouse), and dbt is the construction crew that reads the blueprints and builds the structure.</p>
+    <p>It doesn&rsquo;t fetch the materials (that&rsquo;s the Extract + Load part). It doesn&rsquo;t store them (that&rsquo;s the warehouse). It just <em>builds</em> &mdash; the T in ELT.</p>
+  </div>
+
+  <div class="four-layers" id="layers-dbt">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; dbt</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-dbt', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-dbt', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-dbt', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-dbt', 3)"></div>
+      </div>
+    </div>
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L1</span><span class="layer-label">Plain language</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>dbt lets you write transformation instructions as simple SQL files. Each file says &ldquo;take this data, reshape it like this.&rdquo; dbt figures out the right order to run them, runs them, and creates the resulting tables. One command: <code>dbt run</code>.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L2</span><span class="layer-label">With mechanism</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>Each dbt &ldquo;model&rdquo; is a SQL SELECT statement saved as a <code>.sql</code> file. When you run <code>dbt run</code>, dbt reads all your models, builds a dependency graph (model B references model A, so A must run first), compiles each model into the warehouse&rsquo;s SQL dialect, executes them in order, and creates tables or views. Models are version-controlled in Git, testable, and documented.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L3</span><span class="layer-label">Technical</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>dbt brings software engineering practices to data transformation: version control (Git), modular code (models reference other models via <code>ref()</code>), testing (<code>dbt test</code> checks uniqueness, not-null, referential integrity), documentation (auto-generated from YAML), and environments (dev/staging/prod). It compiles Jinja-templated SQL into raw SQL, handles incremental loading logic, and supports multiple warehouse backends. It is open-source (dbt Core) with a paid cloud version (dbt Cloud).</p>
+      </div></div>
+    </div>
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L4</span><span class="layer-label">Expert nuance</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>dbt&rsquo;s conceptual breakthrough isn&rsquo;t technical &mdash; it&rsquo;s cultural. Before dbt, data transformation was done by &ldquo;ETL developers&rdquo; using proprietary GUI tools (Informatica, SSIS). The logic was trapped in XML configs and drag-and-drop workflows &mdash; un-reviewable, un-testable, un-versionable. dbt said: transformations are just SQL. Put them in files. Version-control them. Review them in pull requests. Test them in CI/CD. This brought analytics engineering into the same discipline as software engineering.</p>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="pm-panel">
+    <h3 style="margin-top:0; color: var(--dbt-text)">What dbt Does NOT Do</h3>
+    <p>dbt does <strong>not</strong> extract data from source systems. It does not load data into the warehouse. It does not schedule itself (you need an orchestrator like Airflow or dbt Cloud). It does not store data. It sits inside the warehouse and transforms what&rsquo;s already there.</p>
+    <p style="margin-bottom:0">Think of it this way: the data is already in the kitchen (warehouse). dbt is the recipe book and the chef. Someone else delivered the groceries (extraction and loading tools).</p>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 3: DBT MODEL vs DV MODEL ======= -->
+<div class="section" id="s3" data-color="245,158,11" data-label="Model vs Model">
+  <div class="section-header">
+    <div class="section-tag etl-t">Disambiguation</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Two Meanings of &ldquo;Model&rdquo;</h2>
+
+  <div class="hook hook-default">
+    <p class="hook-text">In Data Vault world, &ldquo;model&rdquo; means the Hub/Link/Satellite design. In dbt world, &ldquo;model&rdquo; means a SQL file. Same word, <em>completely different things</em>. Getting them mixed up will confuse you fast.</p>
+  </div>
+
+  <div class="disambig-panel">
+    <div class="disambig-label">&#9888; Disambiguation Zone</div>
+    <div class="disambig-grid">
+      <div class="disambig-item dbt-side">
+        <h4>dbt &ldquo;model&rdquo;</h4>
+        <p>A SQL file that produces a table or view. A recipe. <code>hub_character.sql</code> is a model.</p>
+        <p style="margin-top:8px; font-size:12px; color: var(--dbt-text);">One file = one model = one table.</p>
+      </div>
+      <div class="disambig-vs">&ne;</div>
+      <div class="disambig-item dv-side">
+        <h4>DV &ldquo;model&rdquo;</h4>
+        <p>The schema design &mdash; which Hubs, Links, and Satellites exist and how they connect. The blueprint.</p>
+        <p style="margin-top:8px; font-size:12px; color: var(--hub-text);">The architecture = the model.</p>
+      </div>
+    </div>
+  </div>
+
+  <p>When someone at ScaleFree says &ldquo;let me show you the model,&rdquo; context tells you which one they mean. If they open a SQL file, it&rsquo;s a dbt model. If they draw a diagram with Hubs and Satellites, it&rsquo;s a DV model.</p>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <blockquote>&ldquo;The word &lsquo;model&rsquo; means two different things in this context. In dbt, a model is a SQL file that produces a table. In Data Vault, the model is the schema design &mdash; the Hubs, Links, and Satellites and how they connect. One is a file, the other is an architecture.&rdquo;</blockquote>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 4: DATAVAULT4DBT ======= -->
+<div class="section" id="s4" data-color="16,185,129" data-label="DataVault4dbt">
+  <div class="section-header">
+    <div class="section-tag dbt-t">DataVault4dbt</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>DataVault4dbt</h2>
+
+  <div class="hook hook-dbt">
+    <p class="hook-text">A Hub always works the same way. A Satellite always works the same way. If the patterns are <em>standardized</em>, they can be <em>automated</em>. That&rsquo;s what datavault4dbt does.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; Macro</div>
+    <p><span class="bridge-word">Macro</span> &mdash; from Greek <em>makros</em>: &ldquo;large, long.&rdquo; A macro is a single short instruction that expands into many instructions. Like a keyboard shortcut that types a whole paragraph.</p>
+    <p><strong>In dbt:</strong> A macro is a reusable template. You call it with your specific parameters (which column is the business key?), and it generates the full SQL. datavault4dbt is a library of these macros &mdash; one for Hubs, one for Satellites, one for Links, and so on.</p>
+  </div>
+
+  <div class="pm-panel">
+    <h3 style="margin-top:0; color: var(--dbt-text)">The Automation Insight</h3>
+    <p>Remember how a Hub always has the same four columns? <code>hash_key</code>, <code>business_key</code>, <code>load_date</code>, <code>record_source</code>. And the loading rule is always: insert if the business key is new, skip if it already exists, never update or delete.</p>
+    <p>Writing that SQL once is engineering. Writing it for 30 Hubs is copy-paste. datavault4dbt says: <strong>write the pattern once as a macro, then configure it for each entity.</strong></p>
+    <p style="margin-bottom:0">You write 10 lines of configuration. The macro generates 200 lines of correct SQL. Your Hub is built.</p>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot dbt"></div>
+      <span class="data-panel-title dbt-title">What datavault4dbt Automates</span>
+    </div>
+    <table class="data-table">
+      <tr><th>DV Entity</th><th>What the Macro Does</th><th>What You Provide</th></tr>
+      <tr><td class="dbt-val">Hub</td><td class="val">Generates insert-only loading with hash key, deduplication</td><td class="val">Source table, business key column</td></tr>
+      <tr><td class="dbt-val">Satellite</td><td class="val">Generates hash-diff comparison, insert new rows on change</td><td class="val">Source table, attribute columns, Hub reference</td></tr>
+      <tr><td class="dbt-val">Link</td><td class="val">Generates multi-key hash, insert-only relationship tracking</td><td class="val">Source table, foreign key columns to Hubs</td></tr>
+      <tr><td class="dbt-val">Staging</td><td class="val">Generates hash keys + hash diffs from source columns</td><td class="val">Source table, column mapping</td></tr>
+      <tr><td class="dbt-val">PIT Table</td><td class="val">Generates point-in-time snapshots across multiple Satellites</td><td class="val">Hub reference, list of Satellites</td></tr>
+    </table>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <blockquote>&ldquo;The key insight about datavault4dbt is that Data Vault loading patterns are standardized enough to encode once and reuse across every entity. The staging hash calculations, the insert-only Hub and Satellite patterns, and PIT table generation for the Business Vault &mdash; these are all consistent enough to automate. The methodology stays the same; only the configuration changes per project.&rdquo;</blockquote>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">ScaleFree built this &mdash; why does that matter?</span>
+    <span class="explore-hint">Explore</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p>datavault4dbt encodes years of ScaleFree consulting expertise into a reusable, open-source package. It is described as &ldquo;congruent to the original Data Vault 2.0 definition by Dan Linstedt&rdquo; &mdash; meaning the macros don&rsquo;t just implement <em>an interpretation</em> of DV 2.0, they implement the specification itself.</p>
+      <p><strong>ScaleFree built datavault4dbt.</strong> The value lies not in memorizing macro syntax, but in understanding <em>why</em> the automation works: the underlying methodology is standardized enough to encode once and reuse everywhere.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 5: TURBOVAULT4DBT ======= -->
+<div class="section" id="s5" data-color="139,92,246" data-label="TurboVault4dbt">
+  <div class="section-header">
+    <div class="section-tag pipeline-t">TurboVault</div>
+    <span class="tier-badge tier-bonus">Bonus</span>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>TurboVault4dbt</h2>
+
+  <div class="hook hook-pipeline">
+    <p class="hook-text">datavault4dbt automates the SQL. TurboVault4dbt automates <em>the automation</em>. It generates the dbt model files themselves from a metadata spreadsheet.</p>
+  </div>
+
+  <div class="pm-panel">
+    <h3 style="margin-top:0">The Three-Layer Stack</h3>
+    <p>Think of it as three levels of abstraction, each building on the last:</p>
+    <p><strong style="color: var(--sat-text)">Level 3 &mdash; TurboVault4dbt:</strong> You describe your data in a metadata spreadsheet (Excel, Google Sheets, or directly in Snowflake/BigQuery). TurboVault reads that description and auto-generates all the dbt model files.</p>
+    <p><strong style="color: var(--dbt-text)">Level 2 &mdash; datavault4dbt:</strong> Those generated model files call datavault4dbt macros, which expand into the correct Data Vault SQL.</p>
+    <p><strong style="color: var(--hub-text)">Level 1 &mdash; dbt Core:</strong> dbt compiles and executes the SQL against the warehouse, creating the actual tables.</p>
+    <p style="margin-bottom:0"><strong>Result:</strong> Describe your data &rarr; code writes itself &rarr; Data Vault is built. Metadata-driven automation.</p>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">Key Concept</div>
+    <blockquote>&ldquo;TurboVault4dbt takes the automation a level further by generating the dbt model files from metadata. You move from &lsquo;manually configure each entity&rsquo; to &lsquo;describe your data in a spreadsheet and the code writes itself.&rsquo; That&rsquo;s a natural next step once the loading patterns are standardized.&rdquo;</blockquote>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 6: SNOWFLAKE ======= -->
+<div class="section" id="s6" data-color="6,182,212" data-label="Snowflake">
+  <div class="section-header">
+    <div class="section-tag snow-t">Snowflake</div>
+    <span class="tier-badge tier-important">Important</span>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Snowflake</h2>
+
+  <div class="hook hook-snow">
+    <p class="hook-text">dbt is the chef. datavault4dbt is the recipe book. Snowflake is the <em>kitchen</em> &mdash; the place where the data actually lives and where transformations happen.</p>
+  </div>
+
+  <div class="four-layers" id="layers-snow">
+    <div class="four-layers-header">
+      <span class="four-layers-title">4-Layer Explanation &mdash; Snowflake</span>
+      <div class="layer-dots">
+        <div class="layer-dot l1 active" onclick="jumpToLayer('layers-snow', 0)"></div>
+        <div class="layer-dot l2" onclick="jumpToLayer('layers-snow', 1)"></div>
+        <div class="layer-dot l3" onclick="jumpToLayer('layers-snow', 2)"></div>
+        <div class="layer-dot l4" onclick="jumpToLayer('layers-snow', 3)"></div>
+      </div>
+    </div>
+    <div class="layer layer-1 open">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L1</span><span class="layer-label">Plain language</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>Snowflake is a cloud database for analytics. You store your data there, and you run queries there. It runs on AWS, Azure, or Google Cloud &mdash; you don&rsquo;t manage servers, Snowflake handles the infrastructure.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-2">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L2</span><span class="layer-label">With mechanism</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>Snowflake&rsquo;s key innovation is <strong>separating storage from compute</strong>. Your data sits in cheap cloud storage (S3, Azure Blob, GCS). When you need to query it, Snowflake spins up a &ldquo;virtual warehouse&rdquo; (compute cluster) of whatever size you need. Multiple warehouses can query the same data simultaneously without competing. When you&rsquo;re done, the compute shuts down. You pay for storage always, compute only when used.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-3">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L3</span><span class="layer-label">Technical</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>For Data Vault projects, Snowflake is a primary target platform. The staging area, Raw Vault, Business Vault, and Information Marts all live as schemas within Snowflake. dbt connects to Snowflake via a connector, compiles SQL to Snowflake&rsquo;s SQL dialect, and executes transformations using Snowflake&rsquo;s compute. datavault4dbt natively supports Snowflake as a target platform.</p>
+      </div></div>
+    </div>
+    <div class="layer layer-4">
+      <div class="layer-header" onclick="toggleLayer(this)"><span class="layer-badge">L4</span><span class="layer-label">Expert nuance</span><span class="layer-toggle">&darr;</span></div>
+      <div class="layer-content"><div class="layer-content-inner">
+        <p>Snowflake is one of several cloud data warehouses. The competitors: <strong>Google BigQuery</strong> (serverless, auto-scaling, Google&rsquo;s analytics platform), <strong>Amazon Redshift</strong> (AWS&rsquo;s warehouse, older architecture), <strong>Databricks</strong> (Spark-based, strong on ML/data science workloads, uses a &ldquo;lakehouse&rdquo; architecture). ScaleFree works across platforms &mdash; datavault4dbt supports all of them. But Snowflake is the most common target in their project portfolio.</p>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 7: PYTHON BASICS ======= -->
+<div class="section" id="s7" data-color="59,130,246" data-label="Python Basics">
+  <div class="section-header">
+    <div class="section-tag python-t">Python</div>
+    <span class="tier-badge tier-important">Important</span>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Python &mdash; Reading, Not Writing</h2>
+
+  <div class="hook hook-python">
+    <p class="hook-text">Python doesn&rsquo;t replace SQL in data pipelines. It <em>orchestrates</em> SQL, connects APIs, runs custom logic, and handles the parts that SQL can&rsquo;t. You need to <em>read</em> it, not write it.</p>
+  </div>
+
+  <div class="language-bridge">
+    <div class="bridge-label">Language Bridge &mdash; Python</div>
+    <p><span class="bridge-word">Python</span> &mdash; named after Monty Python&rsquo;s Flying Circus, not the snake. The language was designed to be readable &mdash; almost like English pseudocode. That&rsquo;s why it&rsquo;s the most common language in data engineering.</p>
+  </div>
+
+  <p>Here&rsquo;s what Python looks like. Don&rsquo;t memorize syntax &mdash; just practice <em>reading</em> what it does:</p>
+
+  <div class="code-panel">
+    <div class="code-header">
+      <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+      <span class="code-filename">skyrim_pipeline.py</span>
+    </div>
+    <div class="code-body"><span class="cmt"># Variables &mdash; like naming something in algebra</span>
+<span class="var">character_name</span> = <span class="str">"Khajiit"</span>
+<span class="var">level</span> = <span class="num">42</span>
+
+<span class="cmt"># Lists &mdash; a collection, like an inventory</span>
+<span class="var">sources</span> = [<span class="str">"Whiterun_CRM"</span>, <span class="str">"Solitude_ERP"</span>, <span class="str">"Riften_API"</span>]
+
+<span class="cmt"># Function &mdash; a reusable recipe</span>
+<span class="kw">def</span> <span class="fn">load_source</span>(<span class="var">source_name</span>):
+    <span class="var">data</span> = <span class="fn">extract_from</span>(<span class="var">source_name</span>)
+    <span class="fn">load_to_staging</span>(<span class="var">data</span>)
+    <span class="kw">return</span> <span class="fn">len</span>(<span class="var">data</span>)
+
+<span class="cmt"># Loop &mdash; do this for each item in the list</span>
+<span class="kw">for</span> <span class="var">source</span> <span class="kw">in</span> <span class="var">sources</span>:
+    <span class="var">count</span> = <span class="fn">load_source</span>(<span class="var">source</span>)
+    <span class="fn">print</span>(<span class="str">f"Loaded </span><span class="var">{count}</span><span class="str"> records from </span><span class="var">{source}</span><span class="str">"</span>)</div>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div class="data-panel-dot pipeline"></div>
+      <span class="data-panel-title pipeline-title">Python Syntax &mdash; Reading Guide</span>
+    </div>
+    <table class="data-table">
+      <tr><th>Python</th><th>What It Means</th><th>Like in SQL / English</th></tr>
+      <tr><td class="dbt-val">x = "hello"</td><td class="val">Assign a value to a name</td><td class="val">No type needed &mdash; Python figures it out</td></tr>
+      <tr><td class="dbt-val">def func():</td><td class="val">Define a function (reusable recipe)</td><td class="val">&ldquo;def&rdquo; = &ldquo;define, henceforth called&rdquo;</td></tr>
+      <tr><td class="dbt-val">for x in list:</td><td class="val">Do something for each item</td><td class="val">Reads like English: &ldquo;for each x in the list&rdquo;</td></tr>
+      <tr><td class="dbt-val">import dbt</td><td class="val">Bring in an external library</td><td class="val">Like #include or using &mdash; &ldquo;bring in this tool&rdquo;</td></tr>
+      <tr><td class="dbt-val">if x > 5:</td><td class="val">Conditional &mdash; do this only if true</td><td class="val">Like SQL WHERE, but for code flow</td></tr>
+      <tr><td class="dbt-val">  indentation</td><td class="val">Indentation = scope (what&rsquo;s inside what)</td><td class="val">No curly braces &mdash; whitespace is structure</td></tr>
+    </table>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">What does Python actually do in data pipelines?</span>
+    <span class="explore-hint">Explore</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p><strong>Orchestration:</strong> Python scripts (using tools like Airflow or Prefect) schedule and coordinate pipeline steps. &ldquo;First extract from CRM, then run dbt, then notify the team.&rdquo;</p>
+      <p><strong>API connections:</strong> Pulling data from REST APIs (e.g., Salesforce, Stripe) &mdash; HTTP requests, JSON parsing, pagination handling. SQL can&rsquo;t do this.</p>
+      <p><strong>Custom transformations:</strong> Complex logic that&rsquo;s awkward in SQL &mdash; machine learning preprocessing, fuzzy matching, natural language processing.</p>
+      <p><strong>Data quality checks:</strong> Libraries like Great Expectations validate data against rules: &ldquo;this column should never be null,&rdquo; &ldquo;values should be between 0 and 100.&rdquo;</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 8: THE FULL PIPELINE ======= -->
+<div class="section" id="s8" data-color="139,92,246" data-label="Full Pipeline">
+  <div class="section-header">
+    <div class="section-tag pipeline-t">Pipeline</div>
+    <span class="tier-badge tier-core">Core</span>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>The Full Picture</h2>
+
+  <div class="hook hook-pipeline">
+    <p class="hook-text">Every tool you&rsquo;ve just learned has a specific place in the pipeline. Here&rsquo;s how they all <em>connect</em>.</p>
+  </div>
+
+  <div class="pipeline-flow">
+    <div class="pipeline-node" style="background: var(--python-dim); border-color: rgba(59,130,246,0.3); color: var(--python-text);">Source<br>Systems</div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-node" style="background: var(--python-dim); border-color: rgba(59,130,246,0.3); color: var(--python-text);">Extract<br><small style="font-size:7px;color:var(--text-dim)">Python/Fivetran</small></div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-node" style="background: var(--snow-dim); border-color: rgba(6,182,212,0.3); color: var(--snow-text);">Staging<br><small style="font-size:7px;color:var(--text-dim)">Snowflake</small></div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-node" style="background: var(--dbt-dim); border-color: rgba(16,185,129,0.3); color: var(--dbt-text);">Raw Vault<br><small style="font-size:7px;color:var(--text-dim)">dbt + DV4dbt</small></div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-node" style="background: var(--dbt-dim); border-color: rgba(16,185,129,0.3); color: var(--dbt-text);">Biz Vault<br><small style="font-size:7px;color:var(--text-dim)">dbt</small></div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-node" style="background: var(--hub-dim); border-color: rgba(6,182,212,0.3); color: var(--hub-text);">Info Mart<br><small style="font-size:7px;color:var(--text-dim)">Star Schema</small></div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-node" style="background: var(--sat-dim); border-color: rgba(168,85,247,0.3); color: var(--sat-text);">Dashboard<br><small style="font-size:7px;color:var(--text-dim)">Power BI/Tableau</small></div>
+  </div>
+
+  <div class="pm-panel">
+    <h3 style="margin-top:0">Where Each Tool Lives</h3>
+    <p><strong style="color: var(--python-text)">Python / extraction tools</strong> &mdash; pull data from source systems (CRM, ERP, APIs). The E in ELT.</p>
+    <p><strong style="color: var(--snow-text)">Snowflake</strong> &mdash; the warehouse where everything lives. Staging, Raw Vault, Business Vault, and Marts are all schemas inside Snowflake.</p>
+    <p><strong style="color: var(--dbt-text)">dbt + datavault4dbt</strong> &mdash; transforms data inside Snowflake. Builds the Raw Vault and Business Vault. The T in ELT.</p>
+    <p><strong style="color: var(--sat-text)">Power BI / Tableau</strong> &mdash; visualization tools that connect to the Information Marts and display dashboards. The end of the pipeline &mdash; what business users actually see.</p>
+    <p style="margin-bottom:0"><strong style="color: var(--hub-text)">Data Vault</strong> &mdash; not a tool. It&rsquo;s the architecture that governs how data moves through all these layers. The blueprint that all the tools follow.</p>
+  </div>
+
+  <div class="explore-opener" onclick="toggleExplore(this)">
+    <span class="explore-icon">+</span>
+    <span class="explore-label">Power BI vs Tableau &mdash; what&rsquo;s the difference?</span>
+    <span class="explore-hint">Explore</span>
+  </div>
+  <div class="explore-panel">
+    <div class="explore-panel-inner">
+      <p><strong>Power BI</strong> (Microsoft): Most common in enterprise. Integrates with the Microsoft ecosystem (Azure, Excel, Teams). Strong on dashboards and scheduled reports. License model tied to Microsoft 365.</p>
+      <p><strong>Tableau</strong> (Salesforce): More exploratory and visual. Favored by analysts who want to &ldquo;play with&rdquo; data interactively. Historically stronger on ad-hoc visualization, now competitive on dashboards too.</p>
+      <p>Both connect to Snowflake and query the Information Marts. At this stage, knowing they exist and where they sit in the pipeline is sufficient.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======= SECTION 9: EXERCISES ======= -->
+<div class="section" id="s9" data-color="34,197,94" data-label="Exercises">
+  <div class="section-header">
+    <div class="section-tag exercise-t">Exercises</div>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- Exercise 1: Tool Matching -->
+  <div class="exercise-section" id="match-exercise">
+    <div class="exercise-label">Exercise 1 &mdash; Tool Matching</div>
+    <h2>Match the Tool to What It Does</h2>
+    <p>For each description, select the correct tool.</p>
+
+    <div class="match-row" data-correct="dbt">
+      <span class="match-label">Transforms data inside the warehouse using SQL models</span>
+      <select class="match-select">
+        <option value="">Select...</option>
+        <option value="dbt">dbt</option>
+        <option value="dv4dbt">datavault4dbt</option>
+        <option value="turbo">TurboVault4dbt</option>
+        <option value="snowflake">Snowflake</option>
+        <option value="powerbi">Power BI</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="dv4dbt">
+      <span class="match-label">Provides pre-built macros for Hub, Satellite, and Link loading</span>
+      <select class="match-select">
+        <option value="">Select...</option>
+        <option value="dbt">dbt</option>
+        <option value="dv4dbt">datavault4dbt</option>
+        <option value="turbo">TurboVault4dbt</option>
+        <option value="snowflake">Snowflake</option>
+        <option value="powerbi">Power BI</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="turbo">
+      <span class="match-label">Generates dbt model files from a metadata spreadsheet</span>
+      <select class="match-select">
+        <option value="">Select...</option>
+        <option value="dbt">dbt</option>
+        <option value="dv4dbt">datavault4dbt</option>
+        <option value="turbo">TurboVault4dbt</option>
+        <option value="snowflake">Snowflake</option>
+        <option value="powerbi">Power BI</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="snowflake">
+      <span class="match-label">Cloud data warehouse with separated storage and compute</span>
+      <select class="match-select">
+        <option value="">Select...</option>
+        <option value="dbt">dbt</option>
+        <option value="dv4dbt">datavault4dbt</option>
+        <option value="turbo">TurboVault4dbt</option>
+        <option value="snowflake">Snowflake</option>
+        <option value="powerbi">Power BI</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="powerbi">
+      <span class="match-label">Connects to Information Marts and displays dashboards</span>
+      <select class="match-select">
+        <option value="">Select...</option>
+        <option value="dbt">dbt</option>
+        <option value="dv4dbt">datavault4dbt</option>
+        <option value="turbo">TurboVault4dbt</option>
+        <option value="snowflake">Snowflake</option>
+        <option value="powerbi">Power BI / Tableau</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise1()">&#9654; Verify Answers</button>
+    <div class="feedback" id="ex1-feedback"></div>
+  </div>
+
+  <!-- Exercise 2: ELT vs ETL -->
+  <div class="exercise-section" id="etl-exercise">
+    <div class="exercise-label">Exercise 2 &mdash; ELT or ETL?</div>
+    <h2>Identify the Approach</h2>
+    <p>For each scenario, is it ETL or ELT?</p>
+
+    <div class="match-row" data-correct="etl">
+      <span class="match-label">A team uses Informatica to clean and validate data before sending it to an Oracle warehouse</span>
+      <select class="match-select">
+        <option value="">Select...</option>
+        <option value="etl">ETL</option>
+        <option value="elt">ELT</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="elt">
+      <span class="match-label">Raw data from Salesforce is loaded into Snowflake, then dbt transforms it into a star schema</span>
+      <select class="match-select">
+        <option value="">Select...</option>
+        <option value="etl">ETL</option>
+        <option value="elt">ELT</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="elt">
+      <span class="match-label">Source data is loaded into a staging layer as-is, then datavault4dbt generates the Hubs and Satellites</span>
+      <select class="match-select">
+        <option value="">Select...</option>
+        <option value="etl">ETL</option>
+        <option value="elt">ELT</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="etl">
+      <span class="match-label">A middleware server applies business rules and deduplicates records before the warehouse ever sees them</span>
+      <select class="match-select">
+        <option value="">Select...</option>
+        <option value="etl">ETL</option>
+        <option value="elt">ELT</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise2()">&#9654; Verify Answers</button>
+    <div class="feedback" id="ex2-feedback"></div>
+  </div>
+
+  <!-- Exercise 3: Pipeline Order -->
+  <div class="exercise-section" id="pipeline-exercise">
+    <div class="exercise-label">Exercise 3 &mdash; Pipeline Order</div>
+    <h2>Put the Steps in Order</h2>
+    <p>What&rsquo;s the correct order of data flow? Select 1&ndash;7 for each step.</p>
+
+    <div class="match-row" data-correct="4">
+      <span class="match-label">Raw Vault (Hubs, Links, Satellites)</span>
+      <select class="match-select">
+        <option value="">Order...</option>
+        <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option><option value="7">7th</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="1">
+      <span class="match-label">Source Systems (CRM, ERP, APIs)</span>
+      <select class="match-select">
+        <option value="">Order...</option>
+        <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option><option value="7">7th</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="7">
+      <span class="match-label">Dashboard (Power BI / Tableau)</span>
+      <select class="match-select">
+        <option value="">Order...</option>
+        <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option><option value="7">7th</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="3">
+      <span class="match-label">Staging Area</span>
+      <select class="match-select">
+        <option value="">Order...</option>
+        <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option><option value="7">7th</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="6">
+      <span class="match-label">Information Mart (Star Schema)</span>
+      <select class="match-select">
+        <option value="">Order...</option>
+        <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option><option value="7">7th</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="5">
+      <span class="match-label">Business Vault</span>
+      <select class="match-select">
+        <option value="">Order...</option>
+        <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option><option value="7">7th</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <div class="match-row" data-correct="2">
+      <span class="match-label">Extraction (Python / Fivetran)</span>
+      <select class="match-select">
+        <option value="">Order...</option>
+        <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option><option value="7">7th</option>
+      </select>
+      <span class="match-feedback"></span>
+    </div>
+
+    <button class="check-btn" onclick="checkExercise3()">&#9654; Verify Answers</button>
+    <div class="feedback" id="ex3-feedback"></div>
+  </div>
+
+  <div class="completion-banner" id="completion-banner">
+    <h3>All Exercises Complete</h3>
+    <p>You understand the tooling ecosystem. You can now talk about what each tool does and where it fits.</p>
+  </div>
+</div>
+
+
+<!-- KEY CONCEPTS -->
+<div class="section" id="s-concepts" data-label="Key Concepts">
+  <div class="section-header">
+    <div class="section-tag accent-t">Key Concepts</div>
+    <div class="section-line"></div>
+  </div>
+
+  <h2>Key Concepts</h2>
+
+  <div class="concept-callout">
+    <div class="concept-label">On ELT + dbt</div>
+    <blockquote>&ldquo;dbt handles the T in ELT &mdash; it transforms data that&rsquo;s already inside the warehouse. The key shift from ETL to ELT is that business logic moves from opaque middleware into version-controlled SQL models. That&rsquo;s better engineering: reviewable, testable, documented.&rdquo;</blockquote>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">On datavault4dbt</div>
+    <blockquote>datavault4dbt automates the loading patterns that Data Vault standardizes. Those patterns &mdash; insert-only Hub loads, hash-diff Satellite comparisons, PIT table generation &mdash; are consistent enough to encode once and reuse across every entity. The value is that the methodology stays the same; only the configuration changes per project.</blockquote>
+  </div>
+
+  <div class="concept-callout">
+    <div class="concept-label">On the Ecosystem</div>
+    <blockquote>ScaleFree built a three-layer tooling stack: datavault4dbt for the loading patterns, TurboVault4dbt for metadata-driven code generation, and datavault4coalesce for a visual interface. The insight is that standardized patterns enable standardized automation &mdash; and the expertise of configuring that automation is a core part of what a Data Vault consultancy delivers.</blockquote>
+  </div>
+</div>
+
+
+<!-- FOOTER -->
+<div class="tutorial-footer">
+  <span>Chapter 6 &mdash; The Tools</span>
+  <span>Data Vault Foundations</span>
+</div>
+
+</div><!-- /container -->
+
+</div><!-- /page-content -->
+
+<script>
+/* ===================================================
+   STAR CONSTELLATION PARTICLE FIELD
+   =================================================== */
+(function() {
+  var canvas = document.getElementById('particle-field');
+  var ctx = canvas.getContext('2d');
+  var w, h;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var STAR_COUNT = 110;
+  var HUB_FRACTION = 0.15;
+  var CONNECT_DIST = 140;
+  var MOUSE_RADIUS = 200;
+  var MOUSE_STRENGTH = 0.015;
+
+  var starColors = [
+    { r: 16, g: 185, b: 129 },
+    { r: 59, g: 130, b: 246 },
+    { r: 245, g: 158, b: 11 },
+    { r: 0, g: 180, b: 255 },
+    { r: 6, g: 182, b: 212 },
+    { r: 139, g: 92, b: 246 },
+    { r: 168, g: 85, b: 247 }
+  ];
+
+  var stars = [];
+  for (var i = 0; i < STAR_COUNT; i++) {
+    var isHub = Math.random() < HUB_FRACTION;
+    var col = starColors[Math.floor(Math.random() * starColors.length)];
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      baseSize: isHub ? (2.5 + Math.random() * 2) : (0.8 + Math.random() * 1.2),
+      opacity: isHub ? (0.6 + Math.random() * 0.4) : (0.25 + Math.random() * 0.35),
+      r: col.r, g: col.g, b: col.b,
+      isHub: isHub,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.008 + Math.random() * 0.012,
+      driftAngle: Math.random() * Math.PI * 2,
+      driftSpeed: 0.08 + Math.random() * 0.15,
+      driftTurn: (Math.random() - 0.5) * 0.005
+    });
+  }
+
+  var mouse = { x: 0, y: 0, active: false };
+
+  function isOverContent(el) {
+    if (!el) return false;
+    while (el) {
+      if (el.classList) {
+        if (el.classList.contains('section') || el.classList.contains('container') ||
+            el.classList.contains('holo-nav') || el.classList.contains('pm-panel') ||
+            el.classList.contains('hook') || el.classList.contains('four-layers') ||
+            el.classList.contains('data-panel') || el.classList.contains('exercise-section') ||
+            el.classList.contains('concept-callout') || el.classList.contains('language-bridge') ||
+            el.classList.contains('contrast-panel') || el.classList.contains('disambig-panel') ||
+            el.classList.contains('code-panel') || el.classList.contains('explore-panel') ||
+            el.classList.contains('title-section') || el.classList.contains('pipeline-flow')) {
+          return true;
+        }
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = !isOverContent(e.target);
+  });
+  document.addEventListener('mouseleave', function() { mouse.active = false; });
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      p.pulse += p.pulseSpeed;
+      p.driftAngle += p.driftTurn;
+      p.x += Math.cos(p.driftAngle) * p.driftSpeed;
+      p.y += Math.sin(p.driftAngle) * p.driftSpeed;
+
+      if (mouse.active) {
+        var dx = mouse.x - p.x;
+        var dy = mouse.y - p.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS && dist > 1) {
+          var force = (1 - dist / MOUSE_RADIUS) * MOUSE_STRENGTH;
+          p.x += dx * force;
+          p.y += dy * force;
+        }
+      }
+
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      for (var j = i + 1; j < stars.length; j++) {
+        var dx = stars[i].x - stars[j].x;
+        var dy = stars[i].y - stars[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          var alpha = (1 - dist / CONNECT_DIST) * 0.12;
+          if (stars[i].isHub || stars[j].isHub) alpha *= 1.8;
+          ctx.beginPath();
+          ctx.moveTo(stars[i].x, stars[i].y);
+          ctx.lineTo(stars[j].x, stars[j].y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (mouse.active) {
+      for (var i = 0; i < stars.length; i++) {
+        var p = stars[i];
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          var mFade = 1 - mDist / MOUSE_RADIUS;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.strokeStyle = 'rgba(0, 200, 255, ' + (mFade * mFade * 0.2) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (var i = 0; i < stars.length; i++) {
+      var p = stars[i];
+      var pulseVal = 0.6 + 0.4 * Math.sin(p.pulse);
+      var currentOpacity = p.opacity * pulseVal;
+      var currentSize = p.baseSize * (0.85 + 0.15 * Math.sin(p.pulse));
+
+      var proximityBoost = 1;
+      if (mouse.active) {
+        var mdx = p.x - mouse.x;
+        var mdy = p.y - mouse.y;
+        var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_RADIUS) {
+          proximityBoost = 1 + (1 - mDist / MOUSE_RADIUS) * 1.5;
+        }
+      }
+
+      var boostedOpacity = Math.min(currentOpacity * proximityBoost, 1);
+
+      var glowRadius = currentSize * (p.isHub ? 8 : 5);
+      var grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      grd.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.3) + ')');
+      grd.addColorStop(0.4, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (boostedOpacity * 0.08) + ')');
+      grd.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + Math.min(p.r + 60, 255) + ',' + Math.min(p.g + 60, 255) + ',' + Math.min(p.b + 60, 255) + ',' + boostedOpacity + ')';
+      ctx.fill();
+
+      if (p.isHub) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, currentSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (boostedOpacity * 0.7) + ')';
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+/* ===================================================
+   SECTION VISIBILITY + NAV
+   =================================================== */
+var sections = document.querySelectorAll('.section');
+var navNodes = document.querySelectorAll('.nav-node');
+var navConnectors = document.querySelectorAll('.nav-connector');
+var progressFill = document.getElementById('progress-fill');
+var navLabel = document.getElementById('nav-current-label');
+var lcarsSegs = document.querySelectorAll('.lcars-seg');
+var ambientEl = document.getElementById('ambient-glow');
+
+var usesCSSTimeline = CSS.supports && CSS.supports('animation-timeline', 'view()');
+
+if (!usesCSSTimeline) {
+  var sectionObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+      else entry.target.classList.remove('visible');
+    });
+  }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' });
+  sections.forEach(function(s) { sectionObserver.observe(s); });
+}
+
+
+var sectionColors = [];
+sections.forEach(function(s) {
+  var dc = s.getAttribute('data-color');
+  if (dc) {
+    var parts = dc.split(',');
+    sectionColors.push({ r: parseInt(parts[0]), g: parseInt(parts[1]), b: parseInt(parts[2]) });
+  } else {
+    sectionColors.push({ r: 0, g: 180, b: 255 });
+  }
+});
+
+var lastActiveIndex = -1;
+function updateNav() {
+  var activeIdx = 0;
+  var scrollY = window.scrollY + window.innerHeight * 0.35;
+  sections.forEach(function(s, i) { if (s.offsetTop <= scrollY) activeIdx = i; });
+
+  if (activeIdx !== lastActiveIndex) {
+    lastActiveIndex = activeIdx;
+    navNodes.forEach(function(n, i) {
+      n.classList.remove('active', 'completed');
+      if (i === activeIdx) n.classList.add('active');
+      else if (i < activeIdx) n.classList.add('completed');
+    });
+    navConnectors.forEach(function(c, i) {
+      if (i < activeIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+    var currentSection = sections[activeIdx];
+    if (currentSection) navLabel.textContent = currentSection.getAttribute('data-label') || '';
+    lcarsSegs.forEach(function(seg, i) {
+      seg.classList.remove('active', 'completed');
+      if (i === activeIdx) seg.classList.add('active');
+      else if (i < activeIdx) seg.classList.add('completed');
+    });
+    var c = sectionColors[activeIdx];
+    if (c && ambientEl) {
+      ambientEl.style.setProperty('--ambient-c1', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.06)');
+      ambientEl.style.setProperty('--ambient-c2', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.03)');
+      ambientEl.style.setProperty('--ambient-c3', 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.02)');
+    }
+  }
+
+  var activeSection = sections[lastActiveIndex];
+  var nextSection = sections[lastActiveIndex + 1];
+  if (activeSection) {
+    var secTop = activeSection.offsetTop;
+    var secBottom = nextSection ? nextSection.offsetTop : document.documentElement.scrollHeight;
+    var secHeight = secBottom - secTop;
+    var currentY = window.scrollY + window.innerHeight * 0.35;
+    var fill = secHeight > 0 ? ((currentY - secTop) / secHeight) * 100 : 0;
+    fill = Math.max(0, Math.min(100, fill));
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) fill = 100;
+    lcarsSegs.forEach(function(seg, i) {
+      if (i === lastActiveIndex) seg.style.setProperty('--seg-fill', fill + '%');
+      else if (i < lastActiveIndex) seg.style.setProperty('--seg-fill', '100%');
+      else seg.style.removeProperty('--seg-fill');
+    });
+  }
+
+  var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  var scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) scrolled = 100;
+  progressFill.style.width = Math.min(scrolled, 100) + '%';
+}
+
+
+/* ===================================================
+   SCROLL PROGRESS + WORD REVEAL
+   =================================================== */
+function updateScrollProgress() {
+  var viewH = window.innerHeight;
+  sections.forEach(function(section) {
+    var rect = section.getBoundingClientRect();
+    var progress = 1 - (rect.top / viewH);
+    progress = Math.max(0, Math.min(1, progress));
+    section.style.setProperty('--scroll-progress', progress);
+    section.querySelectorAll('.hook-text').forEach(function(hook) {
+      var count = parseInt(hook.getAttribute('data-word-count')) || 1;
+      var litCount = Math.floor(progress * count * 1.3);
+      hook.querySelectorAll('.word').forEach(function(word, i) {
+        if (i < litCount) word.classList.add('lit');
+        else word.classList.remove('lit');
+      });
+    });
+  });
+}
+
+
+/* ===================================================
+   PARALLAX
+   =================================================== */
+var depthShapes = document.querySelectorAll('.depth-shape');
+var depthRates = [0.03, 0.05, 0.02, 0.04];
+function updateParallax() {
+  var scrollY = window.scrollY;
+  depthShapes.forEach(function(shape, i) {
+    shape.style.transform = 'translateY(' + (-scrollY * depthRates[i]) + 'px)';
+  });
+}
+
+
+/* ===================================================
+   UNIFIED SCROLL
+   =================================================== */
+var scrollTicking = false;
+function onScroll() {
+  if (!scrollTicking) {
+    requestAnimationFrame(function() {
+      updateNav();
+      updateScrollProgress();
+      updateParallax();
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('load', function() { updateNav(); updateScrollProgress(); });
+
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    var y = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
+
+
+/* ===================================================
+   4-LAYER TOGGLE
+   =================================================== */
+function toggleLayer(header) {
+  var layer = header.parentElement;
+  layer.classList.toggle('open');
+  var container = layer.closest('.four-layers');
+  if (container) updateLayerDots(container);
+}
+
+function jumpToLayer(containerId, layerIndex) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var layers = container.querySelectorAll('.layer');
+  layers.forEach(function(l, i) {
+    if (i <= layerIndex) l.classList.add('open');
+    else l.classList.remove('open');
+  });
+  updateLayerDots(container);
+}
+
+function updateLayerDots(container) {
+  var layers = container.querySelectorAll('.layer');
+  var dots = container.querySelectorAll('.layer-dot');
+  layers.forEach(function(l, i) {
+    if (dots[i]) {
+      if (l.classList.contains('open')) dots[i].classList.add('active');
+      else dots[i].classList.remove('active');
+    }
+  });
+}
+
+
+/* ===================================================
+   EXPLORE MORE
+   =================================================== */
+function toggleExplore(opener) {
+  var panel = opener.nextElementSibling;
+  var isOpen = opener.classList.toggle('open');
+  if (panel) panel.classList.toggle('open', isOpen);
+}
+
+
+
+/* ===================================================
+   EXERCISE 1: TOOL MATCHING
+   =================================================== */
+function checkExercise1() {
+  var rows = document.querySelectorAll('#match-exercise .match-row');
+  var correct = 0, total = rows.length, allAnswered = true;
+
+  rows.forEach(function(row) {
+    var select = row.querySelector('.match-select');
+    var expected = row.getAttribute('data-correct');
+    var feedback = row.querySelector('.match-feedback');
+    var selected = select.value;
+    if (!selected) { allAnswered = false; feedback.textContent = '?'; feedback.style.color = 'var(--text-dim)'; row.style.borderColor = 'var(--border-subtle)'; return; }
+    if (selected === expected) {
+      correct++; feedback.textContent = '\u2713'; feedback.style.color = 'var(--sql-select)'; row.style.borderColor = 'rgba(34, 197, 94, 0.3)'; row.style.background = 'rgba(34, 197, 94, 0.03)';
+    } else {
+      feedback.textContent = '\u2717'; feedback.style.color = '#ef4444'; row.style.borderColor = 'rgba(239, 68, 68, 0.3)'; row.style.background = 'rgba(239, 68, 68, 0.03)';
+    }
+  });
+
+  var fid = document.getElementById('ex1-feedback');
+  if (!allAnswered) { fid.className = 'feedback incorrect'; fid.textContent = 'Select a tool for every description first.'; fid.style.display = 'block'; return; }
+  if (correct === total) { fid.className = 'feedback correct'; fid.textContent = correct + '/' + total + ' correct. Perfect. You know what each tool does.'; fid.style.display = 'block'; exercisesCompleted.ex1 = true; checkAllComplete(); }
+  else { fid.className = 'feedback incorrect'; fid.textContent = correct + '/' + total + ' correct. Remember: dbt = transformation layer, datavault4dbt = DV macros, TurboVault = generates model files, Snowflake = warehouse, Power BI = dashboards.'; fid.style.display = 'block'; if (correct >= 3) { exercisesCompleted.ex1 = true; checkAllComplete(); } }
+}
+
+
+/* ===================================================
+   EXERCISE 2: ELT vs ETL
+   =================================================== */
+function checkExercise2() {
+  var rows = document.querySelectorAll('#etl-exercise .match-row');
+  var correct = 0, total = rows.length, allAnswered = true;
+
+  rows.forEach(function(row) {
+    var select = row.querySelector('.match-select');
+    var expected = row.getAttribute('data-correct');
+    var feedback = row.querySelector('.match-feedback');
+    var selected = select.value;
+    if (!selected) { allAnswered = false; feedback.textContent = '?'; feedback.style.color = 'var(--text-dim)'; row.style.borderColor = 'var(--border-subtle)'; return; }
+    if (selected === expected) {
+      correct++; feedback.textContent = '\u2713'; feedback.style.color = 'var(--sql-select)'; row.style.borderColor = 'rgba(34, 197, 94, 0.3)'; row.style.background = 'rgba(34, 197, 94, 0.03)';
+    } else {
+      feedback.textContent = '\u2717'; feedback.style.color = '#ef4444'; row.style.borderColor = 'rgba(239, 68, 68, 0.3)'; row.style.background = 'rgba(239, 68, 68, 0.03)';
+    }
+  });
+
+  var fid = document.getElementById('ex2-feedback');
+  if (!allAnswered) { fid.className = 'feedback incorrect'; fid.textContent = 'Select ETL or ELT for every scenario first.'; fid.style.display = 'block'; return; }
+  if (correct === total) { fid.className = 'feedback correct'; fid.textContent = correct + '/' + total + ' correct. The key: if transformation happens before loading, it is ETL. If data loads first and transforms inside the warehouse, it is ELT.'; fid.style.display = 'block'; exercisesCompleted.ex2 = true; checkAllComplete(); }
+  else { fid.className = 'feedback incorrect'; fid.textContent = correct + '/' + total + ' correct. Ask yourself: where does the transformation happen? Before the warehouse = ETL. Inside the warehouse = ELT.'; fid.style.display = 'block'; }
+}
+
+
+/* ===================================================
+   EXERCISE 3: PIPELINE ORDER
+   =================================================== */
+function checkExercise3() {
+  var rows = document.querySelectorAll('#pipeline-exercise .match-row');
+  var correct = 0, total = rows.length, allAnswered = true;
+
+  rows.forEach(function(row) {
+    var select = row.querySelector('.match-select');
+    var expected = row.getAttribute('data-correct');
+    var feedback = row.querySelector('.match-feedback');
+    var selected = select.value;
+    if (!selected) { allAnswered = false; feedback.textContent = '?'; feedback.style.color = 'var(--text-dim)'; row.style.borderColor = 'var(--border-subtle)'; return; }
+    if (selected === expected) {
+      correct++; feedback.textContent = '\u2713'; feedback.style.color = 'var(--sql-select)'; row.style.borderColor = 'rgba(34, 197, 94, 0.3)'; row.style.background = 'rgba(34, 197, 94, 0.03)';
+    } else {
+      feedback.textContent = '\u2717'; feedback.style.color = '#ef4444'; row.style.borderColor = 'rgba(239, 68, 68, 0.3)'; row.style.background = 'rgba(239, 68, 68, 0.03)';
+    }
+  });
+
+  var fid = document.getElementById('ex3-feedback');
+  if (!allAnswered) { fid.className = 'feedback incorrect'; fid.textContent = 'Select an order for every step first.'; fid.style.display = 'block'; return; }
+  if (correct === total) { fid.className = 'feedback correct'; fid.textContent = correct + '/' + total + ' correct. Perfect pipeline order: Source \u2192 Extract \u2192 Staging \u2192 Raw Vault \u2192 Business Vault \u2192 Info Mart \u2192 Dashboard.'; fid.style.display = 'block'; exercisesCompleted.ex3 = true; checkAllComplete(); }
+  else if (correct >= 5) { fid.className = 'feedback correct'; fid.textContent = correct + '/' + total + ' correct. Close! The order is: Source(1) \u2192 Extract(2) \u2192 Staging(3) \u2192 Raw Vault(4) \u2192 Business Vault(5) \u2192 Info Mart(6) \u2192 Dashboard(7).'; fid.style.display = 'block'; exercisesCompleted.ex3 = true; checkAllComplete(); }
+  else { fid.className = 'feedback incorrect'; fid.textContent = correct + '/' + total + ' correct. Think about the data journey: it starts at source systems, gets extracted, lands in staging, builds the vault layers, then gets queried by dashboards.'; fid.style.display = 'block'; }
+}
+
+var exercisesCompleted = { ex1: false, ex2: false, ex3: false };
+function checkAllComplete() {
+  if (exercisesCompleted.ex1 && exercisesCompleted.ex2 && exercisesCompleted.ex3) {
+    var banner = document.getElementById('completion-banner');
+    banner.style.display = 'block';
+    setTimeout(function() { banner.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 150);
+  }
+}
+
+
+/* ===================================================
+   WORD-WRAP UTILITY
+   =================================================== */
+function wrapHookWords(hookEl) {
+  var nodes = Array.prototype.slice.call(hookEl.childNodes);
+  var frag = document.createDocumentFragment();
+  nodes.forEach(function(node) {
+    if (node.nodeType === 1 && node.tagName === 'EM') {
+      var span = document.createElement('span');
+      span.className = 'word';
+      span.appendChild(node.cloneNode(true));
+      frag.appendChild(span);
+    } else if (node.nodeType === 3) {
+      var words = node.textContent.split(/(\s+)/);
+      words.forEach(function(w) {
+        if (/^\s+$/.test(w)) { frag.appendChild(document.createTextNode(w)); }
+        else if (w.length > 0) {
+          var span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = w;
+          frag.appendChild(span);
+        }
+      });
+    } else { frag.appendChild(node.cloneNode(true)); }
+  });
+  while (hookEl.firstChild) hookEl.removeChild(hookEl.firstChild);
+  hookEl.appendChild(frag);
+  hookEl.setAttribute('data-word-count', hookEl.querySelectorAll('.word').length);
+}
+
+
+/* ===================================================
+   INIT
+   =================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.four-layers').forEach(function(container) { updateLayerDots(container); });
+  document.querySelectorAll('.hook-text').forEach(function(hook) { wrapHookWords(hook); });
+});
+</script>
+
+<script src="../nav-inject.js"></script>
+
+
+<!-- ═══════ Game UI Elements ═══════ -->
+<!-- Achievement Toast Container -->
+<div id="achievement-toast-container" class="achievement-toast-container"></div>
+
+<!-- Inventory Toolbar -->
+<div id="inventory-toolbar" class="inventory-toolbar">
+  <div class="inventory-bags"></div>
+  <button id="achievements-btn" class="inventory-bag achievements-bag" aria-label="Achievements" onclick="SV.achievements && SV.achievements.togglePanel()">
+    <span class="bag-icon">&#x1F3C6;</span>
+  </button>
+</div>
+
+<!-- Inventory Panel -->
+<div id="inventory-panel" class="inventory-panel hidden">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title"></span>
+    <button class="inventory-panel-close" onclick="SV.inventory && SV.inventory.closePanel()">&times;</button>
+  </div>
+  <div class="inventory-panel-grid"></div>
+</div>
+
+<!-- Achievements Panel -->
+<div id="achievements-panel" class="inventory-panel hidden" style="z-index: 95;">
+  <div class="inventory-panel-header">
+    <span class="inventory-panel-title">&#x1F3C6; Discoveries</span>
+    <button class="inventory-panel-close" onclick="SV.achievements && SV.achievements.togglePanel()">&times;</button>
+  </div>
+  <div id="achievements-panel-grid" class="inventory-panel-grid"></div>
+</div>
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- Game Systems (order matters: persistence first, then data, then UI) -->
+<script src="../systems/persistence.js"></script>
+<script src="../systems/loot-definitions.js"></script>
+<script src="../systems/retroactive-loot.js"></script>
+<script src="../systems/inventory.js"></script>
+<script src="../systems/quest-log.js"></script>
+<script src="../systems/achievements.js"></script>
+<script src="../systems/mobile-fab.js"></script>
+<script src="../systems/scroll-effects.js"></script>
+
+<script>
+/* ═══════ Game system init + scroll-based item discovery ═══════ */
+document.addEventListener('DOMContentLoaded', function() {
+  /* Initialize game systems */
+  if (typeof SV !== 'undefined') {
+    if (SV.inventory) SV.inventory.init();
+    if (SV.achievements) SV.achievements.init();
+  }
+
+  var items = ['dbt-model', 'elt-vs-etl', 'datavault4dbt', 'snowflake', 'tools-landscape'];
+  var granted = {};
+
+  /* Restore already-granted items from persistence */
+  if (typeof SV !== 'undefined' && SV.persistence) {
+    var inv = SV.persistence.get('inventory', []);
+    for (var i = 0; i < inv.length; i++) { granted[inv[i].id] = true; }
+  }
+
+  function getScrollPct() {
+    var h = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    return window.scrollY / h;
+  }
+
+  function checkScroll() {
+    var pct = getScrollPct();
+    for (var i = 0; i < items.length; i++) {
+      var threshold = (i + 0.5) / items.length;
+      if (pct >= threshold && !granted[items[i]]) {
+        granted[items[i]] = true;
+        if (typeof SV !== 'undefined' && SV.inventory && SV.inventory.addItem) {
+          SV.inventory.addItem(items[i]);
+        }
+      }
+    }
+  }
+
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  setTimeout(checkScroll, 1500);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Lorenzo Colombani">
+    <meta name="description" content="What local LLMs are, how they protect your privacy, and step-by-step guides for installing the most popular ones on Mac.">
+    <title>LLM Installation Hub - Mac M-Series</title>
+    <style>
+        :root {
+            --primary: #007AFF;
+            --secondary: #5856D6;
+            --success: #34C759;
+            --warning: #FF9500;
+            --danger: #FF3B30;
+            --dark: #1C1C1E;
+            --light: #F2F2F7;
+            --glass: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle, rgba(0, 122, 255, 0.1) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Header */
+        .header {
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #007AFF, #5856D6, #FF9500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 3s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* AI Assistant */
+        .ai-assistant {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(0, 122, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); }
+        }
+
+        .ai-assistant:hover {
+            transform: scale(1.1);
+        }
+
+        .ai-icon {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        .ai-chat {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            height: 500px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            display: none;
+            flex-direction: column;
+            z-index: 999;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-chat.active {
+            display: flex;
+        }
+
+        .ai-chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .ai-message {
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-message.bot {
+            background: rgba(0, 122, 255, 0.1);
+            border: 1px solid rgba(0, 122, 255, 0.3);
+        }
+
+        .ai-message.user {
+            background: rgba(88, 86, 214, 0.1);
+            border: 1px solid rgba(88, 86, 214, 0.3);
+            margin-left: 2rem;
+        }
+
+        .ai-chat-input {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .ai-chat-input input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            color: white;
+            outline: none;
+        }
+
+        .ai-chat-input button {
+            background: var(--primary);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .ai-chat-input button:hover {
+            background: var(--secondary);
+            transform: scale(1.1);
+        }
+
+        /* LLM Grid */
+        .llm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .llm-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .llm-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .llm-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .llm-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 122, 255, 0.3);
+        }
+
+        .llm-logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .llm-name {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .llm-description {
+            color: #aaa;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Privacy and Performance Badges */
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .badge.privacy-high {
+            background: rgba(52, 199, 89, 0.2);
+            border-color: #34C759;
+            color: #34C759;
+        }
+
+        .badge.performance {
+            background: rgba(255, 149, 0, 0.2);
+            border-color: #FF9500;
+            color: #FF9500;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 3rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-header h2 {
+            font-size: 2rem;
+            background: linear-gradient(45deg, #007AFF, #5856D6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: white;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+
+        /* Installation Steps */
+        .installation-hangar {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .step {
+            margin-bottom: 1.5rem;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30px;
+            height: 30px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .step-content {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 0.5rem;
+        }
+
+        .code-block {
+            background: #000;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--primary);
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: var(--secondary);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+        }
+
+        /* Progress Indicator */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Download Links */
+        .download-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--primary);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin-right: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .download-link:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Features List */
+        .features-list {
+            list-style: none;
+            margin: 1rem 0;
+        }
+
+        .features-list li {
+            padding: 0.5rem 0;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .features-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        /* Privacy Details */
+        .privacy-details {
+            background: rgba(52, 199, 89, 0.1);
+            border: 1px solid rgba(52, 199, 89, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .privacy-details h4 {
+            color: #34C759;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Performance Metrics */
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .metric {
+            background: rgba(255, 149, 0, 0.1);
+            border: 1px solid rgba(255, 149, 0, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #FF9500;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .llm-grid {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            
+            .modal-content {
+                padding: 2rem;
+                width: 95%;
+            }
+            
+            .ai-chat {
+                width: 90%;
+                right: 5%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <header class="header">
+        <h1>Local LLM Installation Hub</h1>
+        <p class="subtitle">Run AI Models Natively on Your Mac M-Series Chip</p>
+    </header>
+
+    <main class="llm-grid">
+        <!-- Ollama -->
+        <div class="llm-card" onclick="openModal('ollama')">
+            <div class="llm-logo">🦙</div>
+            <h3 class="llm-name">Ollama</h3>
+            <p class="llm-description">Lightweight CLI tool with simple model management. Perfect for developers.</p>
+            <div class="badges">
+                <span class="badge privacy-high">100% Private</span>
+                <span class="badge performance">Fast</span>
+            </div>
+            <div class="features-list">
+                <ul>
+                    <li>Simple CLI interface</li>
+                    <li>Wide model support</li>
+                    <li>No data collection</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- LM Studio -->
+        <div class="llm-card" onclick="openModal('lmstudio')">
+            <div class="llm-logo">🎛️</div>
+            <h3 class="llm-name">LM Studio</h3>
+            <p class="llm-description">User-friendly GUI with extensive customization options and model discovery.</p>
+            <div class="badges">
+                <span class="badge privacy-high">100% Private</span>
+                <span class="badge performance">Optimized</span>
+            </div>
+            <div class="features-list">
+                <ul>
+                    <li>Beautiful interface</li>
+                    <li>Model recommendations</li>
+                    <li>OpenAI API compatible</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Jan.ai -->
+        <div class="llm-card" onclick="openModal('jan')">
+            <div class="llm-logo">🤖</div>
+            <h3 class="llm-name">Jan.ai</h3>
+            <p class="llm-description">Open-source ChatGPT alternative that runs completely offline with extensions.</p>
+            <div class="badges">
+                <span class="badge privacy-high">100% Private</span>
+                <span class="badge performance">Efficient</span>
+            </div>
+            <div class="features-list">
+                <ul>
+                    <li>ChatGPT-like interface</li>
+                    <li>Extension support</li>
+                    <li>Import models from other tools</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- GPT4All -->
+        <div class="llm-card" onclick="openModal('gpt4all')">
+            <div class="llm-logo">🌍</div>
+            <h3 class="llm-name">GPT4All</h3>
+            <p class="llm-description">Privacy-focused ecosystem with document chat capabilities and wide hardware support.</p>
+            <div class="badges">
+                <span class="badge privacy-high">100% Private</span>
+                <span class="badge performance">Versatile</span>
+            </div>
+            <div class="features-list">
+                <ul>
+                    <li>Local document processing</li>
+                    <li>Consumer hardware optimized</li>
+                    <li>Community-driven</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- AnythingLLM -->
+        <div class="llm-card" onclick="openModal('anythingllm')">
+            <div class="llm-logo">💫</div>
+            <h3 class="llm-name">AnythingLLM</h3>
+            <p class="llm-description">Feature-rich platform with team collaboration and advanced document handling.</p>
+            <div class="badges">
+                <span class="badge privacy-high">100% Private</span>
+                <span class="badge performance">Advanced</span>
+            </div>
+            <div class="features-list">
+                <ul>
+                    <li>AI agents support</li>
+                    <li>Vector database integration</li>
+                    <li>Team features</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- InstructLab -->
+        <div class="llm-card" onclick="openModal('instructlab')">
+            <div class="llm-logo">🔬</div>
+            <h3 class="llm-name">InstructLab</h3>
+            <p class="llm-description">Fine-tune and align models locally with synthetic data generation (IBM/Red Hat).</p>
+            <div class="badges">
+                <span class="badge privacy-high">100% Private</span>
+                <span class="badge performance">Training</span>
+            </div>
+            <div class="features-list">
+                <ul>
+                    <li>Model fine-tuning</li>
+                    <li>M-series optimized</li>
+                    <li>Community contributions</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- llama.cpp -->
+        <div class="llm-card" onclick="openModal('llamacpp')">
+            <div class="llm-logo">⚡</div>
+            <h3 class="llm-name">llama.cpp</h3>
+            <p class="llm-description">Lightweight C++ framework for maximum performance and efficiency.</p>
+            <div class="badges">
+                <span class="badge privacy-high">100% Private</span>
+                <span class="badge performance">Fastest</span>
+            </div>
+            <div class="features-list">
+                <ul>
+                    <li>Maximum performance</li>
+                    <li>Minimal resource usage</li>
+                    <li>Developer-focused</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Llamafile -->
+        <div class="llm-card" onclick="openModal('llamafile')">
+            <div class="llm-logo">📦</div>
+            <h3 class="llm-name">Llamafile</h3>
+            <p class="llm-description">Single executable file solution for easy distribution and deployment.</p>
+            <div class="badges">
+                <span class="badge privacy-high">100% Private</span>
+                <span class="badge performance">Portable</span>
+            </div>
+            <div class="features-list">
+                <ul>
+                    <li>One-file execution</li>
+                    <li>No installation required</li>
+                    <li>Mozilla-backed</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <!-- AI Assistant -->
+    <div class="ai-assistant" onclick="toggleAIChat()">
+        <svg class="ai-icon" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+    </div>
+
+    <div class="ai-chat" id="aiChat">
+        <div class="ai-chat-header">
+            <h3>AI Assistant</h3>
+            <button class="close-btn" onclick="toggleAIChat()">×</button>
+        </div>
+        <div class="ai-chat-messages" id="chatMessages">
+            <div class="ai-message bot">
+                Hello! I'm your LLM installation assistant. I can help you:
+                <br><br>
+                • Choose the right LLM for your needs<br>
+                • Guide you through installation<br>
+                • Troubleshoot any issues<br>
+                • Explain privacy features<br>
+                <br>
+                What would you like to know?
+            </div>
+        </div>
+        <div class="ai-chat-input">
+            <input type="text" id="chatInput" placeholder="Ask me anything..." onkeypress="handleChatKeyPress(event)">
+            <button onclick="sendMessage()">→</button>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // LLM Data
+        const llmData = {
+            ollama: {
+                name: "Ollama",
+                fullDescription: "Ollama is a lightweight, command-line tool that makes running LLMs incredibly simple. Built specifically for ease of use, it's perfect for developers who want to get started quickly.",
+                privacy: {
+                    level: "Maximum",
+                    details: [
+                        "All processing happens locally on your Mac",
+                        "No data is ever sent to external servers",
+                        "No telemetry or usage tracking",
+                        "Models are stored locally in ~/.ollama",
+                        "Complete control over your data"
+                    ]
+                },
+                performance: {
+                    metrics: [
+                        { label: "Speed", value: "Fast" },
+                        { label: "Memory", value: "Efficient" },
+                        { label: "Min RAM", value: "8GB" },
+                        { label: "Recommended", value: "16GB+" }
+                    ]
+                },
+                webAccess: false,
+                installation: [
+                    {
+                        title: "Download Ollama",
+                        content: "Visit the official Ollama website and download the Mac installer.",
+                        code: null,
+                        links: [
+                            { text: "Download Ollama", url: "https://ollama.ai" }
+                        ]
+                    },
+                    {
+                        title: "Install Ollama",
+                        content: "Open the downloaded .pkg file and follow the installation wizard. The installer will set up everything automatically.",
+                        code: null
+                    },
+                    {
+                        title: "Verify Installation",
+                        content: "Open Terminal and verify Ollama is installed correctly:",
+                        code: "ollama --version"
+                    },
+                    {
+                        title: "Download a Model",
+                        content: "Download your first model. For example, to download Llama 3.2:",
+                        code: "ollama pull llama3.2"
+                    },
+                    {
+                        title: "Run the Model",
+                        content: "Start chatting with the model:",
+                        code: "ollama run llama3.2"
+                    }
+                ],
+                features: [
+                    "Simple command-line interface",
+                    "Automatic model management",
+                    "Support for multiple models",
+                    "RESTful API for integration",
+                    "Optimized for Apple Silicon"
+                ]
+            },
+            lmstudio: {
+                name: "LM Studio",
+                fullDescription: "LM Studio provides a beautiful, intuitive interface for running LLMs. It's designed to feel like a native Mac app while offering powerful features for both beginners and advanced users.",
+                privacy: {
+                    level: "Maximum",
+                    details: [
+                        "100% offline operation",
+                        "No account required",
+                        "No data collection or telemetry",
+                        "Models stored locally",
+                        "Your conversations stay on your device"
+                    ]
+                },
+                performance: {
+                    metrics: [
+                        { label: "Speed", value: "Optimized" },
+                        { label: "GPU Usage", value: "Full MLX" },
+                        { label: "Min RAM", value: "16GB" },
+                        { label: "Best With", value: "32GB+" }
+                    ]
+                },
+                webAccess: false,
+                installation: [
+                    {
+                        title: "Download LM Studio",
+                        content: "Download the Mac version from the official website. Make sure to select the Apple Silicon version.",
+                        links: [
+                            { text: "Download LM Studio", url: "https://lmstudio.ai" }
+                        ]
+                    },
+                    {
+                        title: "Install the Application",
+                        content: "Open the downloaded DMG file and drag LM Studio to your Applications folder.",
+                        code: null
+                    },
+                    {
+                        title: "First Launch",
+                        content: "Open LM Studio from your Applications folder. On first launch, it will set up the necessary directories.",
+                        code: null
+                    },
+                    {
+                        title: "Browse and Download Models",
+                        content: "Use the built-in model browser to find and download models. LM Studio shows compatibility ratings for your hardware.",
+                        code: null
+                    },
+                    {
+                        title: "Configure and Chat",
+                        content: "Select your downloaded model, adjust parameters if needed, and start chatting!",
+                        code: null
+                    }
+                ],
+                features: [
+                    "Beautiful native Mac interface",
+                    "Model discovery and recommendations",
+                    "Hardware compatibility indicators",
+                    "OpenAI API compatibility",
+                    "Advanced parameter controls",
+                    "Multiple model management"
+                ]
+            },
+            jan: {
+                name: "Jan.ai",
+                fullDescription: "Jan is an open-source alternative to ChatGPT that runs entirely offline. It offers a familiar interface with the privacy of local execution.",
+                privacy: {
+                    level: "Maximum",
+                    details: [
+                        "Completely offline operation",
+                        "Open-source and transparent",
+                        "No data leaves your machine",
+                        "User-owned philosophy",
+                        "No tracking or analytics"
+                    ]
+                },
+                performance: {
+                    metrics: [
+                        { label: "Interface", value: "Smooth" },
+                        { label: "Response", value: "Quick" },
+                        { label: "Min RAM", value: "8GB" },
+                        { label: "Optimal", value: "16GB+" }
+                    ]
+                },
+                webAccess: false,
+                installation: [
+                    {
+                        title: "Download Jan",
+                        content: "Get the latest Mac version from Jan's website.",
+                        links: [
+                            { text: "Download Jan.ai", url: "https://jan.ai" }
+                        ]
+                    },
+                    {
+                        title: "Install Jan",
+                        content: "Open the DMG file and drag Jan to Applications.",
+                        code: null
+                    },
+                    {
+                        title: "Initial Setup",
+                        content: "Launch Jan and it will guide you through the initial setup.",
+                        code: null
+                    },
+                    {
+                        title: "Download Models",
+                        content: "Use the built-in model hub to download models or import from other tools.",
+                        code: null
+                    },
+                    {
+                        title: "Start Chatting",
+                        content: "Select a model and begin your conversation in the ChatGPT-like interface.",
+                        code: null
+                    }
+                ],
+                features: [
+                    "ChatGPT-like interface",
+                    "Extension system",
+                    "Model import from other tools",
+                    "Multiple conversation threads",
+                    "Markdown support",
+                    "Code highlighting"
+                ]
+            },
+            gpt4all: {
+                name: "GPT4All",
+                fullDescription: "GPT4All is a privacy-focused ecosystem designed to run on consumer hardware. It excels at document processing and offers broad compatibility.",
+                privacy: {
+                    level: "Maximum",
+                    details: [
+                        "Local-first design philosophy",
+                        "No internet required after setup",
+                        "Document processing stays local",
+                        "No user tracking",
+                        "Open-source transparency"
+                    ]
+                },
+                performance: {
+                    metrics: [
+                        { label: "Hardware", value: "Flexible" },
+                        { label: "Documents", value: "Excellent" },
+                        { label: "Min RAM", value: "8GB" },
+                        { label: "Sweet Spot", value: "16GB" }
+                    ]
+                },
+                webAccess: false,
+                installation: [
+                    {
+                        title: "Download GPT4All",
+                        content: "Download the Mac installer from the official website.",
+                        links: [
+                            { text: "Download GPT4All", url: "https://gpt4all.io" }
+                        ]
+                    },
+                    {
+                        title: "Run Installer",
+                        content: "Open the installer and follow the setup wizard.",
+                        code: null
+                    },
+                    {
+                        title: "Choose Models",
+                        content: "On first launch, browse available models. Pay attention to RAM requirements.",
+                        code: null
+                    },
+                    {
+                        title: "Download Your Model",
+                        content: "Select and download a model that fits your hardware.",
+                        code: null
+                    },
+                    {
+                        title: "Chat or Process Documents",
+                        content: "Use the chat interface or upload documents for local processing.",
+                        code: null
+                    }
+                ],
+                features: [
+                    "Local document chat",
+                    "Wide model selection",
+                    "Consumer hardware focus",
+                    "Python bindings available",
+                    "Community-driven development",
+                    "Cross-platform support"
+                ]
+            },
+            anythingllm: {
+                name: "AnythingLLM",
+                fullDescription: "AnythingLLM is a comprehensive platform that brings enterprise features to local LLM deployment, including AI agents and team collaboration.",
+                privacy: {
+                    level: "Maximum",
+                    details: [
+                        "All data stays on your machine",
+                        "No cloud dependencies",
+                        "Secure document handling",
+                        "Local vector databases",
+                        "Team data isolation"
+                    ]
+                },
+                performance: {
+                    metrics: [
+                        { label: "Features", value: "Rich" },
+                        { label: "Agents", value: "Supported" },
+                        { label: "Min RAM", value: "16GB" },
+                        { label: "Production", value: "32GB+" }
+                    ]
+                },
+                webAccess: false,
+                installation: [
+                    {
+                        title: "Download AnythingLLM",
+                        content: "Get the Mac desktop app from the official site.",
+                        links: [
+                            { text: "Download AnythingLLM", url: "https://anythingllm.com" }
+                        ]
+                    },
+                    {
+                        title: "Install Application",
+                        content: "Install like any Mac app by dragging to Applications.",
+                        code: null
+                    },
+                    {
+                        title: "Initial Configuration",
+                        content: "Set up your workspace and choose your LLM provider (local or API).",
+                        code: null
+                    },
+                    {
+                        title: "Connect LLM",
+                        content: "If using local models, connect to Ollama or LM Studio running on your machine.",
+                        code: null
+                    },
+                    {
+                        title: "Create Workspace",
+                        content: "Set up workspaces for different projects or teams.",
+                        code: null
+                    }
+                ],
+                features: [
+                    "AI agents and workflows",
+                    "Document RAG system",
+                    "Multiple LLM support",
+                    "Vector database integration",
+                    "Team collaboration",
+                    "API endpoints"
+                ]
+            },
+            instructlab: {
+                name: "InstructLab",
+                fullDescription: "InstructLab by IBM and Red Hat enables you to fine-tune and align LLMs locally on your Mac. Perfect for creating specialized models.",
+                privacy: {
+                    level: "Maximum",
+                    details: [
+                        "Local training and inference",
+                        "Your data never leaves your Mac",
+                        "No cloud training required",
+                        "Complete model ownership",
+                        "Contribute back optionally"
+                    ]
+                },
+                performance: {
+                    metrics: [
+                        { label: "Training", value: "Efficient" },
+                        { label: "M-Series", value: "Optimized" },
+                        { label: "Min RAM", value: "16GB" },
+                        { label: "Training", value: "64GB+" }
+                    ]
+                },
+                webAccess: false,
+                installation: [
+                    {
+                        title: "Install Python 3.11",
+                        content: "InstructLab requires Python 3.11. Install if not present:",
+                        code: "brew install python@3.11"
+                    },
+                    {
+                        title: "Create Virtual Environment",
+                        content: "Set up a Python virtual environment:",
+                        code: "python3.11 -m venv --upgrade-deps venv\nsource venv/bin/activate"
+                    },
+                    {
+                        title: "Install InstructLab",
+                        content: "Install with Apple Metal support:",
+                        code: "pip cache remove llama_cpp_python\npip install 'instructlab[mps]'"
+                    },
+                    {
+                        title: "Initialize Configuration",
+                        content: "Set up InstructLab configuration:",
+                        code: "ilab config init"
+                    },
+                    {
+                        title: "Download Base Model",
+                        content: "Download a model to start with:",
+                        code: "ilab model download"
+                    }
+                ],
+                features: [
+                    "Local model fine-tuning",
+                    "Synthetic data generation",
+                    "MLX optimization for M-series",
+                    "Community taxonomy system",
+                    "LoRA training support",
+                    "Model alignment tools"
+                ]
+            },
+            llamacpp: {
+                name: "llama.cpp",
+                fullDescription: "llama.cpp is a high-performance C++ implementation focused on speed and efficiency. It's the foundation many other tools build upon.",
+                privacy: {
+                    level: "Maximum",
+                    details: [
+                        "No external dependencies",
+                        "Pure local execution",
+                        "No telemetry",
+                        "Minimal footprint",
+                        "Complete control"
+                    ]
+                },
+                performance: {
+                    metrics: [
+                        { label: "Speed", value: "Fastest" },
+                        { label: "Memory", value: "Minimal" },
+                        { label: "Min RAM", value: "4GB" },
+                        { label: "Efficiency", value: "Maximum" }
+                    ]
+                },
+                webAccess: false,
+                installation: [
+                    {
+                        title: "Install Build Tools",
+                        content: "Ensure Xcode command line tools are installed:",
+                        code: "xcode-select --install"
+                    },
+                    {
+                        title: "Clone Repository",
+                        content: "Clone the llama.cpp repository:",
+                        code: "git clone https://github.com/ggerganov/llama.cpp\ncd llama.cpp"
+                    },
+                    {
+                        title: "Build for Metal",
+                        content: "Compile with Metal support for M-series:",
+                        code: "make clean\nmake LLAMA_METAL=1"
+                    },
+                    {
+                        title: "Download Model",
+                        content: "Download a GGUF model from Hugging Face.",
+                        links: [
+                            { text: "Browse Models", url: "https://huggingface.co/models?format=gguf" }
+                        ]
+                    },
+                    {
+                        title: "Run Model",
+                        content: "Execute the model with your downloaded file:",
+                        code: "./main -m path/to/model.gguf -n 256 --interactive"
+                    }
+                ],
+                features: [
+                    "Maximum performance",
+                    "Minimal resource usage",
+                    "GGUF format support",
+                    "Quantization options",
+                    "Batch processing",
+                    "Server mode available"
+                ]
+            },
+            llamafile: {
+                name: "Llamafile",
+                fullDescription: "Llamafile packages entire LLMs into single executable files, making distribution and deployment incredibly simple.",
+                privacy: {
+                    level: "Maximum",
+                    details: [
+                        "Self-contained execution",
+                        "No installation tracking",
+                        "Portable privacy",
+                        "No external connections",
+                        "Zero configuration files"
+                    ]
+                },
+                performance: {
+                    metrics: [
+                        { label: "Startup", value: "Instant" },
+                        { label: "Overhead", value: "Minimal" },
+                        { label: "Min RAM", value: "8GB" },
+                        { label: "Portability", value: "100%" }
+                    ]
+                },
+                webAccess: false,
+                installation: [
+                    {
+                        title: "Download Llamafile",
+                        content: "Browse Hugging Face for llamafile models:",
+                        links: [
+                            { text: "Browse Llamafiles", url: "https://huggingface.co/Mozilla" }
+                        ]
+                    },
+                    {
+                        title: "Make Executable",
+                        content: "After downloading, make the file executable:",
+                        code: "chmod +x Meta-Llama-3.1-8B-Instruct.Q6_K.llamafile"
+                    },
+                    {
+                        title: "Run Directly",
+                        content: "Execute the llamafile:",
+                        code: "./Meta-Llama-3.1-8B-Instruct.Q6_K.llamafile"
+                    },
+                    {
+                        title: "Access Web Interface",
+                        content: "Open your browser to the provided URL (usually http://localhost:8080)",
+                        code: null
+                    },
+                    {
+                        title: "Convert Models (Optional)",
+                        content: "Convert existing GGUF models to llamafile:",
+                        code: "llamafile-convert model.gguf -o model.llamafile"
+                    }
+                ],
+                features: [
+                    "Single file distribution",
+                    "No installation required",
+                    "Built-in web interface",
+                    "Cross-platform compatibility",
+                    "Mozilla backing",
+                    "Easy sharing"
+                ]
+            }
+        };
+
+        // Modal Functions
+        function openModal(llmId) {
+            const modal = document.getElementById('modal');
+            const data = llmData[llmId];
+            
+            document.getElementById('modalTitle').textContent = data.name;
+            document.getElementById('modalBody').innerHTML = generateModalContent(data);
+            
+            modal.classList.add('active');
+            updateProgress(0);
+            
+            // Animate progress
+            setTimeout(() => {
+                animateProgress();
+            }, 100);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.remove('active');
+        }
+
+        function generateModalContent(data) {
+            return `
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                
+                <p style="font-size: 1.1rem; margin-bottom: 2rem;">${data.fullDescription}</p>
+                
+                <div class="privacy-details">
+                    <h4>🔒 Privacy Level: ${data.privacy.level}</h4>
+                    <ul class="features-list">
+                        ${data.privacy.details.map(detail => `<li>${detail}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem;">📊 Performance Metrics</h3>
+                <div class="performance-metrics">
+                    ${data.performance.metrics.map(metric => `
+                        <div class="metric">
+                            <div class="metric-value">${metric.value}</div>
+                            <div class="metric-label">${metric.label}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem;">🌐 Web Access</h3>
+                <p>${data.webAccess ? '⚠️ This LLM can access the internet' : '✅ This LLM runs completely offline'}</p>
+                
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem;">✨ Key Features</h3>
+                <ul class="features-list">
+                    ${data.features.map(feature => `<li>${feature}</li>`).join('')}
+                </ul>
+                
+                <div class="installation-hangar">
+                    <h3 style="margin-bottom: 1.5rem;">🚀 Installation Hangar</h3>
+                    ${data.installation.map((step, index) => `
+                        <div class="step">
+                            <div class="step-number">${index + 1}</div>
+                            <h4>${step.title}</h4>
+                            <div class="step-content">
+                                <p>${step.content}</p>
+                                ${step.code ? `
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                        <code>${step.code}</code>
+                                    </div>
+                                ` : ''}
+                                ${step.links ? step.links.map(link => `
+                                    <a href="${link.url}" class="download-link" target="_blank">
+                                        ${link.text} →
+                                    </a>
+                                `).join('') : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Progress Animation
+        function updateProgress(percent) {
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        function animateProgress() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                updateProgress(progress);
+                if (progress >= 100) {
+                    clearInterval(interval);
+                }
+            }, 20);
+        }
+
+        // Copy Code Function
+        function copyCode(button) {
+            const codeBlock = button.parentElement;
+            const code = codeBlock.querySelector('code').textContent;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // AI Chat Functions
+        function toggleAIChat() {
+            const chat = document.getElementById('aiChat');
+            chat.classList.toggle('active');
+            
+            if (chat.classList.contains('active')) {
+                document.getElementById('chatInput').focus();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Simulate AI response
+            setTimeout(() => {
+                const response = generateAIResponse(message);
+                addMessage(response, 'bot');
+            }, 1000);
+        }
+
+        function addMessage(text, type) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `ai-message ${type}`;
+            // Our own replies carry markup; whatever the visitor typed never does.
+            if (type === 'user') {
+                messageDiv.textContent = text;
+            } else {
+                messageDiv.innerHTML = text;
+            }
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function generateAIResponse(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            // Simple response logic
+            if (lowerMessage.includes('install') || lowerMessage.includes('setup')) {
+                return "I can help you install any of these LLMs! Which one are you interested in? Just click on any card above to see detailed installation instructions.";
+            } else if (lowerMessage.includes('privacy')) {
+                return "All the LLMs listed here run 100% locally on your Mac. Your data never leaves your machine, and there's no telemetry or tracking. This is the main advantage of local LLMs!";
+            } else if (lowerMessage.includes('best') || lowerMessage.includes('recommend')) {
+                return "For beginners, I recommend starting with <strong>Ollama</strong> or <strong>LM Studio</strong>. Ollama is great if you're comfortable with the command line, while LM Studio offers a beautiful GUI. Both are easy to set up and well-optimized for Mac.";
+            } else if (lowerMessage.includes('ram') || lowerMessage.includes('memory')) {
+                return "Most LLMs need at least 8GB RAM for small models (3B-7B parameters). For larger models (13B+), you'll want 16GB or more. With 32GB+ RAM, you can run very capable models comfortably.";
+            } else if (lowerMessage.includes('m1') || lowerMessage.includes('m2') || lowerMessage.includes('m3') || lowerMessage.includes('m4')) {
+                return "All these LLMs are optimized for Apple Silicon! They use the Neural Engine and unified memory architecture efficiently. M2 Pro/Max/Ultra chips will give you faster performance, but even base M1 chips work well.";
+            } else if (lowerMessage.includes('document') || lowerMessage.includes('pdf')) {
+                return "<strong>GPT4All</strong> and <strong>AnythingLLM</strong> are best for document processing. They can analyze PDFs and other documents locally without sending your data anywhere.";
+            } else if (lowerMessage.includes('code') || lowerMessage.includes('programming')) {
+                return "For coding tasks, I recommend <strong>Ollama</strong> with CodeLlama or DeepSeek Coder models. <strong>LM Studio</strong> also has great code-focused models. Both offer syntax highlighting and code completion features.";
+            } else if (lowerMessage.includes('fast') || lowerMessage.includes('speed')) {
+                return "<strong>llama.cpp</strong> offers the fastest performance as it's a pure C++ implementation. <strong>Ollama</strong> is also very fast and easier to use. Speed also depends on your model size and Mac specs.";
+            } else {
+                return "I'm here to help! You can ask me about:<br><br>• Installation steps<br>• Privacy features<br>• Performance requirements<br>• Best LLM for your use case<br>• Troubleshooting<br><br>What would you like to know?";
+            }
+        }
+
+        // Close modal on background click
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+                const chat = document.getElementById('aiChat');
+                if (chat.classList.contains('active')) {
+                    toggleAIChat();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
