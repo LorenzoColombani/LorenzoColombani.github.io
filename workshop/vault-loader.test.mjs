@@ -16,47 +16,51 @@ class Element{
 function setup(t,{reduced=false,unlock=()=>Promise.resolve(true)}={}){
  t.mock.timers.enable({apis:['setTimeout']});
  const element=new Element(),button=new Element('BUTTON'),skip=new Element('BUTTON'),status=new Element('P'),label=new Element('SPAN'),page=new Element('MAIN'),prior=new Element();prior.inert=true;
- element.parts={'[data-vault-status]':status,'[data-vault-sound]':button,'[data-vault-sound-state]':label,'[data-vault-skip]':skip};
- const entry=new Element('BUTTON'),doc=new Element('DOCUMENT');doc.body={children:[element,page,prior]};doc.activeElement=button;doc.querySelector=s=>s==='#enter-button'?entry:null;
- const cues=[];let unlocked=0,stopped=0,disposed=0,finished=0;
+ element.parts={'[data-vault-status]':status,'[data-vault-enter]':button,'[data-vault-skip]':skip};
+ const entry=new Element('CANVAS'),doc=new Element('DOCUMENT');doc.body={children:[element,page,prior]};doc.activeElement=button;doc.querySelector=s=>s==='#world'?entry:null;
+ const cues=[];let unlocked=0,stopped=0,disposed=0,finished=0,activated=0,begun=0;
  const audio={unlock:()=>{unlocked++;return unlock();},play:phase=>cues.push(phase),stop:()=>stopped++,dispose:()=>disposed++};
- const loader=createVaultLoader({element,document:doc,window:{matchMedia:()=>({matches:reduced})},audio,onDone:()=>finished++});
- return {loader,element,button,skip,status,label,page,prior,doc,entry,cues,get unlocked(){return unlocked;},get stopped(){return stopped;},get disposed(){return disposed;},get finished(){return finished;}};
+ const loader=createVaultLoader({element,document:doc,window:{matchMedia:()=>({matches:reduced})},audio,onActivate:()=>activated++,onBegin:()=>begun++,onDone:()=>finished++});
+ return {loader,element,button,skip,status,label,page,prior,doc,entry,cues,get unlocked(){return unlocked;},get stopped(){return stopped;},get disposed(){return disposed;},get finished(){return finished;},get activated(){return activated;},get begun(){return begun;}};
 }
-test('loading follows readiness, stays silent, and never permits Skip before resources are ready',async t=>{
- const h=setup(t);assert.equal(h.page.inert,true);assert.equal(h.skip.disabled,true);
- t.mock.timers.tick(100000);await h.skip.emit('click');assert.equal(h.loader.state,'loading');assert.equal(h.unlocked,0);assert.deepEqual(h.cues,[]);
- h.loader.ready();h.loader.ready();assert.equal(h.loader.state,'unlocking');assert.equal(h.skip.disabled,false);
- t.mock.timers.tick(VAULT_TIMING.door);assert.equal(h.loader.state,'opening');
- t.mock.timers.tick(VAULT_TIMING.open-VAULT_TIMING.door);assert.equal(h.element.classList.contains('is-open'),true);
- t.mock.timers.tick(VAULT_TIMING.fade);assert.equal(h.loader.state,'finished');assert.equal(h.element.hidden,true);assert.equal(h.page.inert,false);assert.equal(h.prior.inert,true);assert.equal(h.finished,1);assert.equal(h.entry.focused,true);
- assert.equal(h.unlocked,0);assert.deepEqual(h.cues,[]);
+test('scene readiness alone never opens the door or starts audio',async t=>{
+ const h=setup(t);assert.equal(h.page.inert,true);assert.equal(h.button.disabled,true);assert.equal(h.skip.disabled,true);
+ await h.button.emit('click');t.mock.timers.tick(10000);await h.skip.emit('click');assert.equal(h.loader.state,'loading');assert.equal(h.unlocked,0);
+ h.loader.ready();h.loader.ready();assert.equal(h.loader.state,'ready');assert.equal(h.button.disabled,false);assert.equal(h.skip.disabled,true);
+ t.mock.timers.tick(10000);assert.equal(h.loader.state,'ready');assert.deepEqual(h.cues,[]);h.loader.dispose();assert.equal(h.begun,0);assert.equal(h.finished,0);
 });
-test('a trusted sound toggle arms only the opening cues and supports turning them off',async t=>{
- const h=setup(t);await h.button.emit('click',{isTrusted:false});assert.equal(h.unlocked,0);
- await h.button.emit('click');assert.equal(h.unlocked,1);assert.deepEqual(h.cues,['charge']);assert.equal(h.button.attrs['aria-pressed'],'true');
- h.loader.ready();t.mock.timers.tick(VAULT_TIMING.door);assert.deepEqual(h.cues,['charge','unlock','open']);
- await h.button.emit('click');assert.equal(h.stopped,1);assert.equal(h.button.attrs['aria-pressed'],'false');
- h.loader.dispose();
+test('one trusted reactor click unlocks sound and enters once; there is no second entry',async t=>{
+ const h=setup(t);h.loader.ready();await h.button.emit('click',{isTrusted:false});assert.equal(h.unlocked,0);
+ await h.button.emit('click');await h.button.emit('click');assert.equal(h.unlocked,1);assert.equal(h.activated,1);assert.equal(h.begun,1);assert.deepEqual(h.cues,['unlock']);
+ t.mock.timers.tick(VAULT_TIMING.door);assert.deepEqual(h.cues,['unlock','open']);
+ t.mock.timers.tick(VAULT_TIMING.open-VAULT_TIMING.door);t.mock.timers.tick(VAULT_TIMING.fade);
+ assert.equal(h.loader.state,'finished');assert.equal(h.page.inert,false);assert.equal(h.prior.inert,true);assert.equal(h.finished,1);assert.equal(h.entry.focused,true);
 });
-test('late audio permission cannot play after Skip, failure, or disposal',async t=>{
- let resolve;const h=setup(t,{unlock:()=>new Promise(r=>resolve=r)});
- const click=h.button.emit('click');h.loader.ready();await h.skip.emit('click');resolve(true);await click;
- assert.equal(h.loader.state,'finished');assert.ok(!h.cues.includes('charge'));assert.equal(h.finished,1);
- h.loader.ready();h.loader.fail();h.loader.dispose();assert.equal(h.finished,1);
+test('audio settles before the door opens and duplicate taps cannot arm it twice',async t=>{
+ let resolve;const h=setup(t,{unlock:()=>new Promise(r=>resolve=r)});h.loader.ready();
+ const click=h.button.emit('click');await h.button.emit('click');assert.equal(h.loader.state,'arming');assert.equal(h.begun,0);assert.equal(h.unlocked,1);
+ resolve(true);await click;assert.equal(h.begun,1);assert.deepEqual(h.cues,['unlock']);await h.skip.emit('click');assert.equal(h.finished,1);
 });
-test('failed audio never prevents the visual door from completing',async t=>{
- const h=setup(t,{unlock:()=>Promise.resolve(false)});await h.button.emit('click');assert.equal(h.label.textContent,'Unavailable');assert.equal(h.button.attrs['aria-pressed'],'false');
- h.loader.ready();await h.skip.emit('click');assert.equal(h.loader.state,'finished');
+test('late audio permission after teardown cannot enter or play',async t=>{
+ let resolve;const h=setup(t,{unlock:()=>new Promise(r=>resolve=r)});h.loader.ready();
+ const click=h.button.emit('click');h.loader.dispose();resolve(true);await click;
+ assert.equal(h.begun,0);assert.equal(h.finished,0);assert.deepEqual(h.cues,[]);assert.equal(h.page.inert,false);
 });
-test('reduced motion has a short reveal and fail releases input immediately',t=>{
- const h=setup(t,{reduced:true});h.loader.ready();t.mock.timers.tick(VAULT_TIMING.reduced);assert.equal(h.loader.state,'finished');assert.equal(h.page.inert,false);
+test('unsupported audio and a stalled resume still leave a working entrance',async t=>{
+ const h=setup(t,{unlock:()=>Promise.resolve(false)});h.loader.ready();await h.button.emit('click');assert.equal(h.begun,1);assert.deepEqual(h.cues,[]);await h.skip.emit('click');assert.equal(h.finished,1);
 });
-test('startup failure does not leave the page locked or scheduled sounds running',t=>{
- const h=setup(t);h.loader.ready();h.loader.fail();t.mock.timers.tick(5000);assert.equal(h.loader.state,'failed');assert.equal(h.page.inert,false);assert.equal(h.prior.inert,true);assert.equal(h.finished,1);assert.equal(h.disposed,1);assert.deepEqual(h.cues,[]);
+test('an unresolved audio request is bounded without a delayed duplicate entrance',async t=>{
+ let resolve;const h=setup(t,{unlock:()=>new Promise(r=>resolve=r)});h.loader.ready();
+ const click=h.button.emit('click');t.mock.timers.tick(2000);assert.equal(h.begun,1);resolve(true);await click;assert.equal(h.begun,1);assert.deepEqual(h.cues,[]);h.loader.dispose();
 });
-test('hidden pages stop opening audio without altering the music setting',async t=>{
- const h=setup(t);await h.button.emit('click');h.doc.hidden=true;await h.doc.emit('visibilitychange');assert.equal(h.stopped,1);h.loader.dispose();
+test('reduced motion still requires the one gesture and completes entry',async t=>{
+ const h=setup(t,{reduced:true});h.loader.ready();assert.equal(h.loader.state,'ready');await h.button.emit('click');t.mock.timers.tick(VAULT_TIMING.reduced);assert.equal(h.begun,1);assert.equal(h.finished,1);assert.equal(h.page.inert,false);
+});
+test('startup failure releases input and never enters the scene',t=>{
+ const h=setup(t);h.loader.ready();h.loader.fail();t.mock.timers.tick(5000);assert.equal(h.loader.state,'failed');assert.equal(h.page.inert,false);assert.equal(h.prior.inert,true);assert.equal(h.begun,0);assert.equal(h.finished,0);assert.equal(h.disposed,1);
+});
+test('backgrounding stops the finite opening cues',async t=>{
+ const h=setup(t);h.loader.ready();await h.button.emit('click');h.doc.hidden=true;await h.doc.emit('visibilitychange');assert.equal(h.stopped,1);h.loader.dispose();
 });
 test('production loader matches its source fragment and bootstrap waits for real scene readiness',async()=>{
  const read=name=>readFile(new URL(name,import.meta.url),'utf8');
@@ -64,4 +68,6 @@ test('production loader matches its source fragment and bootstrap waits for real
  assert.ok(html.includes(fragment.replace(/^<!--.*?-->\n/,'').trim()));
  assert.ok(html.includes('vault-loader.css'));assert.ok(boot.includes("addEventListener('workshop-ready'"));assert.ok(main.includes("dispatchEvent(new Event('workshop-ready'))"));
  assert.ok(!main.includes("$('#loader').classList.add('done')"));
+ assert.ok(!html.includes('id="enter-button"'));assert.ok(!html.includes('data-vault-sound'));
+ assert.ok(boot.includes("new Event('workshop-enter')"));assert.ok(main.includes("addEventListener('workshop-enter',enterFromVault)"));
 });

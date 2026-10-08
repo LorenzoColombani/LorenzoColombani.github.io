@@ -23,8 +23,8 @@
 <meta name="twitter:image:alt" content="The Workshop sharing artwork with Lorenzo’s droid, a teal orb, an ivory optical table, and a blue-hour ocean.">
 <!-- share-preview:end -->
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css?v=reactor-vault-24">
-<link rel="stylesheet" href="vault-loader.css?v=reactor-vault-24">
+<link rel="stylesheet" href="style.css?v=reactor-entry-25">
+<link rel="stylesheet" href="vault-loader.css?v=reactor-entry-25">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
 </head>
 <body class="blue-hour">
@@ -39,8 +39,8 @@
     <div class="vault-sill"></div>
   </div>
   <header class="vault-heading"><span class="vault-eyebrow">Lorenzo Colombani</span><p>The Workshop</p></header>
-  <div class="vault-mechanism" aria-hidden="true">
-    <svg class="vault-reactor" viewBox="0 0 600 600" fill="none">
+  <button class="vault-mechanism" data-vault-enter type="button" aria-label="Open the Workshop" aria-describedby="vault-entry-hint" disabled>
+    <svg class="vault-reactor" viewBox="0 0 600 600" fill="none" aria-hidden="true">
       <defs>
         <radialGradient id="vault-housing"><stop stop-color="#101d23"/><stop offset=".62" stop-color="#16242b"/><stop offset=".78" stop-color="#0a1218"/><stop offset=".9" stop-color="#53616a"/><stop offset=".94" stop-color="#17222a"/><stop offset="1" stop-color="#080f14"/></radialGradient>
         <linearGradient id="vault-steel" x1="100" y1="70" x2="470" y2="500" gradientUnits="userSpaceOnUse"><stop stop-color="#a4adb1"/><stop offset=".22" stop-color="#364852"/><stop offset=".48" stop-color="#101d25"/><stop offset=".72" stop-color="#667781"/><stop offset="1" stop-color="#16252e"/></linearGradient>
@@ -75,10 +75,9 @@
         <g transform="translate(300 300)"><g class="vault-latch vault-latch-n"><use href="#vault-latch"/></g><g class="vault-latch vault-latch-e"><use href="#vault-latch" transform="rotate(90)"/></g><g class="vault-latch vault-latch-s"><use href="#vault-latch" transform="rotate(180)"/></g><g class="vault-latch vault-latch-w"><use href="#vault-latch" transform="rotate(270)"/></g></g>
       </g>
     </svg>
-  </div>
-  <div class="vault-copy"><span class="vault-progress-light" aria-hidden="true"></span><p data-vault-status role="status" aria-live="polite">Preparing the Workshop</p><span class="vault-caption">A little space for possibility.</span></div>
+  </button>
+  <div class="vault-copy"><span class="vault-progress-light" aria-hidden="true"></span><p id="vault-entry-hint" data-vault-status role="status" aria-live="polite">Preparing the Workshop</p><span class="vault-caption">Sound accompanies the opening.</span></div>
   <div class="vault-controls">
-    <button class="vault-sound" data-vault-sound type="button" aria-pressed="false" aria-label="Opening sound"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path class="vault-sound-on" d="M17 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="vault-sound-off" d="m17 9 5 6m0-6-5 6"/></svg><span>Opening sound</span><span class="vault-sound-state" data-vault-sound-state>Off</span></button>
     <button class="vault-skip" data-vault-skip type="button">Skip opening <span aria-hidden="true">↗</span></button>
   </div>
 </div>
@@ -89,17 +88,6 @@
 </header>
 <div id="world-controls" aria-label="Controls attached to the instruments"></div>
 <main class="interface">
-<section class="intro reactor-intro" id="intro" aria-labelledby="welcome-title">
-<div class="welcome-copy"><h1 id="welcome-title">The <em>Workshop.</em></h1><p class="welcome-subtitle">Where we build AI tools and ship them. <span class="shipping-punch">Fast.</span></p></div>
-<button class="reactor-entry" id="enter-button" type="button" aria-label="Enter the workshop" aria-describedby="entry-status">
-<svg class="entry-reactor" viewBox="0 0 180 180" aria-hidden="true"><defs><radialGradient id="entry-light"><stop offset="0" stop-color="#ecfff9"/><stop offset=".35" stop-color="#b1ffe9" stop-opacity=".55"/><stop offset="1" stop-color="#75e8d5" stop-opacity="0"/></radialGradient></defs>
-<circle class="reactor-aura" cx="90" cy="90" r="84" fill="url(#entry-light)"/>
-<g class="reactor-outer"><circle cx="90" cy="90" r="77"/><circle class="reactor-trace" cx="90" cy="90" r="71"/><path d="M90 7 V17 M90 163 V173 M7 90 H17 M163 90 H173"/></g>
-<g class="reactor-coils"><g transform="rotate(0 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(30 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(60 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(90 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(120 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(150 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(180 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(210 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(240 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(270 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(300 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g><g transform="rotate(330 90 90)"><path d="M82 25 L98 25 L96 42 L84 42 Z"/><path class="coil-filament" d="M87 28 V39 M93 28 V39"/></g></g>
-<g class="reactor-iris"><circle cx="90" cy="90" r="43"/><path d="M90 47 L127 69 L127 111 L90 133 L53 111 L53 69 Z"/><path d="M90 57 L119 107 H61 Z"/><path d="M90 69 L108 101 H72 Z" class="reactor-heart"/></g>
-<circle class="reactor-release" cx="90" cy="90" r="62"/>
-</svg><span id="entry-status" class="reactor-entry-status">ENTER THE WORKSHOP</span>
-</button></section>
 <section class="workbench accessibility-controls" id="workbench" hidden aria-label="Workshop controls">
 <div class="workbench-heading"><span class="eyebrow">THE WORKBENCH</span><h2>Put an idea<br> <em>in motion.</em></h2><p>Reach for an instrument. See what happens.</p></div>
 <div class="instruments" role="group" aria-label="Choose an instrument">
@@ -121,6 +109,6 @@
 <dialog class="experience-dialog" id="experience-dialog" aria-labelledby="experience-title"><header><div><span class="eyebrow">PROJECTED / FROM THE WORKBENCH</span><h2 id="experience-title">TVA Case File</h2></div><div class="experience-actions"><a id="experience-external" href="https://tva-case-file-l1607.netlify.app" target="_blank" rel="noopener">Open in a new tab ↗</a><button id="experience-close" type="button">Return to the workshop <span aria-hidden="true">×</span></button></div></header><div id="experience-content"></div><p class="experience-help">Open the case-file source in a new tab.</p></dialog>
 <dialog id="about-dialog" class="about-dialog" aria-labelledby="about-title"><button class="about-close" type="button" aria-label="Close information">×</button><span class="eyebrow">AN INDEPENDENT EXPERIMENT</span><h2 id="about-title">A little space<br>for <em>possibility.</em></h2><p>An original interactive environment for Lorenzo Colombani. A place to make things, play with ideas, and see the work.</p><p>Choose a display on the curved desk. Drag empty space to explore the workshop. The labels travel with their objects and work with a keyboard. Optional text controls are available below.</p><button class="text-controls-toggle" id="text-controls-toggle" type="button" aria-pressed="false">Show text controls</button><div class="about-links"><a href="../work/">Explore all work ↗</a><a href="mailto:lorenzo.colombani@live.fr">Get in touch ↗</a></div><p class="about-credit">Original synthesized soundtrack. Three.js, MIT. Local visual experiment.</p></dialog>
 <noscript><div class="noscript">This interactive scene needs JavaScript. <a href="../work/">Explore the work instead ↗</a></div></noscript>
-<script type="module" src="bootstrap.js?v=reactor-vault-24"></script>
+<script type="module" src="bootstrap.js?v=reactor-entry-25"></script>
 </body>
 </html>

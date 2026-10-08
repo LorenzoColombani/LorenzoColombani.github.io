@@ -8,8 +8,8 @@
     <div class="vault-sill"></div>
   </div>
   <header class="vault-heading"><span class="vault-eyebrow">Lorenzo Colombani</span><p>The Workshop</p></header>
-  <div class="vault-mechanism" aria-hidden="true">
-    <svg class="vault-reactor" viewBox="0 0 600 600" fill="none">
+  <button class="vault-mechanism" data-vault-enter type="button" aria-label="Open the Workshop" aria-describedby="vault-entry-hint" disabled>
+    <svg class="vault-reactor" viewBox="0 0 600 600" fill="none" aria-hidden="true">
       <defs>
         <radialGradient id="vault-housing"><stop stop-color="#101d23"/><stop offset=".62" stop-color="#16242b"/><stop offset=".78" stop-color="#0a1218"/><stop offset=".9" stop-color="#53616a"/><stop offset=".94" stop-color="#17222a"/><stop offset="1" stop-color="#080f14"/></radialGradient>
         <linearGradient id="vault-steel" x1="100" y1="70" x2="470" y2="500" gradientUnits="userSpaceOnUse"><stop stop-color="#a4adb1"/><stop offset=".22" stop-color="#364852"/><stop offset=".48" stop-color="#101d25"/><stop offset=".72" stop-color="#667781"/><stop offset="1" stop-color="#16252e"/></linearGradient>
@@ -44,10 +44,9 @@
         <g transform="translate(300 300)"><g class="vault-latch vault-latch-n"><use href="#vault-latch"/></g><g class="vault-latch vault-latch-e"><use href="#vault-latch" transform="rotate(90)"/></g><g class="vault-latch vault-latch-s"><use href="#vault-latch" transform="rotate(180)"/></g><g class="vault-latch vault-latch-w"><use href="#vault-latch" transform="rotate(270)"/></g></g>
       </g>
     </svg>
-  </div>
-  <div class="vault-copy"><span class="vault-progress-light" aria-hidden="true"></span><p data-vault-status role="status" aria-live="polite">Preparing the Workshop</p><span class="vault-caption">A little space for possibility.</span></div>
+  </button>
+  <div class="vault-copy"><span class="vault-progress-light" aria-hidden="true"></span><p id="vault-entry-hint" data-vault-status role="status" aria-live="polite">Preparing the Workshop</p><span class="vault-caption">Sound accompanies the opening.</span></div>
   <div class="vault-controls">
-    <button class="vault-sound" data-vault-sound type="button" aria-pressed="false" aria-label="Opening sound"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path class="vault-sound-on" d="M17 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="vault-sound-off" d="m17 9 5 6m0-6-5 6"/></svg><span>Opening sound</span><span class="vault-sound-state" data-vault-sound-state>Off</span></button>
     <button class="vault-skip" data-vault-skip type="button">Skip opening <span aria-hidden="true">↗</span></button>
   </div>
 </div>
