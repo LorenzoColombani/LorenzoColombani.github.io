@@ -13,8 +13,12 @@ control becomes available during opening; no arbitrary delay fakes download prog
 a short fade. Failed initialization reveals the existing useful fallback instead
 of trapping the visitor behind a door.
 
-Sound is original procedural powered machinery: reactor hum/rise, lock releases,
-servo movement and a short final seat. The reactor tap unlocks audio, so door
+Sound is the approved recorded big-door arrangement: metal bolt banks, steel
+travel, servo and pressure releases, paired stops and restrained original energy
+accents. The finite 2.23s MP3 is prefetched while the scene loads and decoded after
+the gesture. One continuous source preserves the entire mix across the unlock/open
+transition. Source credits are in `media/vault-door-open-v1.CREDITS.md`.
+The reactor tap unlocks audio, so door
 sound is on automatically with no separate sound toggle. Background music is
 primed in the same gesture but ducked until the door has opened; Music off still
 controls only music. Unsupported/stalled audio cannot trap entry. No film recording

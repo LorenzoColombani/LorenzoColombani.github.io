@@ -145,6 +145,7 @@ def allowed(path: str) -> bool:
     return path in {f'workshop/{name}' for name in CORE} or path in {
         'workshop/assets/robot.glb', 'workshop/assets/sofa.glb',
         'workshop/assets/plant.glb', 'workshop/media/workshop-garage-rock-v1.mp3', 'workshop/media/openbots.mp4', 'workshop/assets/social-preview.png',
+        'workshop/media/vault-door-open-v1.mp3', 'workshop/media/vault-door-open-v1.CREDITS.md',
     }
 
 
@@ -264,7 +265,8 @@ def check_glb(path: str, data: bytes) -> None:
 
 
 def build() -> tuple[dict[str, bytes], dict[str, str], int]:
-    queue = ['workshop/index.html', 'workshop/experiences/tva/index.html', 'workshop/assets/social-preview.png']
+    queue = ['workshop/index.html', 'workshop/experiences/tva/index.html', 'workshop/assets/social-preview.png',
+             'workshop/media/vault-door-open-v1.CREDITS.md']
     # The authored Bridge audio bank composes URLs from a directory and cue names.
     # Seed its curated copy because those dynamic references cannot be inferred.
     queue.extend(str(path.relative_to(ROOT)) for path in (ROOT / 'workshop/experiences/bridge').rglob('*') if path.is_file() and allowed(str(path.relative_to(ROOT))))
@@ -312,7 +314,8 @@ def build() -> tuple[dict[str, bytes], dict[str, str], int]:
 
 def verify(files: dict[str, bytes]) -> int:
     required = ROOT_ASSETS | {'workshop/assets/robot.glb', 'workshop/assets/sofa.glb',
-                             'workshop/assets/plant.glb', 'workshop/media/workshop-garage-rock-v1.mp3', 'workshop/media/openbots.mp4', 'workshop/assets/social-preview.png'}
+                             'workshop/assets/plant.glb', 'workshop/media/workshop-garage-rock-v1.mp3', 'workshop/media/openbots.mp4', 'workshop/assets/social-preview.png',
+                             'workshop/media/vault-door-open-v1.mp3', 'workshop/media/vault-door-open-v1.CREDITS.md'}
     required |= {f'{WEBSITE_PREFIX}{slug}/index.html' for slug in WEBSITES}
     if required - files.keys():
         fail(f'Required assets missing: {sorted(required - files.keys())}')

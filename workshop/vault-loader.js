@@ -1,4 +1,4 @@
-import {createVaultAudio} from './vault-audio.js';
+import {createVaultAudio} from './vault-audio.js?v=vault-metal-26';
 
 export const VAULT_TIMING=Object.freeze({door:680,open:2030,fade:200,reduced:180});
 
